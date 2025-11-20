@@ -1,0 +1,885 @@
+/* =========================
+   בסיס כללי
+   ========================= */
+body {
+  font-family: Arial, sans-serif;
+  direction: rtl;
+  text-align: right;
+  margin: 0;
+  padding: 0;
+  background: #0f172a; /* רקע כהה מסביב לאפליקציה */
+}
+
+.app-shell {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background: #f9fafb;
+  display: flex;
+  flex-direction: column;
+}
+
+/* =========================
+   כותרת עליונה (מסך ראשי)
+   ========================= */
+.app-header {
+  background: linear-gradient(135deg, #1d4ed8, #2563eb);
+  color: #ffffff;
+  padding: 14px 16px 12px;
+  box-shadow: 0 2px 10px rgba(15,23,42,0.5);
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+}
+
+.app-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.app-header-title-block {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.app-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.app-subtitle {
+  margin: 0;
+  font-size: 12px;
+  color: #dbeafe;
+}
+
+/* כפתורים בכותרת */
+
+.primary-button {
+  font-size: 14px;
+  text-decoration: none;
+  color: #0f172a;
+  background: #facc15;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-weight: 600;
+  border: none;
+  display: inline-block;
+  text-align: center;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.primary-button:hover {
+  background: #eab308;
+}
+
+/* טאבים */
+.app-tabs {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+  background: rgba(15,23,42,0.25);
+  padding: 4px;
+  border-radius: 999px;
+}
+
+.tab-link {
+  flex: 1;
+  font-size: 13px;
+  text-align: center;
+  text-decoration: none;
+  color: #e5e7eb;
+  padding: 6px 0;
+  border-radius: 999px;
+}
+
+.tab-active {
+  background: #f9fafb;
+  color: #1f2937;
+  font-weight: 600;
+}
+
+/* סיכום עליון */
+.summary-bar {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+}
+
+.summary-item {
+  flex: 1;
+  background: rgba(15,23,42,0.25);
+  border-radius: 10px;
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.summary-label {
+  font-size: 11px;
+  color: #c7d2fe;
+}
+
+.summary-value {
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+/* בחירת חודש */
+.filter-bar {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.filter-label {
+  color: #e5e7eb;
+  white-space: nowrap;
+}
+
+.filter-select {
+  flex: 1;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid #bfdbfe;
+  font-size: 13px;
+  outline: none;
+}
+
+/* תוכן כללי למסכים רגילים */
+.content {
+  flex: 1;
+  padding: 12px 12px 20px;
+}
+
+/* =========================
+   רשימת הוצאות
+   ========================= */
+.expense-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.expense-card {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 10px 12px;
+  box-shadow: 0 1px 5px rgba(15,23,42,0.12);
+  display: flex;
+  gap: 10px;
+}
+
+.expense-main {
+  flex: 1;
+}
+
+.expense-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 4px;
+}
+
+.expense-date {
+  font-size: 13px;
+  font-weight: 600;
+  color: #4b5563;
+}
+
+.expense-amount {
+  font-size: 17px;
+  font-weight: 700;
+  color: #16a34a;
+}
+
+.expense-desc {
+  margin: 0;
+  margin-bottom: 6px;
+  font-size: 14px;
+  color: #111827;
+}
+
+.expense-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.expense-pill {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #e0f2fe;
+  color: #1d4ed8;
+}
+
+.pill-muted {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+/* כפתורי עריכה ומחיקה */
+.expense-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-end;
+}
+
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-size: 12px;
+  text-decoration: none;
+  border: 1px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.edit-btn {
+  background: #e0f2fe;
+  color: #1d4ed8;
+  border-color: #bfdbfe;
+}
+
+.edit-btn:hover {
+  background: #dbeafe;
+}
+
+.delete-btn {
+  background: #fee2e2;
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+
+.delete-btn:hover {
+  background: #fecaca;
+}
+
+/* מצב אין נתונים */
+.empty-state {
+  margin-top: 24px;
+  font-size: 14px;
+  color: #6b7280;
+  text-align: center;
+}
+
+/* =========================
+   טפסים כלליים
+   ========================= */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.form-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #111827;
+}
+
+.form-input,
+.form-textarea {
+  font-size: 14px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  outline: none;
+}
+
+.form-input:focus,
+.form-textarea:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 1px rgba(37,99,235,0.2);
+}
+
+.form-textarea {
+  resize: vertical;
+}
+
+.form-actions {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.secondary-button {
+  font-size: 14px;
+  text-decoration: none;
+  color: #111827;
+  background: #e5e7eb;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-weight: 500;
+  border: none;
+  display: inline-block;
+  text-align: center;
+  cursor: pointer;
+}
+
+.secondary-button:hover {
+  background: #d1d5db;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.form-error {
+  background: #fee2e2;
+  color: #b91c1c;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+
+/* =========================
+   דוחות
+   ========================= */
+.section-title {
+  margin-top: 16px;
+  margin-bottom: 8px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 10px 12px;
+  box-shadow: 0 1px 4px rgba(15,23,42,0.12);
+  margin-bottom: 8px;
+}
+
+.card-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+}
+
+.amount {
+  font-weight: 700;
+  font-size: 16px;
+  color: #0f172a;
+}
+
+/* מובייל קטן מאוד */
+@media (max-width: 360px) {
+  .app-header-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .summary-bar {
+    flex-direction: column;
+  }
+
+  .expense-card {
+    flex-direction: column;
+  }
+
+  .expense-actions {
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+}
+
+/* =========================================================
+   מסך הוספת הוצאה - לפי העיצוב מפיגמה
+   ========================================================= */
+
+/* רקע כללי למסך הזה בלבד */
+.add-expense-page {
+  background: #020617; /* מסגרת כהה סביב האפליקציה במסך הוספה */
+}
+
+/* הגוף הפנימי של המסך (הרקע הסגלגל) */
+.add-expense-shell {
+  background: #dde0ff;
+}
+
+/* כותרת עליונה למסך הוספת הוצאה */
+.add-expense-header {
+  position: relative;
+  background: #2563eb;
+  color: #ffffff;
+  padding: 22px 16px 18px;
+  border-bottom-left-radius: 22px;
+  border-bottom-right-radius: 22px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+/* טקסט הכותרת */
+.add-expense-header .app-header-title {
+  margin: 0;
+  text-align: center;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+/* הבדג' בצד שמאל למעלה - קישור חזרה */
+.app-header-badge {
+  position: absolute;
+  top: 13px;
+  left: 18px;
+}
+
+.back-button {
+  font-size: 13px;
+  padding: 7px 17px;
+  line-height: 1;
+}
+
+/* תוכן המסך */
+.screen-add-expense {
+  flex: 1;
+  padding: 20px 18px 0;
+}
+
+/* טופס הוספת הוצאה */
+.add-expense-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* קבוצות שדות רק בתוך הטופס הזה */
+.add-expense-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.add-expense-form .form-group label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+}
+
+/* שדות הטופס - input + textarea + select */
+.add-expense-form .form-group input,
+.add-expense-form .form-group textarea,
+.add-expense-form .form-group select {
+  border: none;
+  outline: none;
+  font-size: 15px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  box-sizing: border-box;
+  appearance: none;
+   /* לוק נקי ל-select */
+}
+
+/* כפתורי הפעולה בתחתית */
+.add-expense-form .form-actions {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+/* כפתורים לפי העיצוב שלך - עם רוחב זהה */
+.btn {
+  display: inline-block;
+  text-align: center;
+  padding: 12px 18px;
+  border-radius: 14px;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  text-decoration: none;
+  color: #ffffff;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+}
+
+.btn.primary {
+  background: #22c55e; /* ירוק */
+}
+
+.btn.danger {
+  background: #ef4444; /* אדום */
+}
+
+/* תחתית כחולה מעוגלת למסך ההוספה */
+.add-expense-shell .app-footer {
+  margin-top: 24px;
+  height: 80px;
+  background: #2563eb;
+  border-top-left-radius: 22px;
+  border-top-right-radius: 22px;
+}
+
+/* === טופס הוספת הוצאה / עריכה - עיצוב מודרני === */
+
+.card-form {
+  margin: 16px;
+  padding: 16px 14px 18px;
+  background: #ffffff;
+  border-radius: 18px;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  font-family: inherit;
+  font-size: 14px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.25);
+  background: #ffffff;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 72px;
+}
+
+/* סכום עם ₪ בצד */
+.input-with-suffix {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-with-suffix input {
+  width: 100%;
+  padding-left: 40px; /* מקום לסימון ₪ בצד שמאל */
+}
+
+.input-suffix {
+  position: absolute;
+  left: 10px;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+/* הודעת שגיאה */
+.form-error {
+  margin-bottom: 6px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: #fee2e2;
+  color: #b91c1c;
+  font-size: 13px;
+}
+
+/* כפתורים כלליים */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 0.07s ease, box-shadow 0.15s ease, background 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #ffffff;
+  box-shadow: 0 6px 14px rgba(37, 99, 235, 0.45);
+}
+
+.btn-primary:active {
+  transform: translateY(1px);
+  box-shadow: 0 3px 8px rgba(37, 99, 235, 0.5);
+}
+
+.btn-secondary {
+  background: #e5e7eb;
+  color: #111827;
+  box-shadow: 0 4px 10px rgba(148, 163, 184, 0.5);
+}
+
+.btn-secondary:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 5px rgba(148, 163, 184, 0.7);
+}
+
+/* שני כפתורים בשורה אחת */
+.form-actions-inline {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+}
+
+.btn-inline {
+  flex: 1;
+  text-align: center;
+}
+/* כפתורי פעולה ירוק ואדום */
+
+.btn-success {
+  background: linear-gradient(135deg, #16a34a, #15803d);
+  color: #ffffff;
+  box-shadow: 0 6px 14px rgba(22, 163, 74, 0.45);
+}
+
+.btn-success:active {
+  transform: translateY(1px);
+  box-shadow: 0 3px 8px rgba(22, 163, 74, 0.55);
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, #ef4444, #b91c1c);
+  color: #ffffff;
+  box-shadow: 0 6px 14px rgba(239, 68, 68, 0.45);
+}
+
+.btn-danger:active {
+  transform: translateY(1px);
+  box-shadow: 0 3px 8px rgba(185, 28, 28, 0.55);
+}
+
+/* ניווט תחתון */
+
+.app-bottom-nav {
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  gap: 10px;
+  padding: 6px 12px 10px;
+  background: #ffffff;
+  border-top: 1px solid #e5e7eb;
+}
+
+.nav-item {
+  flex: 1;
+  text-align: center;
+  text-decoration: none;
+  font-size: 11px;
+  color: #6b7280;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-icon {
+  font-size: 18px;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+
+.nav-label {
+  line-height: 1.2;
+}
+
+.nav-item-active {
+  color: #2563eb;
+  font-weight: 600;
+}
+
+/* כפתור הוספה באמצע כמו הוצאה+ */
+
+.nav-item-add {
+  position: relative;
+  top: -14px;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #ffffff;
+  padding: 8px 18px 6px;
+  border-radius: 999px;
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.6);
+  min-width: 110px;
+}
+
+.nav-item-add .nav-icon {
+  font-size: 16px;
+  margin-bottom: 0;
+  margin-left: 4px;
+}
+
+.nav-item-add .nav-label {
+  font-size: 12px;
+}
+
+/* כפתור "חזרה לרשימה" בסגנון + הוצאה */
+
+.back-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: #facc15;
+  /* צהוב כמו כפתור +הוצאה */
+  color: #111827;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: 0 6px 14px rgba(250, 204, 21, 0.6);
+  border: none;
+  cursor: pointer;
+  transition: transform 0.07s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.back-pill:hover {
+  background: #fbbf24;
+}
+
+.back-pill:active {
+  transform: translateY(1px);
+  box-shadow: 0 3px 8px rgba(250, 204, 21, 0.7);
+}
+/* כרטיס הוצאה – מבנה */
+
+.expense-card {
+  display: flex;
+  gap: 10px;
+  padding: 10px 12px;
+  margin: 8px 12px;
+  background: #ffffff;
+  border-radius: 18px;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+}
+
+.expense-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.expense-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 12px;
+}
+
+.expense-amount {
+  color: #16a34a;
+  font-weight: 700;
+}
+
+.expense-date {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.expense-description {
+  margin: 2px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.expense-meta {
+  font-size: 12px;
+  color: #6b7280;
+  display: flex;
+  gap: 8px;
+}
+
+/* עמודת כפתורי עריכה/מחיקה */
+
+.expense-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  justify-content: center;
+}
+
+/* כפתור קטן מעוגל (צ'יפ) */
+
+.chip-btn {
+  min-width: 64px;
+  padding: 6px 0;
+  border-radius: 999px;
+  border: none;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  background: #f3f4f6;
+  color: #111827;
+  box-shadow: 0 4px 10px rgba(148, 163, 184, 0.6);
+  transition: transform 0.07s ease, box-shadow 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.chip-btn:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 6px rgba(148, 163, 184, 0.8);
+}
+
+/* צבעים נפרדים לערוך/מחק */
+
+.chip-edit {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.chip-delete {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+.header-icon-link {
+  font-size: 20px;
+  line-height: 1;
+  padding-inline: 8px;
+}

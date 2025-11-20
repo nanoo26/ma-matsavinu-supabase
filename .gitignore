@@ -1,0 +1,14 @@
+# Python
+__pycache__/
+*.pyc
+
+# Virtual env
+venv/
+.venv/
+.env/
+
+# Databases
+*.db
+
+# PyCharm
+.idea/
