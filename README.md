@@ -4,7 +4,7 @@ A simple, mobile-first Hebrew expense tracking app built with Python and Flask. 
 
 ## Live App
 
-https://github.com/nanoo26/ma-matsavinu-supabase.git
+
 
 ## Features
 - View expenses  
