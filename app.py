@@ -4,22 +4,27 @@ import os
 import io
 import csv
 from collections import defaultdict
+
 app = Flask(__name__)
 
 # =========================
 # Supabase config
 # =========================
 # בטווח הארוך עדיף לשים את הערכים האלה כמשתני סביבה
-# גם לוקאלית וגם ב Render
+# גם לוקאלית וגם ב-Render
+
 SUPABASE_URL = os.environ.get(
     "SUPABASE_URL",
-    "https://rdukuqlayxpwdvyrepxe.supabase.co"  # ה-URL שלך
+    "https://rdukuqlayxpwdvyrepxe.supabase.co"  # ה-URL של הפרויקט שלך
 )
 
+# שים לב: כאן שם משתנה הסביבה הוא SUPABASE_ANON_KEY,
+# והערך הדיפולטי הוא כל המחרוזת של ה-anon key, בלי לחתוך אותה לשניים
 SUPABASE_API_KEY = os.environ.get(
-    "SUPABASE_API_KEY",
+    "SUPABASE_ANON_KEY",
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJkdWt1cWxheXhwd2R2eXJlcHhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI2Mzc0OTAsImV4cCI6MjA3ODIxMzQ5MH0.PFeKjEGgdxYZgXtRVAQ072jmOtW8wQqSs6gRYB3il6M"
 )
+
 SUPABASE_TABLE = "expenses"
 
 
@@ -145,7 +150,14 @@ def insert_expense(date, category, amount, payment_method, description):
         json=payload,
         params={"return": "minimal"},
     )
-    r.raise_for_status()
+    # לצורך דיבאג - אם יש שגיאה נדפיס את התשובה מהשרת
+    try:
+        r.raise_for_status()
+    except requests.HTTPError as e:
+        print("Supabase insert error:", e)
+        print("Response status:", r.status_code)
+        print("Response text:", r.text)
+        raise
 
 
 def update_expense(expense_id, date, category, amount, payment_method, description):
@@ -170,7 +182,13 @@ def update_expense(expense_id, date, category, amount, payment_method, descripti
         json=payload,
         params=params,
     )
-    r.raise_for_status()
+    try:
+        r.raise_for_status()
+    except requests.HTTPError as e:
+        print("Supabase update error:", e)
+        print("Response status:", r.status_code)
+        print("Response text:", r.text)
+        raise
 
 
 def delete_expense_db(expense_id):
@@ -180,7 +198,13 @@ def delete_expense_db(expense_id):
     url = f"{SUPABASE_URL}/rest/v1/{SUPABASE_TABLE}"
     params = {"id": f"eq.{expense_id}"}
     r = requests.delete(url, headers=supabase_headers(), params=params)
-    r.raise_for_status()
+    try:
+        r.raise_for_status()
+    except requests.HTTPError as e:
+        print("Supabase delete error:", e)
+        print("Response status:", r.status_code)
+        print("Response text:", r.text)
+        raise
 
 
 # =========================
