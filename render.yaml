@@ -1,7 +1,13 @@
 services:
   - type: web
-    name: ma-matsavinu
+    name: ma-matsavinu-supabase
     env: python
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "gunicorn app:app"
     plan: free
+    region: frankfurt
+
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.4
