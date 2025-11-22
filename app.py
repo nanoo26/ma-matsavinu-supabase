@@ -7,19 +7,33 @@ from collections import defaultdict
 
 app = Flask(__name__)
 
-# =====================================
-# Supabase - MUST COME FROM ENV VARS
-# =====================================
+# =========================
+# Supabase config
+# =========================
 
-SUPABASE_URL = os.environ.get("SUPABASE_URL")
-SUPABASE_API_KEY = os.environ.get("SUPABASE_API_KEY")
+# ברירת מחדל - הערכים הישירים מהפרויקט שלך בסופבייס
+DEFAULT_SUPABASE_URL = "https://rdukuqlayxpwdvyrepxe.supabase.co"
+DEFAULT_SUPABASE_API_KEY = (
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9."
+    "eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJkdWt1cWxheXhwd2R2eXJlcHhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI2Mzc0OTAsImV4cCI6MjA3ODIxMzQ5MH0."
+    "PFeKjEGgdxYZgXtRVAQ072jmOtW8wQqSs6gRYB3il6M"
+)
+
+# קודם מנסים לקרוא מה־env, ואם זה לא נראה תקין נופלים לברירת המחדל
+env_url = os.environ.get("SUPABASE_URL", "").strip()
+if env_url:
+    SUPABASE_URL = env_url
+else:
+    SUPABASE_URL = DEFAULT_SUPABASE_URL
+
+env_key = os.environ.get("SUPABASE_API_KEY", "").strip()
+if env_key and all(ord(ch) < 128 for ch in env_key):
+    SUPABASE_API_KEY = env_key
+else:
+    SUPABASE_API_KEY = DEFAULT_SUPABASE_API_KEY
+
 SUPABASE_TABLE = "expenses"
 
-if not SUPABASE_URL or not SUPABASE_API_KEY:
-    raise RuntimeError(
-        "Missing Supabase credentials. "
-        "You must set SUPABASE_URL and SUPABASE_API_KEY in environment variables."
-    )
 
 def supabase_headers():
     return {
@@ -28,11 +42,16 @@ def supabase_headers():
         "Content-Type": "application/json",
     }
 
-# =====================================
-# תאריכים / חודשים – פונקציות עזר
-# =====================================
+
+# =========================
+# Helpers - תאריכים / חודשים
+# =========================
 
 def normalize_date(date_str: str) -> str:
+    """
+    מקבל מ input type=date (YYYY-MM-DD)
+    ומחזיר בפורמט DD/MM/YYYY למסד הנתונים
+    """
     if not date_str:
         return ""
     parts = date_str.split("-")
@@ -41,7 +60,12 @@ def normalize_date(date_str: str) -> str:
     year, month, day = parts
     return f"{day}/{month}/{year}"
 
+
 def date_for_input(db_date: str) -> str:
+    """
+    מקבל תאריך מהמסד בפורמט DD/MM/YYYY
+    ומחזיר YYYY-MM-DD ל input type=date
+    """
     if not db_date:
         return ""
     parts = db_date.split("/")
@@ -50,46 +74,75 @@ def date_for_input(db_date: str) -> str:
     day, month, year = parts
     return f"{year}-{month}-{day}"
 
+
 def month_key_from_date(date_str: str) -> str:
+    """
+    DD/MM/YYYY -> YYYY-MM (מפתח חודשי)
+    """
     try:
         day, month, year = date_str.split("/")
         return f"{year}-{month}"
     except ValueError:
         return ""
 
+
 def build_months_list(expenses):
+    """
+    בונה רשימת חודשים מכל ההוצאות:
+    [{key: '2025-11', label: '11/2025'}, ...]
+    """
     seen = {}
     for exp in expenses:
-        key = month_key_from_date(exp.get("date", ""))
-        if key:
-            year, month = key.split("-")
-            seen[key] = f"{month}/{year}"
-    return sorted(
-        [{"key": k, "label": v} for k, v in seen.items()],
-        key=lambda x: x["key"],
-        reverse=True
-    )
+        date_str = exp.get("date") or ""
+        key = month_key_from_date(date_str)
+        if not key:
+            continue
+        year, month = key.split("-")
+        label = f"{month}/{year}"
+        seen[key] = label
 
-# =====================================
-# Supabase CRUD
-# =====================================
+    items = [{"key": k, "label": v} for k, v in seen.items()]
+    items.sort(key=lambda x: x["key"], reverse=True)
+    return items
+
+
+# =========================
+# Supabase - פעולות CRUD
+# =========================
 
 def fetch_all_expenses():
+    """
+    מביא את כל ההוצאות מסופבייס, מסודרות מהחדשה לישנה
+    """
     url = f"{SUPABASE_URL}/rest/v1/{SUPABASE_TABLE}"
-    params = {"select": "*", "order": "date.desc,id.desc"}
+    params = {
+        "select": "*",
+        "order": "date.desc,id.desc",
+    }
     r = requests.get(url, headers=supabase_headers(), params=params)
     r.raise_for_status()
     return r.json()
 
+
 def fetch_single_expense(expense_id: int):
+    """
+    מביא רשומה בודדת לפי id
+    """
     url = f"{SUPABASE_URL}/rest/v1/{SUPABASE_TABLE}"
-    params = {"id": f"eq.{expense_id}", "select": "*"}
+    params = {
+        "id": f"eq.{expense_id}",
+        "select": "*",
+    }
     r = requests.get(url, headers=supabase_headers(), params=params)
     r.raise_for_status()
     data = r.json()
     return data[0] if data else None
 
+
 def insert_expense(date, category, amount, payment_method, description):
+    """
+    מוסיף הוצאה חדשה
+    """
     url = f"{SUPABASE_URL}/rest/v1/{SUPABASE_TABLE}"
     payload = {
         "date": date,
@@ -98,17 +151,22 @@ def insert_expense(date, category, amount, payment_method, description):
         "payment_method": payment_method,
         "description": description,
     }
-    r = requests.post(
-        url,
-        headers=supabase_headers(),
-        json=payload,
-        params={"return": "representation"}
-    )
-    if r.status_code >= 400:
-        print("INSERT ERROR:", r.text)
-    r.raise_for_status()
+
+    headers = supabase_headers()
+    headers = dict(headers)
+    headers["Prefer"] = "return=minimal"
+
+    r = requests.post(url, headers=headers, json=payload)
+
+    if not r.ok:
+        print("Supabase INSERT error:", r.status_code, r.text)
+        r.raise_for_status()
+
 
 def update_expense(expense_id, date, category, amount, payment_method, description):
+    """
+    מעדכן הוצאה קיימת
+    """
     url = f"{SUPABASE_URL}/rest/v1/{SUPABASE_TABLE}"
     payload = {
         "date": date,
@@ -117,71 +175,116 @@ def update_expense(expense_id, date, category, amount, payment_method, descripti
         "payment_method": payment_method,
         "description": description,
     }
-    params = {"id": f"eq.{expense_id}", "return": "representation"}
-    r = requests.patch(url, headers=supabase_headers(), json=payload, params=params)
-    if r.status_code >= 400:
-        print("UPDATE ERROR:", r.text)
-    r.raise_for_status()
+    params = {
+        "id": f"eq.{expense_id}",
+    }
+
+    headers = supabase_headers()
+    headers = dict(headers)
+    headers["Prefer"] = "return=minimal"
+
+    r = requests.patch(url, headers=headers, json=payload, params=params)
+
+    if not r.ok:
+        print("Supabase UPDATE error:", r.status_code, r.text)
+        r.raise_for_status()
+
 
 def delete_expense_db(expense_id):
+    """
+    מוחק הוצאה
+    """
     url = f"{SUPABASE_URL}/rest/v1/{SUPABASE_TABLE}"
     params = {"id": f"eq.{expense_id}"}
-    r = requests.delete(url, headers=supabase_headers(), params=params)
-    if r.status_code >= 400:
-        print("DELETE ERROR:", r.text)
-    r.raise_for_status()
 
-# =====================================
-# קבועים
-# =====================================
+    headers = supabase_headers()
+    headers = dict(headers)
+    headers["Prefer"] = "return=minimal"
+
+    r = requests.delete(url, headers=headers, params=params)
+
+    if not r.ok:
+        print("Supabase DELETE error:", r.status_code, r.text)
+        r.raise_for_status()
+
+
+# =========================
+# קבועים - קטגוריות ואמצעי תשלום
+# =========================
 
 DEFAULT_CATEGORIES = [
-    "בילויים", "בית", "ילדים", "בריאות", "רכב",
-    "חוגים", "קניות", "שונות", "טבק",
+    "בילויים",
+    "בית",
+    "ילדים",
+    "בריאות",
+    "רכב",
+    "חוגים",
+    "קניות",
+    "שונות",
+    "טבק",
 ]
 
 PAYMENT_METHODS = [
-    "מקס שלום", "מקס חגית", "כאל ויזה", "לאומי שלום", 'עו"ש',
+    "מקס שלום",
+    "מקס חגית",
+    "כאל ויזה",
+    "לאומי שלום",
+    'עו"ש',
 ]
 
-# =====================================
-# ROUTES
-# =====================================
+
+# =========================
+# ראוטים
+# =========================
 
 @app.route("/")
 def root():
     return redirect(url_for("index"))
 
+
 @app.route("/expenses")
 def index():
+    """
+    מסך רשימת הוצאות
+    """
     expenses = fetch_all_expenses()
     months = build_months_list(expenses)
 
     selected_month = request.args.get("month")
     valid_keys = {m["key"] for m in months}
 
-    if months and (not selected_month or selected_month not in valid_keys):
-        selected_month = months[0]["key"]
+    if months:
+        if not selected_month or selected_month not in valid_keys:
+            selected_month = months[0]["key"]
+    else:
+        selected_month = None
 
-    filtered = [
-        e for e in expenses
-        if month_key_from_date(e.get("date", "")) == selected_month
-    ] if selected_month else expenses
+    if selected_month:
+        filtered_expenses = [
+            e for e in expenses
+            if month_key_from_date(e.get("date", "")) == selected_month
+        ]
+    else:
+        filtered_expenses = expenses
 
-    total_rows = len(filtered)
-    total_amount = sum(float(e.get("amount") or 0) for e in filtered)
+    total_rows = len(filtered_expenses)
+    total_amount = sum(float(e.get("amount", 0) or 0) for e in filtered_expenses)
 
     return render_template(
         "expenses.html",
-        expenses=filtered,
+        expenses=filtered_expenses,
         total_rows=total_rows,
         total_amount=total_amount,
         months=months,
         selected_month=selected_month,
     )
 
+
 @app.route("/add_expenses", methods=["GET", "POST"])
 def add_expense():
+    """
+    מסך הוספת הוצאה
+    """
     categories = sorted(set(DEFAULT_CATEGORIES))
     payment_methods = PAYMENT_METHODS
 
@@ -197,6 +300,14 @@ def add_expense():
             return render_template(
                 "add_expense.html",
                 error="נא למלא את כל השדות",
+                categories=categories,
+                payment_methods=payment_methods,
+            )
+
+        if payment_method not in PAYMENT_METHODS:
+            return render_template(
+                "add_expense.html",
+                error="יש לבחור אמצעי תשלום מתוך הרשימה",
                 categories=categories,
                 payment_methods=payment_methods,
             )
@@ -221,8 +332,12 @@ def add_expense():
         payment_methods=payment_methods,
     )
 
+
 @app.route("/edit/<int:expense_id>", methods=["GET", "POST"])
 def edit_expense(expense_id):
+    """
+    מסך עריכת הוצאה
+    """
     expense = fetch_single_expense(expense_id)
     if not expense:
         return redirect(url_for("index"))
@@ -246,6 +361,16 @@ def edit_expense(expense_id):
                 payment_methods=payment_methods,
                 date_input=raw_date,
                 error="נא למלא את כל השדות",
+            )
+
+        if payment_method not in PAYMENT_METHODS:
+            return render_template(
+                "edit_expense.html",
+                expense=expense,
+                categories=categories,
+                payment_methods=payment_methods,
+                date_input=raw_date,
+                error="יש לבחור אמצעי תשלום מתוך הרשימה",
             )
 
         try:
@@ -273,21 +398,32 @@ def edit_expense(expense_id):
         error=None,
     )
 
+
 @app.route("/delete/<int:expense_id>")
 def delete_expense(expense_id):
+    """
+    מחיקת הוצאה
+    """
     delete_expense_db(expense_id)
     return redirect(url_for("index"))
 
+
 @app.route("/reports")
 def reports():
+    """
+    מסך דוחות
+    """
     expenses = fetch_all_expenses()
     months = build_months_list(expenses)
 
     selected_month = request.args.get("month")
     valid_keys = {m["key"] for m in months}
 
-    if months and (not selected_month or selected_month not in valid_keys):
-        selected_month = months[0]["key"]
+    if months:
+        if not selected_month or selected_month not in valid_keys:
+            selected_month = months[0]["key"]
+    else:
+        selected_month = None
 
     monthly_summary = []
     category_summary = []
@@ -301,11 +437,16 @@ def reports():
         year, month = selected_month.split("-")
         total = sum(float(e.get("amount", 0) or 0) for e in filtered)
 
-        monthly_summary = [{"year": year, "month": month, "total": total}]
+        monthly_summary = [{
+            "year": year,
+            "month": month,
+            "total": total,
+        }]
 
         by_cat = defaultdict(float)
         for e in filtered:
-            by_cat[e.get("category") or "לא מוגדר"] += float(e.get("amount", 0) or 0)
+            cat = e.get("category") or "לא מוגדר"
+            by_cat[cat] += float(e.get("amount", 0) or 0)
 
         category_summary = [
             {"category": cat, "total": amount}
@@ -320,14 +461,18 @@ def reports():
         category_summary=category_summary,
     )
 
+
 @app.route("/export")
 def export_csv():
+    """
+    מוריד את כל ההוצאות לקובץ CSV בעברית תקינה לאקסל
+    """
     expenses = fetch_all_expenses()
 
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(["date", "category", "amount", "payment_method", "description"])
 
+    writer.writerow(["date", "category", "amount", "payment_method", "description"])
     for row in expenses:
         writer.writerow([
             row.get("date", ""),
@@ -337,13 +482,20 @@ def export_csv():
             row.get("description", ""),
         ])
 
-    csv_data = "\ufeff" + output.getvalue()  # BOM לתמיכה בעברית
+    csv_data = output.getvalue()
+    output.close()
+
+    # מוסיף BOM כדי שאקסל יציג עברית נכון
+    csv_data = "\ufeff" + csv_data
 
     return Response(
         csv_data,
         mimetype="text/csv; charset=utf-8",
-        headers={"Content-Disposition": "attachment; filename=expenses_export.csv"}
+        headers={
+            "Content-Disposition": "attachment; filename=expenses_export.csv"
+        }
     )
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
