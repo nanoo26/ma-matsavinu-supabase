@@ -100,6 +100,63 @@
     </section>
   </main>
 
+  <section class="card budget-card">
+  <div class="card-header">
+    <h2 class="card-title">התקציב החודשי</h2>
+    <p class="card-subtitle">
+      עדכן את הסכומים לכל קטגוריה, הוסף קטגוריות חדשות וסמן למחיקה קטגוריות שכבר אינן רלוונטיות.
+    </p>
+  </div>
+
+  <div class="card-body">
+
+    <div class="budget-table-header">
+      <span>מחיקה</span>
+      <span>תקציב חודשי (₪)</span>
+      <span>קטגוריה</span>
+    </div>
+
+    {% for row in rows %}
+      <div class="budget-row">
+        <div class="budget-delete-cell">
+          <input type="checkbox" name="delete_{{ row['id'] }}">
+        </div>
+        <div>
+          <input
+            type="text"
+            name="amount_{{ row['id'] }}"
+            value="{{ row['amount'] }}"
+            class="budget-input"
+          >
+        </div>
+        <div class="budget-category-label">
+          {{ row["category"] }}
+        </div>
+      </div>
+    {% endfor %}
+
+    <div class="budget-new-row">
+      <input
+        type="text"
+        name="new_category"
+        placeholder="שם קטגוריה חדשה"
+        class="budget-new-input"
+      >
+      <input
+        type="text"
+        name="new_amount"
+        placeholder="סכום חודשי"
+        class="budget-new-input"
+      >
+    </div>
+
+    <button type="submit" class="btn-primary budget-save-btn">
+      שמור תקציב
+    </button>
+
+  </div>
+</section>
+
 </div>
 </body>
 </html>

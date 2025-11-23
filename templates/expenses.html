@@ -73,44 +73,41 @@
       <section class="expense-list">
 
         {% for e in expenses %}
-<section class="card expense-card">
-  <div class="expense-row">
+  <article class="expense-item">
 
-    <!-- צד שמאל - לחצני עריכה ומחיקה -->
-    <div class="expense-actions">
-      <a href="{{ url_for('edit_expense', expense_id=e['id']) }}"
-         class="chip-button chip-edit">
-        ערוך
-      </a>
-      <a href="{{ url_for('delete_expense', expense_id=e['id']) }}"
-         class="chip-button chip-delete">
-        מחק
-      </a>
-    </div>
-
-    <!-- צד ימין - סכום, תאריך, תיאור וקטגוריה -->
-    <div class="expense-main">
-      <div class="expense-amount-date">
-        <span class="expense-amount">
-          {{ "%.2f" | format(e["amount"]) }} ₪
-        </span>
-        <span class="expense-date">
-          {{ e["date"] }}
-        </span>
+    <div class="expense-item-main">
+      <!-- כפתורי עריכה ומחיקה בצד שמאל -->
+      <div class="expense-actions">
+        <a href="{{ url_for('edit_expense', expense_id=e['id']) }}" class="chip-btn chip-edit">
+          ערוך
+        </a>
+        <a href="{{ url_for('delete_expense', expense_id=e['id']) }}" class="chip-btn chip-delete">
+          מחק
+        </a>
       </div>
 
-      <div class="expense-description">
-        {{ e["description"] }}
-      </div>
+      <!-- סכום + תאריך + תיאור -->
+      <div class="expense-content">
+        <div class="expense-top-row">
+          <div class="expense-amount-date">
+            <span class="expense-amount">{{ "%.2f" | format(e["amount"]|float) }} ₪</span>
+            <span class="expense-date">{{ e["date"] }}</span>
+          </div>
+        </div>
 
-      <div class="expense-category">
-        {{ e["category"] }}
+        <div class="expense-description">
+          {{ e["description"] }}
+        </div>
+
+        <div class="expense-category">
+          {{ e["category"] }}
+        </div>
       </div>
     </div>
 
-  </div>
-</section>
+  </article>
 {% endfor %}
+
 
 
       </section>
