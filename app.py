@@ -51,14 +51,12 @@ SUPABASE_URL, SUPABASE_API_KEY = load_supabase_config()
 SUPABASE_TABLE = "expenses"
 
 
-def supabase_headers(extra=None):
-    """
-    כותרות בסיס לקריאות לסופבייס.
-    """
-    base = {
+def supabase_headers():
+    return {
         "apikey": SUPABASE_API_KEY,
         "Authorization": f"Bearer {SUPABASE_API_KEY}",
         "Content-Type": "application/json",
+        "Prefer": "return=representation",
     }
     if extra:
         base.update(extra)
@@ -142,8 +140,7 @@ def fetch_single_expense(expense_id: int):
 
 def insert_expense(date, category, amount, payment_method, description):
     """
-    מוסיף הוצאה חדשה לטבלת expenses בסופבייס.
-    משתמש ב-POST רגיל עם json=payload לפי הדוקומנטציה.
+    מוסיף הוצאה חדשה ל-Supabase עם לוגים ברורים
     """
     url = f"{SUPABASE_URL}/rest/v1/{SUPABASE_TABLE}"
     payload = {
@@ -154,30 +151,25 @@ def insert_expense(date, category, amount, payment_method, description):
         "description": description,
     }
 
-    headers = supabase_headers({"Prefer": "return=representation"})
-
     print("Supabase INSERT payload:", json.dumps(payload, ensure_ascii=False))
-    try:
-        r = requests.post(
-            url,
-            headers=headers,
-            params=None,
-            json=payload,          # שים לב: json=payload ולא data=
-            timeout=10,
-        )
-        print("Supabase INSERT status:", r.status_code)
-        print("Supabase INSERT response:", r.text)
-        r.raise_for_status()
-    except Exception as e:
-        print("Supabase INSERT exception:", repr(e))
-        raise
 
+    r = requests.post(
+        url,
+        headers=supabase_headers(),
+        json=payload,
+    )
+
+    print("Supabase INSERT status:", r.status_code)
+    print("Supabase INSERT response:", r.text)
+
+    # אם משהו לא תקין - נפיל שגיאה כדי שתראה 500 ונדע שיש בעיה
+    if r.status_code not in (200, 201, 204):
+        raise RuntimeError(f"Supabase INSERT failed: {r.status_code} {r.text}")
 
 
 def update_expense(expense_id, date, category, amount, payment_method, description):
     """
-    מעדכן הוצאה קיימת בסופבייס עם PATCH תקני.
-    בלי X-HTTP-Method-Override, אלא PATCH ישיר לפי Supabase.
+    מעדכן הוצאה קיימת
     """
     url = f"{SUPABASE_URL}/rest/v1/{SUPABASE_TABLE}"
     payload = {
@@ -190,35 +182,43 @@ def update_expense(expense_id, date, category, amount, payment_method, descripti
     params = {
         "id": f"eq.{expense_id}",
     }
-    headers = supabase_headers({
-        "Prefer": "return=representation",
-    })
-    
 
     print(f"Supabase UPDATE id={expense_id} payload:", json.dumps(payload, ensure_ascii=False))
-    try:
-        r = requests.patch(
-            url,
-            headers=headers,
-            params=params,
-            json=payload,      # שוב – json=payload
-            timeout=10,
-        )
-        print("Supabase UPDATE status:", r.status_code)
-        print("Supabase UPDATE response:", r.text)
-        r.raise_for_status()
-    except Exception as e:
-        print("Supabase UPDATE exception:", repr(e))
-        raise
+
+    r = requests.patch(
+        url,
+        headers=supabase_headers(),
+        json=payload,
+        params=params,
+    )
+
+    print("Supabase UPDATE status:", r.status_code)
+    print("Supabase UPDATE response:", r.text)
+
+    if r.status_code not in (200, 204):
+        raise RuntimeError(f"Supabase UPDATE failed: {r.status_code} {r.text}")
 
 
 def delete_expense_db(expense_id):
+    """
+    מוחק הוצאה לפי id מ Supabase
+    """
     url = f"{SUPABASE_URL}/rest/v1/{SUPABASE_TABLE}"
     params = {"id": f"eq.{expense_id}"}
-    headers = supabase_headers({"Prefer": "return=minimal"})
-    r = requests.delete(url, headers=headers, params=params, timeout=10)
-    print(f"Supabase DELETE id={expense_id} status:", r.status_code, "resp:", r.text)
-    r.raise_for_status()
+
+    # משתמשים ב headers הרגילים ומעדיפים תשובה מינימלית
+    headers = supabase_headers().copy()
+    headers["Prefer"] = "return=minimal"
+
+    print(f"Supabase DELETE id={expense_id} url={url} params={params}")
+
+    r = requests.delete(url, headers=headers, params=params)
+
+    print("Supabase DELETE status:", r.status_code)
+    print("Supabase DELETE response:", r.text)
+
+    if r.status_code not in (200, 204):
+        raise RuntimeError(f"Supabase DELETE failed: {r.status_code} {r.text}")
 
 
 # =========================
