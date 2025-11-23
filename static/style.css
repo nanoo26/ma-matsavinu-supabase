@@ -1637,3 +1637,160 @@ body {
   font-size: 14px;
   color: #6b7280;
 }
+
+/* ===== כרטיסי הוצאות - עיצוב חדש ===== */
+
+.expense-item {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+}
+
+.expense-item-main {
+  display: flex;
+  flex-direction: row-reverse; /* כדי שהמידע יהיה מימין והכפתורים משמאל */
+  align-items: flex-start;
+  gap: 16px;
+}
+
+/* כפתורי ערוך ומחק בצד שמאל */
+
+.expense-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 72px;
+}
+
+.chip-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 16px;
+  border-radius: 999px;
+  font-size: 13px;
+  border: none;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.chip-edit {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.chip-delete {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+/* אזור התוכן של ההוצאה */
+
+.expense-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.expense-amount-date {
+  display: flex;
+  flex-direction: row-reverse; /* תאריך מימין, סכום משמאל */
+  align-items: baseline;
+  gap: 12px;
+}
+
+.expense-amount {
+  font-weight: 700;
+  color: #16a34a;
+  font-size: 16px;
+}
+
+.expense-date {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.expense-description {
+  margin-top: 4px;
+  font-weight: 600;
+  font-size: 14px;
+  color: #0f172a;
+}
+
+.expense-category {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+/* ===== מסך ניהול תקציב ===== */
+
+.budget-card {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 18px 16px 20px;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+}
+
+.budget-table-header {
+  display: grid;
+  grid-template-columns: 60px 1fr 90px;
+  font-size: 13px;
+  color: #6b7280;
+  margin-bottom: 8px;
+}
+
+.budget-row {
+  display: grid;
+  grid-template-columns: 60px 1fr 90px; /* מחיקה - סכום - קטגוריה */
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.budget-row:last-child {
+  border-bottom: none;
+}
+
+.budget-delete-cell {
+  text-align: center;
+}
+
+.budget-input {
+  width: 100%;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  padding: 6px 12px;
+  font-size: 14px;
+}
+
+.budget-category-label {
+  font-size: 14px;
+  color: #111827;
+}
+
+/* שורת הוספת קטגוריה חדשה */
+
+.budget-new-row {
+  display: grid;
+  grid-template-columns: 1fr 110px;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.budget-new-input {
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  padding: 6px 12px;
+  font-size: 14px;
+}
+
+/* כפתור שמירת תקציב */
+
+.budget-save-btn {
+  margin-top: 14px;
+}

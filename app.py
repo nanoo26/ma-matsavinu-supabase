@@ -4,37 +4,16 @@ import os
 import io
 import csv
 import json
-from collections import defaultdict
 import sqlite3
+from collections import defaultdict
+
+# =========================
+# בסיס נתונים מקומי (SQLite) לטבלת התקציב
+# =========================
 
 DB_PATH = "expenses.db"
 app = Flask(__name__)
 
-
-# =========================
-# SQLite - חיבור מקומי
-# =========================
-
-def get_db_connection():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
-
-
-def get_total_budget():
-    """
-    סך כל התקציב החודשי בטבלת budget.
-    אם הטבלה ריקה - מחזיר 0.
-    """
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute("SELECT SUM(amount) AS total FROM budget;")
-    row = cur.fetchone()
-    conn.close()
-
-    if row and row["total"] is not None:
-        return float(row["total"])
-    return 0.0
 
 def get_db_connection():
     conn = sqlite3.connect(DB_PATH)
@@ -43,7 +22,7 @@ def get_db_connection():
 
 
 def ensure_budget_table():
-    """יוצר טבלת תקציב אם היא לא קיימת"""
+    """יוצר טבלת תקציב אם לא קיימת."""
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute(
@@ -59,11 +38,8 @@ def ensure_budget_table():
     conn.close()
 
 
-@app.before_first_request
-def init_db():
-    # יוודא שב־Render וגם בלוקאל תמיד יש את טבלת התקציב
-    ensure_budget_table()
-
+# נריץ פעם אחת בזמן עליית האפליקציה (גם לוקאלי וגם ב־Render)
+ensure_budget_table()
 
 # =========================
 # Supabase config
@@ -78,11 +54,7 @@ DEFAULT_SUPABASE_API_KEY = (
 
 
 def load_supabase_config():
-    """
-    טוען SUPABASE_URL ו־SUPABASE_API_KEY מה־env אם קיימים,
-    אחרת משתמש בערכי ברירת המחדל.
-    וגם בודק שאין תווים לא ASCII במפתח.
-    """
+    """טוען SUPABASE_URL ו־SUPABASE_API_KEY מה־env אם קיימים, אחרת ברירת מחדל."""
     env_url = os.environ.get("SUPABASE_URL", "").strip()
     if env_url:
         supabase_url = env_url
@@ -95,6 +67,7 @@ def load_supabase_config():
     else:
         key = DEFAULT_SUPABASE_API_KEY
 
+    # ודא שאין תווים לא ASCII
     if not all(ord(ch) < 128 for ch in key):
         raise RuntimeError(
             "SUPABASE_API_KEY contains non ASCII characters. "
@@ -122,6 +95,7 @@ def supabase_headers():
 # =========================
 
 def normalize_date(date_str: str) -> str:
+    """YYYY-MM-DD -> DD/MM/YYYY"""
     if not date_str:
         return ""
     parts = date_str.split("-")
@@ -132,6 +106,7 @@ def normalize_date(date_str: str) -> str:
 
 
 def date_for_input(db_date: str) -> str:
+    """DD/MM/YYYY -> YYYY-MM-DD (לטופס עריכה)"""
     if not db_date:
         return ""
     parts = db_date.split("/")
@@ -142,6 +117,7 @@ def date_for_input(db_date: str) -> str:
 
 
 def month_key_from_date(date_str: str) -> str:
+    """DD/MM/YYYY -> YYYY-MM (מפתח חודש)"""
     try:
         day, month, year = date_str.split("/")
         return f"{year}-{month}"
@@ -150,10 +126,7 @@ def month_key_from_date(date_str: str) -> str:
 
 
 def build_months_list(expenses):
-    """
-    יוצר רשימת חודשים ייחודיים מתוך רשימת ההוצאות:
-    [{ "key": "YYYY-MM", "label": "MM/YYYY" }, ...]
-    """
+    """בונה רשימת חודשים קיימים בהוצאות."""
     seen = {}
     for exp in expenses:
         date_str = exp.get("date") or ""
@@ -197,9 +170,6 @@ def fetch_single_expense(expense_id: int):
 
 
 def insert_expense(date, category, amount, payment_method, description):
-    """
-    מוסיף הוצאה חדשה ל-Supabase עם לוגים ברורים
-    """
     url = f"{SUPABASE_URL}/rest/v1/{SUPABASE_TABLE}"
     payload = {
         "date": date,
@@ -210,13 +180,7 @@ def insert_expense(date, category, amount, payment_method, description):
     }
 
     print("Supabase INSERT payload:", json.dumps(payload, ensure_ascii=False))
-
-    r = requests.post(
-        url,
-        headers=supabase_headers(),
-        json=payload,
-    )
-
+    r = requests.post(url, headers=supabase_headers(), json=payload)
     print("Supabase INSERT status:", r.status_code)
     print("Supabase INSERT response:", r.text)
 
@@ -225,9 +189,6 @@ def insert_expense(date, category, amount, payment_method, description):
 
 
 def update_expense(expense_id, date, category, amount, payment_method, description):
-    """
-    מעדכן הוצאה קיימת
-    """
     url = f"{SUPABASE_URL}/rest/v1/{SUPABASE_TABLE}"
     payload = {
         "date": date,
@@ -236,19 +197,10 @@ def update_expense(expense_id, date, category, amount, payment_method, descripti
         "payment_method": payment_method,
         "description": description,
     }
-    params = {
-        "id": f"eq.{expense_id}",
-    }
+    params = {"id": f"eq.{expense_id}"}
 
     print(f"Supabase UPDATE id={expense_id} payload:", json.dumps(payload, ensure_ascii=False))
-
-    r = requests.patch(
-        url,
-        headers=supabase_headers(),
-        json=payload,
-        params=params,
-    )
-
+    r = requests.patch(url, headers=supabase_headers(), json=payload, params=params)
     print("Supabase UPDATE status:", r.status_code)
     print("Supabase UPDATE response:", r.text)
 
@@ -257,9 +209,6 @@ def update_expense(expense_id, date, category, amount, payment_method, descripti
 
 
 def delete_expense_db(expense_id):
-    """
-    מוחק הוצאה לפי id מ Supabase
-    """
     url = f"{SUPABASE_URL}/rest/v1/{SUPABASE_TABLE}"
     params = {"id": f"eq.{expense_id}"}
 
@@ -267,9 +216,7 @@ def delete_expense_db(expense_id):
     headers["Prefer"] = "return=minimal"
 
     print(f"Supabase DELETE id={expense_id} url={url} params={params}")
-
     r = requests.delete(url, headers=headers, params=params)
-
     print("Supabase DELETE status:", r.status_code)
     print("Supabase DELETE response:", r.text)
 
@@ -311,151 +258,9 @@ def root():
     return redirect(url_for("index"))
 
 
-# ------------ דוח תקציב מול ביצוע ------------
-
-@app.route("/reports/budget")
-def report_budget():
-    # 1. כל ההוצאות - מסופבייס
-    expenses = fetch_all_expenses()
-    months_items = build_months_list(expenses)
-    months = months_items
-
-    # 2. בחירת חודש (אותו לוגיקה כמו בדף ההוצאות)
-    selected_month = request.args.get("month")
-    if months_items:
-        valid_keys = {m["key"] for m in months_items}
-        if not selected_month or selected_month not in valid_keys:
-            selected_month = months_items[0]["key"]
-    else:
-        selected_month = None
-
-    # תווית יפה להצגה (MM/YYYY)
-    selected_month_label = None
-    if selected_month:
-        for m in months_items:
-            if m["key"] == selected_month:
-                selected_month_label = m["label"]
-                break
-
-    # 3. טוענים תקציב מ-SQLite
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute("SELECT category, amount FROM budget ORDER BY category;")
-    budget_rows = cur.fetchall()
-    conn.close()
-
-    budget_map = {row["category"]: row["amount"] for row in budget_rows}
-
-    rows = []
-    total_budget = 0.0
-    total_spent = 0.0
-
-    if selected_month:
-        # 4. סיכום ביצוע לפי קטגוריה מההוצאות (Supabase)
-        spent_by_cat = defaultdict(float)
-        for e in expenses:
-            if month_key_from_date(e.get("date", "")) == selected_month:
-                cat = e.get("category") or "לא מוגדר"
-                amt = float(e.get("amount") or 0)
-                spent_by_cat[cat] += amt
-
-        # 5. בונים שורות דוח לפי התקציב
-        for category, budget in budget_map.items():
-            spent = spent_by_cat.get(category, 0.0)
-            diff = budget - spent
-            rows.append({
-                "category": category,
-                "budget": budget,
-                "spent": spent,
-                "diff": diff,
-            })
-            total_budget += budget
-            total_spent += spent
-
-    # 6. מערכים לגרף (Chart.js) - לא חובה, אבל זמין
-    categories = [row["category"] for row in rows]
-    budget_values = [row["budget"] for row in rows]
-    spent_values = [row["spent"] for row in rows]
-
-    return render_template(
-        "report_budget.html",
-        rows=rows,
-        months=months,
-        selected_month=selected_month,
-        selected_month_label=selected_month_label,
-        total_budget=total_budget,
-        total_spent=total_spent,
-        categories=categories,
-        budget_values=budget_values,
-        spent_values=spent_values,
-    )
-
-
-# ------------ ניהול תקציב חודשי ------------
-
-@app.route("/budget", methods=["GET", "POST"])
-def manage_budget():
-    conn = get_db_connection()
-    cur = conn.cursor()
-
-    if request.method == "POST":
-        # מביאים את כל השורות הקיימות
-        cur.execute("SELECT id, category, amount FROM budget ORDER BY category;")
-        existing_rows = cur.fetchall()
-
-        for row in existing_rows:
-            row_id = row["id"]
-            delete_flag = request.form.get(f"delete_{row_id}")
-
-            if delete_flag:
-                # מחיקה
-                cur.execute("DELETE FROM budget WHERE id = ?;", (row_id,))
-                continue
-
-            field_name = f"amount_{row_id}"
-            amount_raw = (request.form.get(field_name, "") or "").strip()
-            if not amount_raw:
-                continue
-
-            try:
-                amount = float(amount_raw.replace(",", ""))
-            except ValueError:
-                amount = row["amount"]
-
-            cur.execute(
-                "UPDATE budget SET amount = ? WHERE id = ?;",
-                (amount, row_id),
-            )
-
-        # קטגוריה חדשה (אופציונלי)
-        new_category = (request.form.get("new_category", "") or "").strip()
-        new_amount_raw = (request.form.get("new_amount", "") or "").strip()
-        if new_category and new_amount_raw:
-            try:
-                new_amount = float(new_amount_raw.replace(",", ""))
-                cur.execute(
-                    "INSERT OR IGNORE INTO budget (category, amount) VALUES (?, ?);",
-                    (new_category, new_amount),
-                )
-            except ValueError:
-                pass
-
-        conn.commit()
-        conn.close()
-        return redirect(url_for("manage_budget"))
-
-    # GET - מציג את הטופס
-    cur.execute("SELECT id, category, amount FROM budget ORDER BY category;")
-    rows = cur.fetchall()
-    conn.close()
-
-    return render_template("budget_manage.html", rows=rows)
-
-
-# ------------ רשימת הוצאות ------------
-
 @app.route("/expenses")
 def index():
+    """מסך רשימת הוצאות + בר גרפי תקציב מול ביצוע."""
     expenses = fetch_all_expenses()
     months = build_months_list(expenses)
 
@@ -479,20 +284,24 @@ def index():
     total_rows = len(filtered_expenses)
     total_amount = sum(float(e.get("amount", 0) or 0) for e in filtered_expenses)
 
-    total_budget = get_total_budget()
+    # סה"כ תקציב חודשי (אותו תקציב לכל חודש כרגע)
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT COALESCE(SUM(amount), 0) AS total_budget FROM budget;")
+    row = cur.fetchone()
+    conn.close()
+    total_budget = row["total_budget"] if row else 0.0
 
     return render_template(
         "expenses.html",
         expenses=filtered_expenses,
         total_rows=total_rows,
         total_amount=total_amount,
-        total_budget=total_budget,
         months=months,
         selected_month=selected_month,
+        total_budget=total_budget,
     )
 
-
-# ------------ הוספת הוצאה ------------
 
 @app.route("/add_expenses", methods=["GET", "POST"])
 def add_expense():
@@ -543,8 +352,6 @@ def add_expense():
         payment_methods=payment_methods,
     )
 
-
-# ------------ עריכת הוצאה ------------
 
 @app.route("/edit/<int:expense_id>", methods=["GET", "POST"])
 def edit_expense(expense_id):
@@ -609,18 +416,15 @@ def edit_expense(expense_id):
     )
 
 
-# ------------ מחיקת הוצאה ------------
-
 @app.route("/delete/<int:expense_id>")
 def delete_expense(expense_id):
     delete_expense_db(expense_id)
     return redirect(url_for("index"))
 
 
-# ------------ דוחות חודשיים (סיכום וקטגוריות) ------------
-
 @app.route("/reports")
 def reports():
+    """דוח סיכום חודשי + לפי קטגוריה."""
     expenses = fetch_all_expenses()
     months = build_months_list(expenses)
 
@@ -670,7 +474,136 @@ def reports():
     )
 
 
-# ------------ יצוא CSV ------------
+@app.route("/reports/budget")
+def report_budget():
+    """דוח תקציב מול ביצוע + גרף."""
+    expenses = fetch_all_expenses()
+    months_items = build_months_list(expenses)
+    months = months_items
+
+    selected_month = request.args.get("month")
+    valid_keys = {m["key"] for m in months_items}
+
+    if months_items:
+        if not selected_month or selected_month not in valid_keys:
+            selected_month = months_items[0]["key"]
+    else:
+        selected_month = None
+
+    selected_month_label = None
+    if selected_month:
+        for m in months_items:
+            if m["key"] == selected_month:
+                selected_month_label = m["label"]
+                break
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT category, amount FROM budget")
+    budget_rows = cur.fetchall()
+    conn.close()
+
+    budget_map = {row["category"]: row["amount"] for row in budget_rows}
+
+    rows = []
+    total_budget = 0.0
+    total_spent = 0.0
+
+    if selected_month:
+        spent_by_cat = defaultdict(float)
+        for e in expenses:
+            if month_key_from_date(e.get("date", "")) == selected_month:
+                cat = e.get("category") or "לא מוגדר"
+                amt = float(e.get("amount") or 0)
+                spent_by_cat[cat] += amt
+
+        for category, budget in budget_map.items():
+            spent = spent_by_cat.get(category, 0.0)
+            diff = budget - spent
+            rows.append(
+                {
+                    "category": category,
+                    "budget": budget,
+                    "spent": spent,
+                    "diff": diff,
+                }
+            )
+            total_budget += budget
+            total_spent += spent
+
+    categories = [row["category"] for row in rows]
+    budget_values = [row["budget"] for row in rows]
+    spent_values = [row["spent"] for row in rows]
+
+    return render_template(
+        "report_budget.html",
+        rows=rows,
+        months=months,
+        selected_month=selected_month,
+        selected_month_label=selected_month_label,
+        total_budget=total_budget,
+        total_spent=total_spent,
+        categories=categories,
+        budget_values=budget_values,
+        spent_values=spent_values,
+    )
+
+
+@app.route("/budget", methods=["GET", "POST"])
+def manage_budget():
+    """מסך ניהול תקציב חודשי (עדכון, הוספה, מחיקה)."""
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    if request.method == "POST":
+        # עדכון סכומים
+        cur.execute("SELECT id, category, amount FROM budget ORDER BY category;")
+        existing_rows = cur.fetchall()
+
+        for row in existing_rows:
+            field_name = f"amount_{row['id']}"
+            amount_raw = (request.form.get(field_name, "") or "").strip()
+            delete_flag = request.form.get(f"delete_{row['id']}", "")
+
+            # מחיקה
+            if delete_flag:
+                cur.execute("DELETE FROM budget WHERE id = ?;", (row["id"],))
+                continue
+
+            if not amount_raw:
+                continue
+
+            try:
+                amount = float(amount_raw.replace(",", ""))
+            except ValueError:
+                amount = row["amount"]
+
+            cur.execute(
+                "UPDATE budget SET amount = ? WHERE id = ?;",
+                (amount, row["id"]),
+            )
+
+        # הוספת קטגוריה חדשה
+        new_category = (request.form.get("new_category", "") or "").strip()
+        new_amount_raw = (request.form.get("new_amount", "") or "").strip()
+        if new_category and new_amount_raw:
+            try:
+                new_amount = float(new_amount_raw.replace(",", ""))
+                cur.execute(
+                    "INSERT OR IGNORE INTO budget (category, amount) VALUES (?, ?);",
+                    (new_category, new_amount),
+                )
+            except ValueError:
+                pass
+
+        conn.commit()
+
+    cur.execute("SELECT id, category, amount FROM budget ORDER BY category;")
+    rows = cur.fetchall()
+    conn.close()
+
+    return render_template("budget_manage.html", rows=rows)
+
 
 @app.route("/export")
 def export_csv():
@@ -681,25 +614,28 @@ def export_csv():
 
     writer.writerow(["date", "category", "amount", "payment_method", "description"])
     for row in expenses:
-        writer.writerow([
-            row.get("date", ""),
-            row.get("category", ""),
-            row.get("amount", 0),
-            row.get("payment_method", ""),
-            row.get("description", ""),
-        ])
+        writer.writerow(
+            [
+                row.get("date", ""),
+                row.get("category", ""),
+                row.get("amount", 0),
+                row.get("payment_method", ""),
+                row.get("description", ""),
+            ]
+        )
 
     csv_data = output.getvalue()
     output.close()
 
-    csv_data = "\ufeff" + csv_data  # BOM בשביל אקסל בעברית
+    # BOM בשביל אקסל בעברית
+    csv_data = "\ufeff" + csv_data
 
     return Response(
         csv_data,
         mimetype="text/csv; charset=utf-8",
         headers={
             "Content-Disposition": "attachment; filename=expenses_export.csv"
-        }
+        },
     )
 
 
