@@ -4,80 +4,121 @@
   <meta charset="utf-8">
   <title>מה מצבינו - רשימת הוצאות</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
 <div class="app-shell">
 
+  <!-- כותרת עליונה -->
   <header class="app-header">
     <div class="app-header-top">
       <h1 class="app-title">מה מצבינו</h1>
-      <nav class="header-actions">
-        <a href="{{ url_for('reports', month=selected_month) }}"
-           class="header-link header-icon-link"
-           aria-label="דוחות">
-           📊
+
+      <div class="header-actions">
+        <!-- כפתור מעבר לדוחות -->
+        <a href="{{ url_for('reports', month=selected_month) }}" class="icon-button" title="דוחות">
+          📊
         </a>
-  <a href="{{ url_for('add_expense') }}" class="primary-button">+ הוצאה</a>
-</nav>
-    </div>
-    <div class="summary-bar">
-      <span>סה״כ שורות: {{ total_rows }}</span>
-      <span>סה״כ הוצאות: {{ "%.2f" | format(total_amount) }} ₪</span>
+
+        <!-- כפתור הוספת הוצאה -->
+        <a href="{{ url_for('add_expense') }}" class="primary-button">
+          + הוצאה
+        </a>
+      </div>
     </div>
 
-    {% if months %}
-      <form method="get" class="filter-bar">
-        <label for="month-select">חודש:</label>
-        <select id="month-select" name="month" onchange="this.form.submit()">
-          {% for m in months %}
-            <option value="{{ m.key }}" {% if m.key == selected_month %}selected{% endif %}>
-              {{ m.label }}
-            </option>
-          {% endfor %}
-        </select>
-      </form>
-    {% endif %}
+    <!-- שורת סיכום + בר תקציב -->
+    <div class="app-header-summary">
+      <div class="summary-line">
+        סה"כ שורות: {{ total_rows }} | סה"כ הוצאות: {{ "%.2f"|format(total_amount) }} ₪
+      </div>
+
+      {% if total_budget > 0 %}
+        {% set percent = (total_amount / total_budget * 100) if total_budget else 0 %}
+        <div class="budget-header-row">
+          <span class="budget-label-left">
+            ({{ "%.1f"|format(percent) }}%) {{ "%.0f"|format(total_amount) }} ₪ ביצוע
+          </span>
+          <span class="budget-label-right">
+            {{ "%.0f"|format(total_budget) }} ₪ תקציב חודשי
+          </span>
+        </div>
+
+        <div class="budget-progress">
+          <div class="budget-progress-inner"
+               style="width: {{ 100 if percent > 100 else (0 if percent < 0 else percent) }}%;"></div>
+        </div>
+      {% endif %}
+
+      <!-- בחירת חודש -->
+      {% if months %}
+        <form method="get" class="filter-bar">
+          <label for="month-select">חודש:</label>
+          <select id="month-select" name="month" onchange="this.form.submit()">
+            {% for m in months %}
+              <option value="{{ m.key }}" {% if m.key == selected_month %}selected{% endif %}>
+                {{ m.label }}
+              </option>
+            {% endfor %}
+          </select>
+        </form>
+      {% endif %}
+    </div>
   </header>
 
-  <main class="content">
+  <!-- תוכן ראשי -->
+  <main class="app-main">
+
     {% if expenses %}
-      <div class="expense-list">
-        {% for exp in expenses %}
-          <article class="expense-card">
-            <div class="expense-main">
-              <div class="expense-header">
-                <span class="expense-date">{{ exp["date"] }}</span>
-                <span class="expense-amount">{{ "%.2f" | format(exp["amount"]) }} ₪</span>
-              </div>
-              <p class="expense-description">
-                {{ exp["description"] }}
-              </p>
-              <div class="expense-meta">
-                <span>{{ exp["payment_method"] }}</span>
-              </div>
-            </div>
+      <section class="expense-list">
 
-            <div class="expense-actions">
-              <a href="{{ url_for('edit_expense', expense_id=exp['id']) }}"
-                 class="chip-btn chip-edit">
-                ערוך
-              </a>
-              <a href="{{ url_for('delete_expense', expense_id=exp['id']) }}"
-                 class="chip-btn chip-delete"
-                 onclick="return confirm('למחוק את ההוצאה הזו?');">
-                מחק
-              </a>
-            </div>
-          </article>
-        {% endfor %}
+        {% for e in expenses %}
+<section class="card expense-card">
+  <div class="expense-row">
+
+    <!-- צד שמאל - לחצני עריכה ומחיקה -->
+    <div class="expense-actions">
+      <a href="{{ url_for('edit_expense', expense_id=e['id']) }}"
+         class="chip-button chip-edit">
+        ערוך
+      </a>
+      <a href="{{ url_for('delete_expense', expense_id=e['id']) }}"
+         class="chip-button chip-delete">
+        מחק
+      </a>
+    </div>
+
+    <!-- צד ימין - סכום, תאריך, תיאור וקטגוריה -->
+    <div class="expense-main">
+      <div class="expense-amount-date">
+        <span class="expense-amount">
+          {{ "%.2f" | format(e["amount"]) }} ₪
+        </span>
+        <span class="expense-date">
+          {{ e["date"] }}
+        </span>
       </div>
-    {% else %}
-      <p class="empty-state">אין הוצאות לחודש שנבחר. נסה לבחור חודש אחר או להוסיף הוצאה.</p>
-    {% endif %}
-  </main>
 
+      <div class="expense-description">
+        {{ e["description"] }}
+      </div>
+
+      <div class="expense-category">
+        {{ e["category"] }}
+      </div>
+    </div>
+
+  </div>
+</section>
+{% endfor %}
+
+
+      </section>
+    {% else %}
+      <p class="empty-state">אין עדיין הוצאות לחודש שנבחר.</p>
+    {% endif %}
+
+  </main>
 </div>
 </body>
 </html>

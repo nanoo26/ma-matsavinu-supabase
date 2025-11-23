@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <title>מה מצבינו - ניהול תקציב</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="app-shell">
+
+  <header class="app-header">
+    <div class="app-header-top">
+      <h1 class="app-title">מה מצבינו</h1>
+    </div>
+    <p class="app-subtitle">ניהול תקציב חודשי לפי קטגוריות</p>
+
+    <nav class="header-actions">
+      <a href="{{ url_for('index') }}" class="btn-secondary">חזרה לרשימת ההוצאות</a>
+      <a href="{{ url_for('report_budget') }}" class="btn-secondary">דוח תקציב מול ביצוע</a>
+    </nav>
+  </header>
+
+  <main class="app-main">
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">התקציב החודשי</h2>
+        <p class="card-subtitle">
+          עדכן את הסכומים לכל קטגוריה, הוסף קטגוריות חדשות וסמן למחיקה קטגוריות שאינן רלוונטיות.
+        </p>
+      </div>
+
+      <div class="card-body">
+        <form method="post" class="budget-form">
+          <div class="budget-header-row">
+            <span class="col-delete">מחיקה</span>
+            <span class="col-amount">תקציב חודשי (₪)</span>
+            <span class="col-category">קטגוריה</span>
+          </div>
+
+          {% for row in rows %}
+          <div class="budget-row">
+            <div class="col-delete">
+              <label>
+                <input type="checkbox" name="delete_{{ row.id }}">
+                מחיקה
+              </label>
+            </div>
+            <div class="col-amount">
+              <input
+                type="number"
+                step="1"
+                min="0"
+                name="amount_{{ row.id }}"
+                value="{{ "%.0f"|format(row.amount) }}"
+              >
+            </div>
+            <div class="col-category">
+              {{ row.category }}
+            </div>
+          </div>
+          {% endfor %}
+
+          <hr class="budget-separator">
+
+          <div class="budget-row new-row">
+            <div class="col-delete">
+              קטגוריה חדשה
+            </div>
+            <div class="col-amount">
+              <input
+                type="number"
+                step="1"
+                min="0"
+                name="new_amount"
+                placeholder="סכום חדש"
+              >
+            </div>
+            <div class="col-category">
+              <input
+                type="text"
+                name="new_category"
+                placeholder="שם קטגוריה חדשה"
+              >
+            </div>
+          </div>
+
+          <div class="budget-actions">
+            <button type="submit" class="btn-primary full-width">שמור תקציב</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-body">
+        <a href="{{ url_for('report_budget') }}" class="btn-secondary">חזרה לדוח תקציב מול ביצוע</a>
+        <a href="{{ url_for('index') }}" class="btn-secondary">חזרה לרשימת ההוצאות</a>
+      </div>
+    </section>
+  </main>
+
+</div>
+</body>
+</html>

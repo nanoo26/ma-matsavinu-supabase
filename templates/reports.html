@@ -9,12 +9,16 @@
 <body>
 <div class="app-shell">
 
+  <!-- כותרת עליונה -->
   <header class="app-header">
     <div class="app-header-top">
       <h1 class="app-title">מה מצבינו</h1>
       <nav class="header-actions">
-        <a href="{{ url_for('index', month=selected_month) }}" class="primary-button">
-          חזרה לרשימה
+        <a href="{{ url_for('index', month=selected_month) }}" class="btn-secondary">
+          חזרה לרשימת ההוצאות
+        </a>
+        <a href="{{ url_for('report_budget', month=selected_month) }}" class="btn-secondary">
+          דוח תקציב מול ביצוע
         </a>
       </nav>
     </div>
@@ -33,34 +37,39 @@
     {% endif %}
   </header>
 
+  <!-- תוכן הדוח -->
   <main class="content reports-content">
+
     {% if monthly_summary %}
-      <section class="card reports-card">
-        <h2 class="section-title">סיכום חודשי</h2>
-        {% for row in monthly_summary %}
-          <div class="report-row">
-            <span>{{ row.month }}/{{ row.year }}</span>
-            <span class="report-amount">{{ "%.2f" | format(row.total) }} ₪</span>
-          </div>
-        {% endfor %}
-      </section>
+    <section class="card reports-card">
+      <h2 class="section-title">סיכום חודשי</h2>
+      {% for row in monthly_summary %}
+        <div class="report-row report-total-row">
+          <span class="report-total-month">{{ row.month }}/{{ row.year }}</span>
+          <span class="report-total-amount">{{ "%.2f" | format(row.total) }} ₪</span>
+        </div>
+        <p class="report-total-caption">סה"כ הוצאות בחודש זה</p>
+      {% endfor %}
+    </section>
     {% endif %}
 
     {% if category_summary %}
-      <section class="card reports-card">
-        <h2 class="section-title">לפי קטגוריה</h2>
+    <section class="card reports-card">
+      <h2 class="section-title">לפי קטגוריה</h2>
+      <div class="report-list">
         {% for row in category_summary %}
           <div class="report-row">
-            <span>{{ row.category }}</span>
+            <span class="report-category">{{ row.category }}</span>
             <span class="report-amount">{{ "%.2f" | format(row.total) }} ₪</span>
           </div>
         {% endfor %}
-      </section>
+      </div>
+    </section>
     {% else %}
       <p class="empty-state">אין נתונים לחודש שנבחר.</p>
     {% endif %}
-  </main>
 
+  </main>
 </div>
 </body>
 </html>
