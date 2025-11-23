@@ -22,8 +22,8 @@ DEFAULT_SUPABASE_API_KEY = (
 
 def load_supabase_config():
     """
-    טוען SUPABASE_URL ו SUPABASE_API_KEY מה env אם קיימים,
-    אחרת משתמש בערכי ברירת מחדל.
+    טוען SUPABASE_URL ו־SUPABASE_API_KEY מה־env אם קיימים,
+    אחרת משתמש בערכי ברירת המחדל.
     וגם בודק שאין תווים לא ASCII במפתח.
     """
     env_url = os.environ.get("SUPABASE_URL", "").strip()
@@ -41,7 +41,7 @@ def load_supabase_config():
     if not all(ord(ch) < 128 for ch in key):
         raise RuntimeError(
             "SUPABASE_API_KEY contains non ASCII characters. "
-            "Clean your SUPABASE_API_KEY environment variable."
+            "Clean your SUPABASE_API_KEY environment variable (no Hebrew / special chars)."
         )
 
     return supabase_url, key
@@ -52,6 +52,9 @@ SUPABASE_TABLE = "expenses"
 
 
 def supabase_headers(extra=None):
+    """
+    כותרות בסיס לקריאות לסופבייס.
+    """
     base = {
         "apikey": SUPABASE_API_KEY,
         "Authorization": f"Bearer {SUPABASE_API_KEY}",
@@ -120,7 +123,7 @@ def fetch_all_expenses():
         "select": "*",
         "order": "date.desc,id.desc",
     }
-    r = requests.get(url, headers=supabase_headers(), params=params, timeout=10)
+    r = requests.get(url, headers=supabase_headers(), params=params)
     r.raise_for_status()
     return r.json()
 
@@ -131,13 +134,17 @@ def fetch_single_expense(expense_id: int):
         "id": f"eq.{expense_id}",
         "select": "*",
     }
-    r = requests.get(url, headers=supabase_headers(), params=params, timeout=10)
+    r = requests.get(url, headers=supabase_headers(), params=params)
     r.raise_for_status()
     data = r.json()
     return data[0] if data else None
 
 
 def insert_expense(date, category, amount, payment_method, description):
+    """
+    מוסיף הוצאה חדשה לטבלת expenses בסופבייס.
+    משתמש ב-POST רגיל עם json=payload לפי הדוקומנטציה.
+    """
     url = f"{SUPABASE_URL}/rest/v1/{SUPABASE_TABLE}"
     payload = {
         "date": date,
@@ -146,12 +153,18 @@ def insert_expense(date, category, amount, payment_method, description):
         "payment_method": payment_method,
         "description": description,
     }
-    headers = supabase_headers({"Prefer": "return=representation"})
-    body = json.dumps(payload, ensure_ascii=False)
 
-    print("Supabase INSERT payload:", body)
+    headers = supabase_headers({"Prefer": "return=representation"})
+
+    print("Supabase INSERT payload:", json.dumps(payload, ensure_ascii=False))
     try:
-        r = requests.post(url, headers=headers, data=body, timeout=10)
+        r = requests.post(
+            url,
+            headers=headers,
+            params=None,
+            json=payload,          # שים לב: json=payload ולא data=
+            timeout=10,
+        )
         print("Supabase INSERT status:", r.status_code)
         print("Supabase INSERT response:", r.text)
         r.raise_for_status()
@@ -160,10 +173,11 @@ def insert_expense(date, category, amount, payment_method, description):
         raise
 
 
+
 def update_expense(expense_id, date, category, amount, payment_method, description):
     """
-    מעדכן הוצאה קיימת בסופבייס.
-    ב Render יש כנראה בעיה עם PATCH, לכן משתמשים ב POST עם X-HTTP-Method-Override.
+    מעדכן הוצאה קיימת בסופבייס עם PATCH תקני.
+    בלי X-HTTP-Method-Override, אלא PATCH ישיר לפי Supabase.
     """
     url = f"{SUPABASE_URL}/rest/v1/{SUPABASE_TABLE}"
     payload = {
@@ -177,14 +191,19 @@ def update_expense(expense_id, date, category, amount, payment_method, descripti
         "id": f"eq.{expense_id}",
     }
     headers = supabase_headers({
-        "Prefer": "return=minimal",
-        "X-HTTP-Method-Override": "PATCH",
+        "Prefer": "return=representation",
     })
-    body = json.dumps(payload, ensure_ascii=False)
+    
 
-    print(f"Supabase UPDATE id={expense_id} payload:", body)
+    print(f"Supabase UPDATE id={expense_id} payload:", json.dumps(payload, ensure_ascii=False))
     try:
-        r = requests.post(url, headers=headers, params=params, data=body, timeout=10)
+        r = requests.patch(
+            url,
+            headers=headers,
+            params=params,
+            json=payload,      # שוב – json=payload
+            timeout=10,
+        )
         print("Supabase UPDATE status:", r.status_code)
         print("Supabase UPDATE response:", r.text)
         r.raise_for_status()
@@ -461,7 +480,7 @@ def export_csv():
     csv_data = output.getvalue()
     output.close()
 
-    csv_data = "\ufeff" + csv_data
+    csv_data = "\ufeff" + csv_data  # BOM בשביל אקסל בעברית
 
     return Response(
         csv_data,
