@@ -22,9 +22,9 @@ DEFAULT_SUPABASE_API_KEY = (
 
 def load_supabase_config():
     """
-    Load SUPABASE_URL and SUPABASE_API_KEY from environment if set,
-    otherwise fall back to the default values.
-    Also verifies the key contains only ASCII characters.
+    טוען SUPABASE_URL ו־SUPABASE_API_KEY מה־env אם קיימים,
+    אחרת משתמש בערכי ברירת המחדל.
+    וגם בודק שאין תווים לא ASCII במפתח.
     """
     env_url = os.environ.get("SUPABASE_URL", "").strip()
     if env_url:
@@ -41,7 +41,7 @@ def load_supabase_config():
     if not all(ord(ch) < 128 for ch in key):
         raise RuntimeError(
             "SUPABASE_API_KEY contains non ASCII characters. "
-            "Clean your environment variable (no Hebrew / special chars)."
+            "Clean your SUPABASE_API_KEY environment variable (no Hebrew / special chars)."
         )
 
     return supabase_url, key
@@ -53,7 +53,7 @@ SUPABASE_TABLE = "expenses"
 
 def supabase_headers(extra=None):
     """
-    Base headers for Supabase requests.
+    כותרות בסיס לקריאות לסופבייס.
     """
     base = {
         "apikey": SUPABASE_API_KEY,
@@ -66,7 +66,7 @@ def supabase_headers(extra=None):
 
 
 # =========================
-# Helpers - dates / months
+# Helpers - תאריכים / חודשים
 # =========================
 
 def normalize_date(date_str: str) -> str:
@@ -141,6 +141,9 @@ def fetch_single_expense(expense_id: int):
 
 
 def insert_expense(date, category, amount, payment_method, description):
+    """
+    מוסיף הוצאה חדשה לסופבייס, עם לוג מפורט.
+    """
     url = f"{SUPABASE_URL}/rest/v1/{SUPABASE_TABLE}"
     payload = {
         "date": date,
@@ -150,12 +153,23 @@ def insert_expense(date, category, amount, payment_method, description):
         "description": description,
     }
     headers = supabase_headers({"Prefer": "return=minimal"})
-    body = json.dumps(payload)
-    r = requests.post(url, headers=headers, data=body)
-    r.raise_for_status()
+    body = json.dumps(payload, ensure_ascii=False)
+
+    print("Supabase INSERT payload:", body)
+    try:
+        r = requests.post(url, headers=headers, data=body, timeout=10)
+        print("Supabase INSERT status:", r.status_code)
+        print("Supabase INSERT response:", r.text)
+        r.raise_for_status()
+    except Exception as e:
+        print("Supabase INSERT exception:", repr(e))
+        raise
 
 
 def update_expense(expense_id, date, category, amount, payment_method, description):
+    """
+    מעדכן הוצאה קיימת בסופבייס, עם לוג מפורט.
+    """
     url = f"{SUPABASE_URL}/rest/v1/{SUPABASE_TABLE}"
     payload = {
         "date": date,
@@ -168,21 +182,30 @@ def update_expense(expense_id, date, category, amount, payment_method, descripti
         "id": f"eq.{expense_id}",
     }
     headers = supabase_headers({"Prefer": "return=minimal"})
-    body = json.dumps(payload)
-    r = requests.patch(url, headers=headers, params=params, data=body)
-    r.raise_for_status()
+    body = json.dumps(payload, ensure_ascii=False)
+
+    print(f"Supabase UPDATE id={expense_id} payload:", body)
+    try:
+        r = requests.patch(url, headers=headers, params=params, data=body, timeout=10)
+        print("Supabase UPDATE status:", r.status_code)
+        print("Supabase UPDATE response:", r.text)
+        r.raise_for_status()
+    except Exception as e:
+        print("Supabase UPDATE exception:", repr(e))
+        raise
 
 
 def delete_expense_db(expense_id):
     url = f"{SUPABASE_URL}/rest/v1/{SUPABASE_TABLE}"
     params = {"id": f"eq.{expense_id}"}
     headers = supabase_headers({"Prefer": "return=minimal"})
-    r = requests.delete(url, headers=headers, params=params)
+    r = requests.delete(url, headers=headers, params=params, timeout=10)
+    print(f"Supabase DELETE id={expense_id} status:", r.status_code, "resp:", r.text)
     r.raise_for_status()
 
 
 # =========================
-# Constants - categories / payment methods
+# קבועים - קטגוריות ואמצעי תשלום
 # =========================
 
 DEFAULT_CATEGORIES = [
@@ -207,7 +230,7 @@ PAYMENT_METHODS = [
 
 
 # =========================
-# Routes
+# ראוטים
 # =========================
 
 @app.route("/")
@@ -440,7 +463,7 @@ def export_csv():
     csv_data = output.getvalue()
     output.close()
 
-    csv_data = "\ufeff" + csv_data  # BOM for Hebrew in Excel
+    csv_data = "\ufeff" + csv_data  # BOM בשביל אקסל בעברית
 
     return Response(
         csv_data,
