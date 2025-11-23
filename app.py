@@ -36,6 +36,34 @@ def get_total_budget():
         return float(row["total"])
     return 0.0
 
+def get_db_connection():
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+def ensure_budget_table():
+    """יוצר טבלת תקציב אם היא לא קיימת"""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute(
+        """
+        CREATE TABLE IF NOT EXISTS budget (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            category TEXT UNIQUE NOT NULL,
+            amount REAL NOT NULL DEFAULT 0
+        );
+        """
+    )
+    conn.commit()
+    conn.close()
+
+
+@app.before_first_request
+def init_db():
+    # יוודא שב־Render וגם בלוקאל תמיד יש את טבלת התקציב
+    ensure_budget_table()
+
 
 # =========================
 # Supabase config
