@@ -342,8 +342,15 @@ def add_expense():
                 payment_methods=payment_methods,
             )
 
+        # שמירה לסופבייס
         insert_expense(date, category, amount, payment_method, description)
-        return redirect(url_for("index"))
+
+        # נחשב את החודש של ההוצאה החדשה ונפנה ישירות לחודש הזה במסך ההוצאות
+        selected_month = month_key_from_date(date)
+        if selected_month:
+            return redirect(url_for("index", month=selected_month))
+        else:
+            return redirect(url_for("index"))
 
     return render_template(
         "add_expense.html",
@@ -351,6 +358,7 @@ def add_expense():
         categories=categories,
         payment_methods=payment_methods,
     )
+
 
 
 @app.route("/edit/<int:expense_id>", methods=["GET", "POST"])
