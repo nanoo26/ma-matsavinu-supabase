@@ -3,6 +3,7 @@ import requests
 import os
 import io
 import csv
+import json
 from collections import defaultdict
 
 app = Flask(__name__)
@@ -10,8 +11,7 @@ app = Flask(__name__)
 # =========================
 # Supabase config
 # =========================
-# ברירת מחדל - המפתחות הפומביים של הפרויקט שלך בסופבייס
-# (אפשר להשתמש בהם גם אם אין ENV, אבל עדיף ENV)
+
 DEFAULT_SUPABASE_URL = "https://rdukuqlayxpwdvyrepxe.supabase.co"
 DEFAULT_SUPABASE_API_KEY = (
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9."
@@ -22,9 +22,9 @@ DEFAULT_SUPABASE_API_KEY = (
 
 def load_supabase_config():
     """
-    קורא את SUPABASE_URL ו-SUPABASE_API_KEY מה-ENV אם קיימים,
-    אחרת משתמש בערכי ברירת המחדל.
-    בנוסף בודק שאין תווים לא-אנגלית (כמו עברית) במפתח.
+    Load SUPABASE_URL and SUPABASE_API_KEY from environment if set,
+    otherwise fall back to the default values.
+    Also verifies the key contains only ASCII characters.
     """
     env_url = os.environ.get("SUPABASE_URL", "").strip()
     if env_url:
@@ -38,11 +38,10 @@ def load_supabase_config():
     else:
         key = DEFAULT_SUPABASE_API_KEY
 
-    # הגנה קטנה נגד תווים בעברית / רווחים מוזרים
     if not all(ord(ch) < 128 for ch in key):
         raise RuntimeError(
             "SUPABASE_API_KEY contains non ASCII characters. "
-            "נקה את משתני הסביבה וודא שאין עברית או רווחים מיותרים."
+            "Clean your environment variable (no Hebrew / special chars)."
         )
 
     return supabase_url, key
@@ -54,8 +53,7 @@ SUPABASE_TABLE = "expenses"
 
 def supabase_headers(extra=None):
     """
-    מחזיר כותרות בסיסיות לקריאה ל-Supabase.
-    אפשר להעביר dict ב-extra כדי להוסיף/להחליף כותרות.
+    Base headers for Supabase requests.
     """
     base = {
         "apikey": SUPABASE_API_KEY,
@@ -68,7 +66,7 @@ def supabase_headers(extra=None):
 
 
 # =========================
-# Helpers - תאריכים / חודשים
+# Helpers - dates / months
 # =========================
 
 def normalize_date(date_str: str) -> str:
@@ -116,7 +114,7 @@ def build_months_list(expenses):
 
 
 # =========================
-# Supabase - CRUD
+# Supabase CRUD
 # =========================
 
 def fetch_all_expenses():
@@ -152,7 +150,8 @@ def insert_expense(date, category, amount, payment_method, description):
         "description": description,
     }
     headers = supabase_headers({"Prefer": "return=minimal"})
-    r = requests.post(url, headers=headers, json=payload)
+    body = json.dumps(payload)
+    r = requests.post(url, headers=headers, data=body)
     r.raise_for_status()
 
 
@@ -169,7 +168,8 @@ def update_expense(expense_id, date, category, amount, payment_method, descripti
         "id": f"eq.{expense_id}",
     }
     headers = supabase_headers({"Prefer": "return=minimal"})
-    r = requests.patch(url, headers=headers, json=payload, params=params)
+    body = json.dumps(payload)
+    r = requests.patch(url, headers=headers, params=params, data=body)
     r.raise_for_status()
 
 
@@ -182,7 +182,7 @@ def delete_expense_db(expense_id):
 
 
 # =========================
-# קבועים - קטגוריות ואמצעי תשלום
+# Constants - categories / payment methods
 # =========================
 
 DEFAULT_CATEGORIES = [
@@ -207,7 +207,7 @@ PAYMENT_METHODS = [
 
 
 # =========================
-# ראוטים
+# Routes
 # =========================
 
 @app.route("/")
@@ -440,7 +440,7 @@ def export_csv():
     csv_data = output.getvalue()
     output.close()
 
-    csv_data = "\ufeff" + csv_data  # BOM לעברית באקסל
+    csv_data = "\ufeff" + csv_data  # BOM for Hebrew in Excel
 
     return Response(
         csv_data,
