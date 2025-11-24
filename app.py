@@ -14,6 +14,7 @@ SUPABASE_KEY = (
     or ""
 )
 
+
 if not SUPABASE_URL or not SUPABASE_KEY:
     raise RuntimeError(
         "SUPABASE_URL או SUPABASE_KEY/SUPABASE_ANON_KEY/SUPABASE_SERVICE_ROLE_KEY לא מוגדרים ב-Environment של Render"
