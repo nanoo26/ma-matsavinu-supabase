@@ -4,24 +4,23 @@ import requests
 
 app = Flask(__name__)
 
-# הגדרות Supabase מתוך משתני סביבה ב-Render
+# =========================
+# Supabase config
+# =========================
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "").rstrip("/")
-
 SUPABASE_KEY = (
-    os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
-    or os.environ.get("SUPABASE_ANON_KEY")
-    or os.environ.get("SUPABASE_KEY")
+    os.environ.get("SUPABASE_KEY")
+    or os.environ.get("SUPABASE_API_KEY")  # גיבוי אם ישן יישאר בטעות
     or ""
 )
 
-
 if not SUPABASE_URL or not SUPABASE_KEY:
     raise RuntimeError(
-        "SUPABASE_URL או SUPABASE_KEY/SUPABASE_ANON_KEY/SUPABASE_SERVICE_ROLE_KEY לא מוגדרים ב-Environment של Render"
+        "SUPABASE_URL או SUPABASE_KEY לא מוגדרים ב-Environment של Render"
     )
 
 
-def supabase_headers(extra: dict | None = None) -> dict:
+def supabase_headers(extra=None):
     headers = {
         "apikey": SUPABASE_KEY,
         "Authorization": f"Bearer {SUPABASE_KEY}",
@@ -34,7 +33,6 @@ def supabase_headers(extra: dict | None = None) -> dict:
 
 
 def normalize_date(date_str: str) -> str:
-    # מ-input מסוג yyyy-mm-dd ל-date השמור אצלך בטבלה dd/mm/yyyy
     if not date_str:
         return ""
     parts = date_str.split("-")
@@ -45,7 +43,6 @@ def normalize_date(date_str: str) -> str:
 
 
 def date_for_input(db_date: str) -> str:
-    # ההפך - מהטקסט בטבלה dd/mm/yyyy ל-input מסוג yyyy-mm-dd
     if not db_date:
         return ""
     parts = db_date.split("/")
@@ -55,19 +52,24 @@ def date_for_input(db_date: str) -> str:
     return f"{year}-{month}-{day}"
 
 
+# =========================
+# Routes
+# =========================
 @app.route("/")
 def index():
-    # מושכים את כל ההוצאות מ-Supabase
     url = f"{SUPABASE_URL}/rest/v1/expenses"
     params = {
         "select": "id,date,category,amount,payment_method,description",
         "order": "id.desc",
     }
-    resp = requests.get(url, headers=supabase_headers(), params=params)
-    resp.raise_for_status()
-    expenses = resp.json()  # רשימה של dict
 
-    # קטגוריות ייחודיות מהרשימה
+    resp = requests.get(url, headers=supabase_headers(), params=params)
+    print("DEBUG / index status:", resp.status_code)
+    if not resp.ok:
+        print("DEBUG / index body:", resp.text)
+        return f"Supabase error {resp.status_code}", 500
+
+    expenses = resp.json()
     categories = sorted({e.get("category") for e in expenses if e.get("category")})
 
     return render_template(
@@ -101,11 +103,12 @@ def add_expense():
             headers=supabase_headers({"Prefer": "return=minimal"}),
             json=payload,
         )
-        resp.raise_for_status()
+        print("DEBUG /add status:", resp.status_code, resp.text)
+        if not resp.ok:
+            return f"Supabase insert error {resp.status_code}", 500
 
         return redirect(url_for("index"))
 
-    # לטעינת המסך - קטגוריות ברירת מחדל (אפשר אח"כ להביא מ-Supabase אם תרצה)
     categories = ["מזון", "בילויים", "בית", "ילדים", "רכב",
                   "בריאות", "חוגים", "קניות", "שונות", "טבק"]
 
@@ -138,18 +141,23 @@ def edit_expense(expense_id):
             params=params,
             json=payload,
         )
-        resp.raise_for_status()
+        print("DEBUG /edit status:", resp.status_code, resp.text)
+        if not resp.ok:
+            return f"Supabase update error {resp.status_code}", 500
 
         return redirect(url_for("index"))
 
-    # שליפת ההוצאה לפי id
     params = {
         "select": "id,date,category,amount,payment_method,description",
         "id": f"eq.{expense_id}",
         "limit": 1,
     }
     resp = requests.get(url, headers=supabase_headers(), params=params)
-    resp.raise_for_status()
+    print("DEBUG /edit GET status:", resp.status_code)
+    if not resp.ok:
+        print("DEBUG /edit GET body:", resp.text)
+        return f"Supabase get error {resp.status_code}", 500
+
     rows = resp.json()
     if not rows:
         return redirect(url_for("index"))
@@ -177,7 +185,9 @@ def delete_expense(expense_id):
         headers=supabase_headers({"Prefer": "return=minimal"}),
         params=params,
     )
-    resp.raise_for_status()
+    print("DEBUG /delete status:", resp.status_code, resp.text)
+    if not resp.ok:
+        return f"Supabase delete error {resp.status_code}", 500
 
     return redirect(url_for("index"))
 
