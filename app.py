@@ -6,7 +6,18 @@ app = Flask(__name__)
 
 # הגדרות Supabase מתוך משתני סביבה ב-Render
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "").rstrip("/")
-SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "")  # או SUPABASE_ANON_KEY / SERVICE_ROLE_KEY
+
+SUPABASE_KEY = (
+    os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+    or os.environ.get("SUPABASE_ANON_KEY")
+    or os.environ.get("SUPABASE_KEY")
+    or ""
+)
+
+if not SUPABASE_URL or not SUPABASE_KEY:
+    raise RuntimeError(
+        "SUPABASE_URL או SUPABASE_KEY/SUPABASE_ANON_KEY/SUPABASE_SERVICE_ROLE_KEY לא מוגדרים ב-Environment של Render"
+    )
 
 
 def supabase_headers(extra: dict | None = None) -> dict:
