@@ -290,12 +290,17 @@ def root():
 
 @app.route("/expenses")
 def index():
+    # כל ההוצאות מסופבייס
     expenses = fetch_all_expenses()
-    months = build_months_list(expenses)
+    print("### FETCH_ALL_EXPENSES count:", len(expenses))
+    if expenses:
+        print("### FIRST ROW:", expenses[0])
+        print("### LAST ROW:", expenses[-1])
 
+    # בניית רשימת חודשים
+    months = build_months_list(expenses)
     selected_month = request.args.get("month")
     valid_keys = {m["key"] for m in months}
-
     print("### /expenses months keys:", valid_keys)
     print("### /expenses selected_month BEFORE fix:", selected_month)
 
@@ -307,6 +312,7 @@ def index():
 
     print("### /expenses selected_month AFTER fix:", selected_month)
 
+    # סינון הוצאות לפי חודש נבחר
     if selected_month:
         filtered_expenses = [
             e for e in expenses
@@ -317,8 +323,16 @@ def index():
 
     total_rows = len(filtered_expenses)
     total_amount = sum(float(e.get("amount", 0) or 0) for e in filtered_expenses)
-
     print("### /expenses filtered_rows:", total_rows)
+
+    # חישוב סך התקציב החודשי מהטבלה budget (SQLite)
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT SUM(amount) FROM budget")
+    row = cur.fetchone()
+    conn.close()
+    total_budget = float(row[0] or 0.0)
+    print("### /expenses total_budget:", total_budget)
 
     return render_template(
         "expenses.html",
@@ -327,6 +341,7 @@ def index():
         total_amount=total_amount,
         months=months,
         selected_month=selected_month,
+        total_budget=total_budget,  # חשוב - זה מה שהיה חסר
     )
 
 
