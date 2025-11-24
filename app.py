@@ -205,15 +205,37 @@ def update_expense(expense_id, date, category, amount, payment_method, descripti
         "payment_method": payment_method,
         "description": description,
     }
-    params = {"id": f"eq.{expense_id}"}
 
-    print(f"Supabase UPDATE id={expense_id} payload:", json.dumps(payload, ensure_ascii=False))
-    r = requests.patch(url, headers=supabase_headers(), json=payload, params=params)
-    print("Supabase UPDATE status:", r.status_code)
-    print("Supabase UPDATE response:", r.text)
+    print("### ADD_EXPENSE: inserting to Supabase")
+    print("Supabase INSERT payload:", json.dumps(payload, ensure_ascii=False))
 
-    if r.status_code not in (200, 204):
-        raise RuntimeError(f"Supabase UPDATE failed: {r.status_code} {r.text}")
+    r = requests.post(
+        url,
+        headers=supabase_headers(),
+        json=payload,
+    )
+
+    print("Supabase INSERT status:", r.status_code)
+    print("Supabase INSERT raw response:", r.text)
+
+    if r.status_code not in (200, 201):
+        # שגיאה אמיתית מהשרת
+        raise RuntimeError(f"Supabase INSERT failed: {r.status_code} {r.text}")
+
+    # כאן Supabase אמור להחזיר מערך עם שורה אחת (הרשומה החדשה)
+    try:
+        data = r.json()
+    except Exception:
+        raise RuntimeError(f"Supabase INSERT returned non-JSON: {r.text}")
+
+    if not isinstance(data, list) or len(data) != 1:
+        # זה בדיוק המצב שאתה בו עכשיו – מקבלים רשימה ארוכה של כל הטבלה או ריק
+        raise RuntimeError(
+            "Supabase INSERT returned unexpected rows "
+            f"(expected 1, got {len(data) if isinstance(data, list) else 'non-list'}): {data}"
+        )
+
+    print("Supabase INSERT new row:", data[0])
 
 
 def delete_expense_db(expense_id):
@@ -268,18 +290,22 @@ def root():
 
 @app.route("/expenses")
 def index():
-    """מסך רשימת הוצאות + בר גרפי תקציב מול ביצוע."""
     expenses = fetch_all_expenses()
     months = build_months_list(expenses)
 
     selected_month = request.args.get("month")
     valid_keys = {m["key"] for m in months}
 
+    print("### /expenses months keys:", valid_keys)
+    print("### /expenses selected_month BEFORE fix:", selected_month)
+
     if months:
         if not selected_month or selected_month not in valid_keys:
             selected_month = months[0]["key"]
     else:
         selected_month = None
+
+    print("### /expenses selected_month AFTER fix:", selected_month)
 
     if selected_month:
         filtered_expenses = [
@@ -292,13 +318,7 @@ def index():
     total_rows = len(filtered_expenses)
     total_amount = sum(float(e.get("amount", 0) or 0) for e in filtered_expenses)
 
-    # סה"כ תקציב חודשי (אותו תקציב לכל חודש כרגע)
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute("SELECT COALESCE(SUM(amount), 0) AS total_budget FROM budget;")
-    row = cur.fetchone()
-    conn.close()
-    total_budget = row["total_budget"] if row else 0.0
+    print("### /expenses filtered_rows:", total_rows)
 
     return render_template(
         "expenses.html",
@@ -307,9 +327,8 @@ def index():
         total_amount=total_amount,
         months=months,
         selected_month=selected_month,
-        total_budget=total_budget,
-        
     )
+
 
 @app.route("/debug/expenses")
 def debug_expenses():
