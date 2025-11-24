@@ -325,7 +325,7 @@ PAYMENT_METHODS = [
 # ראוטים
 # =========================
 
- @app.route("/")
+@app.route("/")
 def root():
     return redirect(url_for("index"))
 
