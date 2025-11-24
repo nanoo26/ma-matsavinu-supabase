@@ -2,118 +2,46 @@
 <html lang="he" dir="rtl">
 <head>
   <meta charset="utf-8">
-  <title>מה מצבינו - רשימת הוצאות</title>
+  <title>מה מצבינו - הוצאות</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="/static/style.css">
 </head>
+
 <body>
 <div class="app-shell">
 
-  <!-- כותרת עליונה -->
   <header class="app-header">
-    <div class="app-header-top">
-      <h1 class="app-title">מה מצבינו</h1>
-
-      <div class="header-actions">
-        <!-- כפתור מעבר לדוחות -->
-        <a href="{{ url_for('reports', month=selected_month) }}" class="icon-button" title="דוחות">
-          📊
-        </a>
-
-        <!-- כפתור הוספת הוצאה -->
-        <a href="{{ url_for('add_expense') }}" class="primary-button">
-          + הוצאה
-        </a>
-      </div>
-    </div>
-
-    <!-- שורת סיכום + תקציב + בחירת חודש -->
-    <div class="app-header-summary">
-
-      <div class="summary-line">
-        סה"כ שורות: {{ total_rows }} | סה"כ הוצאות: {{ "%.2f"|format(total_amount) }} ₪
-      </div>
-
-      {% if total_budget is defined and total_budget > 0 %}
-        <div class="budget-card">
-          <div class="budget-row">
-            <span>תקציב לחודש הנבחר</span>
-            <span>{{ "{:,.0f}".format(total_budget) }} ₪</span>
-          </div>
-          <div class="budget-row">
-            <span>שימוש עד עכשיו</span>
-            <span>{{ "{:,.0f}".format(budget_used | default(0)) }} ₪</span>
-          </div>
-          <div class="budget-row">
-            <span>יתרה</span>
-            <span>{{ "{:,.0f}".format(budget_left | default(0)) }} ₪</span>
-          </div>
-        </div>
-      {% endif %}
-
-      {% if months %}
-        <form method="get" class="filter-bar">
-          <label for="month-select">חודש:</label>
-          <select id="month-select" name="month" onchange="this.form.submit()">
-            {% for m in months %}
-              <option value="{{ m.key }}" {% if m.key == selected_month %}selected{% endif %}>
-                {{ m.label }}
-              </option>
-            {% endfor %}
-          </select>
-        </form>
-      {% endif %}
-    </div>
+    <h1 class="app-title">מעקב הוצאות</h1>
+    <p class="app-subtitle">כל ההוצאות במקום אחד</p>
   </header>
 
-  <!-- תוכן ראשי -->
-  <main class="app-main">
+  <div class="content">
 
-    {% if expenses %}
-      <section class="expense-list">
+    <a class="btn-main" href="/add">הוספת הוצאה חדשה</a>
 
-        {% for e in expenses %}
-          <article class="expense-item">
+    <ul class="expense-list">
+      {% for e in expenses %}
+      <li class="expense-item">
+        <div class="expense-row">
+          <span class="exp-date">{{ e["date"] }}</span>
+          <span class="exp-amount">{{ "%.2f"|format(e["amount"]) }} ש"ח</span>
+        </div>
 
-            <div class="expense-item-main">
-              <!-- כפתורי עריכה ומחיקה בצד שמאל -->
-              <div class="expense-actions">
-                <a href="{{ url_for('edit_expense', expense_id=e['id']) }}" class="chip-btn chip-edit">
-                  ערוך
-                </a>
-                <a href="{{ url_for('delete_expense', expense_id=e['id']) }}" class="chip-btn chip-delete">
-                  מחק
-                </a>
-              </div>
+        <div class="exp-meta">
+          <span class="exp-note">{{ e["note"] }}</span>
+          <span class="exp-pay">{{ e["payment_method"] }}</span>
+          <span class="exp-cat">{{ e["category"] }}</span>
+        </div>
 
-              <!-- סכום + תאריך + תיאור + קטגוריה -->
-              <div class="expense-content">
-                <div class="expense-top-row">
-                  <div class="expense-amount-date">
-                    <span class="expense-amount">{{ "%.2f" | format(e["amount"]|float) }} ₪</span>
-                    <span class="expense-date">{{ e["date"] }}</span>
-                  </div>
-                </div>
+        <div class="exp-actions">
+          <a href="/edit/{{ e['id'] }}" class="btn-small edit-btn">ערוך</a>
+          <a href="/delete/{{ e['id'] }}" class="btn-small delete-btn">מחק</a>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
 
-                <div class="expense-description">
-                  {{ e["description"] }}
-                </div>
-
-                <div class="expense-category">
-                  {{ e["category"] }}
-                </div>
-              </div>
-            </div>
-
-          </article>
-        {% endfor %}
-
-      </section>
-    {% else %}
-      <p class="empty-state">אין עדיין הוצאות לחודש שנבחר.</p>
-    {% endif %}
-
-  </main>
+  </div>
 </div>
 </body>
 </html>
