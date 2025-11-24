@@ -154,7 +154,15 @@ def fetch_all_expenses():
     }
     r = requests.get(url, headers=supabase_headers(), params=params)
     r.raise_for_status()
-    return r.json()
+    data = r.json()
+
+    # לוג דיבוג חשוב – במיוחד ברנדר
+    print("### FETCH_ALL_EXPENSES count:", len(data))
+    if data:
+        print("### FIRST ROW:", data[0])
+        print("### LAST ROW:", data[-1])
+
+    return data
 
 
 def fetch_single_expense(expense_id: int):
@@ -300,7 +308,20 @@ def index():
         months=months,
         selected_month=selected_month,
         total_budget=total_budget,
+        
     )
+
+@app.route("/debug/expenses")
+def debug_expenses():
+    """
+    דף דיבוג: מחזיר את כל ההוצאות כפי ש-Render רואה אותן מסופבייס.
+    שימושי רק לך, לא לשימוש פרודקשן ללקוחות.
+    """
+    expenses = fetch_all_expenses()
+    return {
+        "count": len(expenses),
+        "items": expenses,
+    }
 
 
 @app.route("/add_expenses", methods=["GET", "POST"])
