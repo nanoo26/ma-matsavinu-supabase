@@ -33,22 +33,24 @@
         סה"כ שורות: {{ total_rows }} | סה"כ הוצאות: {{ "%.2f"|format(total_amount) }} ₪
       </div>
 
-      {% if total_budget > 0 %}
-        {% set percent = (total_amount / total_budget * 100) if total_budget else 0 %}
-        <div class="budget-header-row">
-          <span class="budget-label-left">
-            ({{ "%.1f"|format(percent) }}%) {{ "%.0f"|format(total_amount) }} ₪ ביצוע
-          </span>
-          <span class="budget-label-right">
-            {{ "%.0f"|format(total_budget) }} ₪ תקציב חודשי
-          </span>
-        </div>
+    {% if total_budget is defined and total_budget > 0 %}
+  <div class="budget-card">
+    <div class="budget-row">
+      <span>תקציב לחודש הנבחר</span>
+      <span>{{ "{:,.0f}".format(total_budget) }} ₪</span>
+    </div>
+    <div class="budget-row">
+      <span>שימוש עד עכשיו</span>
+      <span>{{ "{:,.0f}".format(budget_used|default(0)) }} ₪</span>
+    </div>
+    <div class="budget-row">
+      <span>יתרה</span>
+      <span>{{ "{:,.0f}".format(budget_left|default(0)) }} ₪</span>
+    </div>
+  </div>
+{% endif %}
 
-        <div class="budget-progress">
-          <div class="budget-progress-inner"
-               style="width: {{ 100 if percent > 100 else (0 if percent < 0 else percent) }}%;"></div>
-        </div>
-      {% endif %}
+
 
       <!-- בחירת חודש -->
       {% if months %}
