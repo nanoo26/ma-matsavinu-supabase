@@ -2,14 +2,37 @@ from flask import Flask, render_template, request, redirect, url_for
 import sqlite3
 import os
 
-DB_PATH = "expenses.db"
 app = Flask(__name__)
+
+# מסלול מלא לקובץ ה־DB באותה תיקייה של app.py
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(BASE_DIR, "expenses.db")
 
 
 def get_db_connection():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
+
+
+def init_db():
+    """יוצר את הטבלה expenses אם היא לא קיימת."""
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+    cur.execute(
+        """
+        CREATE TABLE IF NOT EXISTS expenses (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            date TEXT NOT NULL,
+            category TEXT NOT NULL,
+            amount REAL NOT NULL,
+            payment_method TEXT NOT NULL,
+            note TEXT
+        )
+        """
+    )
+    conn.commit()
+    conn.close()
 
 
 def normalize_date(date_str: str) -> str:
@@ -32,20 +55,30 @@ def date_for_input(db_date: str) -> str:
     return f"{year}-{month}-{day}"
 
 
+# נוודא שהטבלה קיימת מיד כשהאפליקציה עולה
+init_db()
+
+
 @app.route("/")
 def index():
     conn = get_db_connection()
     cur = conn.cursor()
 
-    cur.execute("""
+    cur.execute(
+        """
         SELECT id, date, category, amount, payment_method, note
         FROM expenses
         ORDER BY id DESC
-    """)
+        """
+    )
     expenses = cur.fetchall()
 
     cur.execute("SELECT DISTINCT category FROM expenses ORDER BY category ASC")
     categories = [row["category"] for row in cur.fetchall()]
+
+    # אם אין עדיין קטגוריות ב־DB - נגדיר ברירת מחדל
+    if not categories:
+        categories = ["מזון", "בילויים", "בית", "ילדים", "רכב", "בריאות", "חוגים", "קניות", "שונות", "טבק"]
 
     conn.close()
 
@@ -69,10 +102,13 @@ def add_expense():
         payment_method = request.form["payment_method"]
         note = request.form["note"]
 
-        cur.execute("""
+        cur.execute(
+            """
             INSERT INTO expenses (date, category, amount, payment_method, note)
             VALUES (?, ?, ?, ?, ?)
-        """, (date, category, amount, payment_method, note))
+            """,
+            (date, category, amount, payment_method, note),
+        )
 
         conn.commit()
         conn.close()
@@ -80,6 +116,10 @@ def add_expense():
 
     cur.execute("SELECT DISTINCT category FROM expenses ORDER BY category ASC")
     categories = [row["category"] for row in cur.fetchall()]
+
+    if not categories:
+        categories = ["מזון", "בילויים", "בית", "ילדים", "רכב", "בריאות", "חוגים", "קניות", "שונות", "טבק"]
+
     conn.close()
 
     return render_template("add_expense.html", categories=categories)
@@ -97,11 +137,14 @@ def edit_expense(expense_id):
         payment_method = request.form["payment_method"]
         note = request.form["note"]
 
-        cur.execute("""
+        cur.execute(
+            """
             UPDATE expenses
             SET date = ?, category = ?, amount = ?, payment_method = ?, note = ?
             WHERE id = ?
-        """, (date, category, amount, payment_method, note, expense_id))
+            """,
+            (date, category, amount, payment_method, note, expense_id),
+        )
 
         conn.commit()
         conn.close()
@@ -117,13 +160,16 @@ def edit_expense(expense_id):
     cur.execute("SELECT DISTINCT category FROM expenses ORDER BY category ASC")
     categories = [row["category"] for row in cur.fetchall()]
 
+    if not categories:
+        categories = ["מזון", "בילויים", "בית", "ילדים", "רכב", "בריאות", "חוגים", "קניות", "שונות", "טבק"]
+
     conn.close()
 
     return render_template(
         "edit_expense.html",
         expense=expense,
         categories=categories,
-        date_for_input=date_for_input
+        date_for_input=date_for_input,
     )
 
 
