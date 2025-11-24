@@ -176,7 +176,7 @@ def fetch_single_expense(expense_id: int):
     return data[0] if data else None
 
 
-def insert_expense(date, category, amount, payment_method, description):
+ddef insert_expense(date, category, amount, payment_method, description):
     url = f"{SUPABASE_URL}/rest/v1/{SUPABASE_TABLE}"
     payload = {
         "date": date,
@@ -186,33 +186,37 @@ def insert_expense(date, category, amount, payment_method, description):
         "description": description,
     }
 
+    # נשלח כ-array של רשומות, ונבקש להחזיר את השורה שנוצרה
     print("Supabase INSERT payload:", json.dumps(payload, ensure_ascii=False))
-    r = requests.post(url, headers=supabase_headers(), json=payload)
-    print("Supabase INSERT status:", r.status_code)
-    print("Supabase INSERT response:", r.text)
+    r = requests.post(
+        url,
+        headers=supabase_headers(),
+        params={"select": "*"},
+        data=json.dumps([payload]),  # שים לב: [payload] ולא payload
+    )
 
-    if r.status_code not in (200, 201, 204):
+    print("Supabase INSERT status:", r.status_code)
+    print("Supabase INSERT raw response:", r.text)
+
+    if r.status_code not in (200, 201):
+        # אם סופבייס מחזיר שגיאה - נפיל אותה ונראה בלוג מה קורה
         raise RuntimeError(f"Supabase INSERT failed: {r.status_code} {r.text}")
 
+    # ננסה לפענח JSON
+    try:
+        data = r.json()
+    except Exception:
+        raise RuntimeError(f"Supabase INSERT returned non-JSON: {r.text}")
 
-def update_expense(expense_id, date, category, amount, payment_method, description):
-    """עדכון רשומה קיימת בסופבייס במקום יצירת חדשה."""
-    url = f"{SUPABASE_URL}/rest/v1/{SUPABASE_TABLE}?id=eq.{expense_id}"
-    payload = {
-        "date": date,
-        "category": category,
-        "amount": amount,
-        "payment_method": payment_method,
-        "description": description,
-    }
+    # מצפים למערך עם רשומה אחת חדשה
+    if not isinstance(data, list) or len(data) != 1:
+        raise RuntimeError(
+            "Supabase INSERT returned unexpected rows "
+            f"(expected 1, got {len(data) if isinstance(data, list) else 'non-list'}): {data}"
+        )
 
-    print(f"Supabase UPDATE id={expense_id} payload:", json.dumps(payload, ensure_ascii=False))
-    r = requests.patch(url, headers=supabase_headers(), json=payload)
-    print("Supabase UPDATE status:", r.status_code)
-    print("Supabase UPDATE response:", r.text)
-
-    if r.status_code not in (200, 204):
-        raise RuntimeError(f"Supabase UPDATE failed: {r.status_code} {r.text}")
+    print("Supabase INSERT new row:", data[0])
+    return data[0]
 
 
 def delete_expense_db(expense_id):
