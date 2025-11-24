@@ -1,41 +1,28 @@
 from flask import Flask, render_template, request, redirect, url_for
-import sqlite3
 import os
+import requests
 
 app = Flask(__name__)
 
-# מסלול מלא לקובץ ה־DB באותה תיקייה של app.py
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE_DIR, "expenses.db")
+# הגדרות Supabase מתוך משתני סביבה ב-Render
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "").rstrip("/")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "")  # או SUPABASE_ANON_KEY / SERVICE_ROLE_KEY
 
 
-def get_db_connection():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
-
-
-def init_db():
-    """יוצר את הטבלה expenses אם היא לא קיימת."""
-    conn = sqlite3.connect(DB_PATH)
-    cur = conn.cursor()
-    cur.execute(
-        """
-        CREATE TABLE IF NOT EXISTS expenses (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            date TEXT NOT NULL,
-            category TEXT NOT NULL,
-            amount REAL NOT NULL,
-            payment_method TEXT NOT NULL,
-            note TEXT
-        )
-        """
-    )
-    conn.commit()
-    conn.close()
+def supabase_headers(extra: dict | None = None) -> dict:
+    headers = {
+        "apikey": SUPABASE_KEY,
+        "Authorization": f"Bearer {SUPABASE_KEY}",
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+    }
+    if extra:
+        headers.update(extra)
+    return headers
 
 
 def normalize_date(date_str: str) -> str:
+    # מ-input מסוג yyyy-mm-dd ל-date השמור אצלך בטבלה dd/mm/yyyy
     if not date_str:
         return ""
     parts = date_str.split("-")
@@ -46,6 +33,7 @@ def normalize_date(date_str: str) -> str:
 
 
 def date_for_input(db_date: str) -> str:
+    # ההפך - מהטקסט בטבלה dd/mm/yyyy ל-input מסוג yyyy-mm-dd
     if not db_date:
         return ""
     parts = db_date.split("/")
@@ -55,32 +43,20 @@ def date_for_input(db_date: str) -> str:
     return f"{year}-{month}-{day}"
 
 
-# נוודא שהטבלה קיימת מיד כשהאפליקציה עולה
-init_db()
-
-
 @app.route("/")
 def index():
-    conn = get_db_connection()
-    cur = conn.cursor()
+    # מושכים את כל ההוצאות מ-Supabase
+    url = f"{SUPABASE_URL}/rest/v1/expenses"
+    params = {
+        "select": "id,date,category,amount,payment_method,description",
+        "order": "id.desc",
+    }
+    resp = requests.get(url, headers=supabase_headers(), params=params)
+    resp.raise_for_status()
+    expenses = resp.json()  # רשימה של dict
 
-    cur.execute(
-        """
-        SELECT id, date, category, amount, payment_method, note
-        FROM expenses
-        ORDER BY id DESC
-        """
-    )
-    expenses = cur.fetchall()
-
-    cur.execute("SELECT DISTINCT category FROM expenses ORDER BY category ASC")
-    categories = [row["category"] for row in cur.fetchall()]
-
-    # אם אין עדיין קטגוריות ב־DB - נגדיר ברירת מחדל
-    if not categories:
-        categories = ["מזון", "בילויים", "בית", "ילדים", "רכב", "בריאות", "חוגים", "קניות", "שונות", "טבק"]
-
-    conn.close()
+    # קטגוריות ייחודיות מהרשימה
+    categories = sorted({e.get("category") for e in expenses if e.get("category")})
 
     return render_template(
         "expenses.html",
@@ -92,78 +68,84 @@ def index():
 
 @app.route("/add", methods=["GET", "POST"])
 def add_expense():
-    conn = get_db_connection()
-    cur = conn.cursor()
-
     if request.method == "POST":
         date = normalize_date(request.form["date"])
         category = request.form["category"]
         amount = float(request.form["amount"])
         payment_method = request.form["payment_method"]
-        note = request.form["note"]
+        description = request.form["description"]
 
-        cur.execute(
-            """
-            INSERT INTO expenses (date, category, amount, payment_method, note)
-            VALUES (?, ?, ?, ?, ?)
-            """,
-            (date, category, amount, payment_method, note),
+        url = f"{SUPABASE_URL}/rest/v1/expenses"
+        payload = {
+            "date": date,
+            "category": category,
+            "amount": amount,
+            "payment_method": payment_method,
+            "description": description,
+        }
+
+        resp = requests.post(
+            url,
+            headers=supabase_headers({"Prefer": "return=minimal"}),
+            json=payload,
         )
+        resp.raise_for_status()
 
-        conn.commit()
-        conn.close()
         return redirect(url_for("index"))
 
-    cur.execute("SELECT DISTINCT category FROM expenses ORDER BY category ASC")
-    categories = [row["category"] for row in cur.fetchall()]
-
-    if not categories:
-        categories = ["מזון", "בילויים", "בית", "ילדים", "רכב", "בריאות", "חוגים", "קניות", "שונות", "טבק"]
-
-    conn.close()
+    # לטעינת המסך - קטגוריות ברירת מחדל (אפשר אח"כ להביא מ-Supabase אם תרצה)
+    categories = ["מזון", "בילויים", "בית", "ילדים", "רכב",
+                  "בריאות", "חוגים", "קניות", "שונות", "טבק"]
 
     return render_template("add_expense.html", categories=categories)
 
 
 @app.route("/edit/<int:expense_id>", methods=["GET", "POST"])
 def edit_expense(expense_id):
-    conn = get_db_connection()
-    cur = conn.cursor()
+    url = f"{SUPABASE_URL}/rest/v1/expenses"
 
     if request.method == "POST":
         date = normalize_date(request.form["date"])
         category = request.form["category"]
         amount = float(request.form["amount"])
         payment_method = request.form["payment_method"]
-        note = request.form["note"]
+        description = request.form["description"]
 
-        cur.execute(
-            """
-            UPDATE expenses
-            SET date = ?, category = ?, amount = ?, payment_method = ?, note = ?
-            WHERE id = ?
-            """,
-            (date, category, amount, payment_method, note, expense_id),
+        params = {"id": f"eq.{expense_id}"}
+        payload = {
+            "date": date,
+            "category": category,
+            "amount": amount,
+            "payment_method": payment_method,
+            "description": description,
+        }
+
+        resp = requests.patch(
+            url,
+            headers=supabase_headers({"Prefer": "return=minimal"}),
+            params=params,
+            json=payload,
         )
+        resp.raise_for_status()
 
-        conn.commit()
-        conn.close()
         return redirect(url_for("index"))
 
-    cur.execute("SELECT * FROM expenses WHERE id = ?", (expense_id,))
-    expense = cur.fetchone()
-
-    if not expense:
-        conn.close()
+    # שליפת ההוצאה לפי id
+    params = {
+        "select": "id,date,category,amount,payment_method,description",
+        "id": f"eq.{expense_id}",
+        "limit": 1,
+    }
+    resp = requests.get(url, headers=supabase_headers(), params=params)
+    resp.raise_for_status()
+    rows = resp.json()
+    if not rows:
         return redirect(url_for("index"))
 
-    cur.execute("SELECT DISTINCT category FROM expenses ORDER BY category ASC")
-    categories = [row["category"] for row in cur.fetchall()]
+    expense = rows[0]
 
-    if not categories:
-        categories = ["מזון", "בילויים", "בית", "ילדים", "רכב", "בריאות", "חוגים", "קניות", "שונות", "טבק"]
-
-    conn.close()
+    categories = ["מזון", "בילויים", "בית", "ילדים", "רכב",
+                  "בריאות", "חוגים", "קניות", "שונות", "טבק"]
 
     return render_template(
         "edit_expense.html",
@@ -175,11 +157,16 @@ def edit_expense(expense_id):
 
 @app.route("/delete/<int:expense_id>")
 def delete_expense(expense_id):
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute("DELETE FROM expenses WHERE id = ?", (expense_id,))
-    conn.commit()
-    conn.close()
+    url = f"{SUPABASE_URL}/rest/v1/expenses"
+    params = {"id": f"eq.{expense_id}"}
+
+    resp = requests.delete(
+        url,
+        headers=supabase_headers({"Prefer": "return=minimal"}),
+        params=params,
+    )
+    resp.raise_for_status()
+
     return redirect(url_for("index"))
 
 
