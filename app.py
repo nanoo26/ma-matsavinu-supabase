@@ -176,8 +176,13 @@ def fetch_single_expense(expense_id: int):
     return data[0] if data else None
 
 
-ddef insert_expense(date, category, amount, payment_method, description):
+def insert_expense(date, category, amount, payment_method, description):
+    """
+    יצירת הוצאה חדשה בטבלת expenses בסופבייס.
+    שולח מערך [payload] ומבקש לקבל חזרה את הרשומה החדשה.
+    """
     url = f"{SUPABASE_URL}/rest/v1/{SUPABASE_TABLE}"
+
     payload = {
         "date": date,
         "category": category,
@@ -186,37 +191,93 @@ ddef insert_expense(date, category, amount, payment_method, description):
         "description": description,
     }
 
-    # נשלח כ-array של רשומות, ונבקש להחזיר את השורה שנוצרה
-    print("Supabase INSERT payload:", json.dumps(payload, ensure_ascii=False))
+    print("### INSERT_EXPENSE: URL:", url)
+    print("### INSERT_EXPENSE: payload:", json.dumps(payload, ensure_ascii=False))
+
+    # שולחים כ-array של רשומות, לפי הדוקומנטציה של Supabase/PostgREST
     r = requests.post(
         url,
         headers=supabase_headers(),
-        params={"select": "*"},
-        data=json.dumps([payload]),  # שים לב: [payload] ולא payload
+        params={"select": "*"},          # נחזיר את הרשומה שנוצרה
+        data=json.dumps([payload]),      # חשוב: [payload] ולא רק payload
     )
 
-    print("Supabase INSERT status:", r.status_code)
-    print("Supabase INSERT raw response:", r.text)
+    print("### INSERT_EXPENSE: status:", r.status_code)
+    print("### INSERT_EXPENSE: response text:", r.text)
 
     if r.status_code not in (200, 201):
-        # אם סופבייס מחזיר שגיאה - נפיל אותה ונראה בלוג מה קורה
         raise RuntimeError(f"Supabase INSERT failed: {r.status_code} {r.text}")
 
-    # ננסה לפענח JSON
     try:
         data = r.json()
     except Exception:
         raise RuntimeError(f"Supabase INSERT returned non-JSON: {r.text}")
 
-    # מצפים למערך עם רשומה אחת חדשה
     if not isinstance(data, list) or len(data) != 1:
         raise RuntimeError(
             "Supabase INSERT returned unexpected rows "
             f"(expected 1, got {len(data) if isinstance(data, list) else 'non-list'}): {data}"
         )
 
-    print("Supabase INSERT new row:", data[0])
-    return data[0]
+    new_row = data[0]
+    print("### INSERT_EXPENSE: new row:", new_row)
+    return new_row
+
+
+def update_expense(expense_id, date, category, amount, payment_method, description):
+    """
+    עדכון הוצאה קיימת בטבלת expenses.
+    משתמשים ב-PATCH עם פילטר id=eq.{expense_id} ומבקשים לייצג את הרשומה אחרי העדכון.
+    """
+    url = f"{SUPABASE_URL}/rest/v1/{SUPABASE_TABLE}"
+
+    payload = {
+        "date": date,
+        "category": category,
+        "amount": amount,
+        "payment_method": payment_method,
+        "description": description,
+    }
+
+    print(f"### UPDATE_EXPENSE: id={expense_id}")
+    print("### UPDATE_EXPENSE: URL:", url)
+    print("### UPDATE_EXPENSE: payload:", json.dumps(payload, ensure_ascii=False))
+
+    r = requests.patch(
+        url,
+        headers=supabase_headers(),
+        params={
+            "id": f"eq.{expense_id}",
+            "select": "*",
+        },
+        data=json.dumps(payload),
+    )
+
+    print("### UPDATE_EXPENSE: status:", r.status_code)
+    print("### UPDATE_EXPENSE: response text:", r.text)
+
+    if r.status_code not in (200, 204):
+        raise RuntimeError(f"Supabase UPDATE failed: {r.status_code} {r.text}")
+
+    if r.status_code == 204:
+        # מצב שבו אין body בחזרה (return=minimal), לא קריטי
+        return None
+
+    try:
+        data = r.json()
+    except Exception:
+        raise RuntimeError(f"Supabase UPDATE returned non-JSON: {r.text}")
+
+    if not isinstance(data, list) or len(data) != 1:
+        raise RuntimeError(
+            "Supabase UPDATE returned unexpected rows "
+            f"(expected 1, got {len(data) if isinstance(data, list) else 'non-list'}): {data}"
+        )
+
+    updated_row = data[0]
+    print("### UPDATE_EXPENSE: updated row:", updated_row)
+    return updated_row
+
 
 
 def delete_expense_db(expense_id):
@@ -264,7 +325,7 @@ PAYMENT_METHODS = [
 # ראוטים
 # =========================
 
-@app.route("/")
+ @app.route("/")
 def root():
     return redirect(url_for("index"))
 
