@@ -316,6 +316,7 @@ def add_expense():
         payment_method = request.form.get("payment_method", "").strip()
         description = request.form.get("description", "").strip()
 
+        # ולידציה בסיסית
         if not date or not category or not amount_raw or not payment_method or not description:
             return render_template(
                 "add_expense.html",
@@ -342,22 +343,27 @@ def add_expense():
                 payment_methods=payment_methods,
             )
 
-        # שמירה לסופבייס
+        # שמירה ל-Supabase עם לוגים (יעזרו לנו גם ב-Render)
+        print("### ADD_EXPENSE: inserting to Supabase")
         insert_expense(date, category, amount, payment_method, description)
+        print("### ADD_EXPENSE: insert done")
 
-        # נחשב את החודש של ההוצאה החדשה ונפנה ישירות לחודש הזה במסך ההוצאות
-        selected_month = month_key_from_date(date)
+        # מחזירים לחודש של ההוצאה החדשה, כדי שלא "תיעלם" בגלל סינון חודש
+        selected_month = month_key_from_date(date)  # מחזיר משהו כמו "2025-11"
         if selected_month:
             return redirect(url_for("index", month=selected_month))
         else:
+            # אם מסיבה כלשהי אין חודש תקין - נחזור לרשימה בלי פילטר
             return redirect(url_for("index"))
 
+    # GET - טופס ריק
     return render_template(
         "add_expense.html",
         error=None,
         categories=categories,
         payment_methods=payment_methods,
     )
+
 
 
 
