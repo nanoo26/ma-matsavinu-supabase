@@ -27,32 +27,30 @@
       </div>
     </div>
 
-    <!-- שורת סיכום + בר תקציב -->
+    <!-- שורת סיכום + תקציב + בחירת חודש -->
     <div class="app-header-summary">
+
       <div class="summary-line">
         סה"כ שורות: {{ total_rows }} | סה"כ הוצאות: {{ "%.2f"|format(total_amount) }} ₪
       </div>
 
-    {% if total_budget is defined and total_budget > 0 %}
-  <div class="budget-card">
-    <div class="budget-row">
-      <span>תקציב לחודש הנבחר</span>
-      <span>{{ "{:,.0f}".format(total_budget) }} ₪</span>
-    </div>
-    <div class="budget-row">
-      <span>שימוש עד עכשיו</span>
-      <span>{{ "{:,.0f}".format(budget_used|default(0)) }} ₪</span>
-    </div>
-    <div class="budget-row">
-      <span>יתרה</span>
-      <span>{{ "{:,.0f}".format(budget_left|default(0)) }} ₪</span>
-    </div>
-  </div>
-{% endif %}
+      {% if total_budget is defined and total_budget > 0 %}
+        <div class="budget-card">
+          <div class="budget-row">
+            <span>תקציב לחודש הנבחר</span>
+            <span>{{ "{:,.0f}".format(total_budget) }} ₪</span>
+          </div>
+          <div class="budget-row">
+            <span>שימוש עד עכשיו</span>
+            <span>{{ "{:,.0f}".format(budget_used | default(0)) }} ₪</span>
+          </div>
+          <div class="budget-row">
+            <span>יתרה</span>
+            <span>{{ "{:,.0f}".format(budget_left | default(0)) }} ₪</span>
+          </div>
+        </div>
+      {% endif %}
 
-
-
-      <!-- בחירת חודש -->
       {% if months %}
         <form method="get" class="filter-bar">
           <label for="month-select">חודש:</label>
@@ -75,42 +73,40 @@
       <section class="expense-list">
 
         {% for e in expenses %}
-  <article class="expense-item">
+          <article class="expense-item">
 
-    <div class="expense-item-main">
-      <!-- כפתורי עריכה ומחיקה בצד שמאל -->
-      <div class="expense-actions">
-        <a href="{{ url_for('edit_expense', expense_id=e['id']) }}" class="chip-btn chip-edit">
-          ערוך
-        </a>
-        <a href="{{ url_for('delete_expense', expense_id=e['id']) }}" class="chip-btn chip-delete">
-          מחק
-        </a>
-      </div>
+            <div class="expense-item-main">
+              <!-- כפתורי עריכה ומחיקה בצד שמאל -->
+              <div class="expense-actions">
+                <a href="{{ url_for('edit_expense', expense_id=e['id']) }}" class="chip-btn chip-edit">
+                  ערוך
+                </a>
+                <a href="{{ url_for('delete_expense', expense_id=e['id']) }}" class="chip-btn chip-delete">
+                  מחק
+                </a>
+              </div>
 
-      <!-- סכום + תאריך + תיאור -->
-      <div class="expense-content">
-        <div class="expense-top-row">
-          <div class="expense-amount-date">
-            <span class="expense-amount">{{ "%.2f" | format(e["amount"]|float) }} ₪</span>
-            <span class="expense-date">{{ e["date"] }}</span>
-          </div>
-        </div>
+              <!-- סכום + תאריך + תיאור + קטגוריה -->
+              <div class="expense-content">
+                <div class="expense-top-row">
+                  <div class="expense-amount-date">
+                    <span class="expense-amount">{{ "%.2f" | format(e["amount"]|float) }} ₪</span>
+                    <span class="expense-date">{{ e["date"] }}</span>
+                  </div>
+                </div>
 
-        <div class="expense-description">
-          {{ e["description"] }}
-        </div>
+                <div class="expense-description">
+                  {{ e["description"] }}
+                </div>
 
-        <div class="expense-category">
-          {{ e["category"] }}
-        </div>
-      </div>
-    </div>
+                <div class="expense-category">
+                  {{ e["category"] }}
+                </div>
+              </div>
+            </div>
 
-  </article>
-{% endfor %}
-
-
+          </article>
+        {% endfor %}
 
       </section>
     {% else %}

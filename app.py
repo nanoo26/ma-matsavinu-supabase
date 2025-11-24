@@ -156,7 +156,6 @@ def fetch_all_expenses():
     r.raise_for_status()
     data = r.json()
 
-    # לוג דיבוג חשוב – במיוחד ברנדר
     print("### FETCH_ALL_EXPENSES count:", len(data))
     if data:
         print("### FIRST ROW:", data[0])
@@ -197,7 +196,8 @@ def insert_expense(date, category, amount, payment_method, description):
 
 
 def update_expense(expense_id, date, category, amount, payment_method, description):
-    url = f"{SUPABASE_URL}/rest/v1/{SUPABASE_TABLE}"
+    """עדכון רשומה קיימת בסופבייס במקום יצירת חדשה."""
+    url = f"{SUPABASE_URL}/rest/v1/{SUPABASE_TABLE}?id=eq.{expense_id}"
     payload = {
         "date": date,
         "category": category,
@@ -206,36 +206,13 @@ def update_expense(expense_id, date, category, amount, payment_method, descripti
         "description": description,
     }
 
-    print("### ADD_EXPENSE: inserting to Supabase")
-    print("Supabase INSERT payload:", json.dumps(payload, ensure_ascii=False))
+    print(f"Supabase UPDATE id={expense_id} payload:", json.dumps(payload, ensure_ascii=False))
+    r = requests.patch(url, headers=supabase_headers(), json=payload)
+    print("Supabase UPDATE status:", r.status_code)
+    print("Supabase UPDATE response:", r.text)
 
-    r = requests.post(
-        url,
-        headers=supabase_headers(),
-        json=payload,
-    )
-
-    print("Supabase INSERT status:", r.status_code)
-    print("Supabase INSERT raw response:", r.text)
-
-    if r.status_code not in (200, 201):
-        # שגיאה אמיתית מהשרת
-        raise RuntimeError(f"Supabase INSERT failed: {r.status_code} {r.text}")
-
-    # כאן Supabase אמור להחזיר מערך עם שורה אחת (הרשומה החדשה)
-    try:
-        data = r.json()
-    except Exception:
-        raise RuntimeError(f"Supabase INSERT returned non-JSON: {r.text}")
-
-    if not isinstance(data, list) or len(data) != 1:
-        # זה בדיוק המצב שאתה בו עכשיו – מקבלים רשימה ארוכה של כל הטבלה או ריק
-        raise RuntimeError(
-            "Supabase INSERT returned unexpected rows "
-            f"(expected 1, got {len(data) if isinstance(data, list) else 'non-list'}): {data}"
-        )
-
-    print("Supabase INSERT new row:", data[0])
+    if r.status_code not in (200, 204):
+        raise RuntimeError(f"Supabase UPDATE failed: {r.status_code} {r.text}")
 
 
 def delete_expense_db(expense_id):
@@ -292,10 +269,6 @@ def root():
 def index():
     # כל ההוצאות מסופבייס
     expenses = fetch_all_expenses()
-    print("### FETCH_ALL_EXPENSES count:", len(expenses))
-    if expenses:
-        print("### FIRST ROW:", expenses[0])
-        print("### LAST ROW:", expenses[-1])
 
     # בניית רשימת חודשים
     months = build_months_list(expenses)
@@ -332,7 +305,14 @@ def index():
     row = cur.fetchone()
     conn.close()
     total_budget = float(row[0] or 0.0)
+
+    # שימוש בתקציב: כרגע משתמשים בסך ההוצאות של החודש הנבחר
+    budget_used = total_amount
+    budget_left = total_budget - budget_used
+
     print("### /expenses total_budget:", total_budget)
+    print("### /expenses budget_used:", budget_used)
+    print("### /expenses budget_left:", budget_left)
 
     return render_template(
         "expenses.html",
@@ -341,7 +321,9 @@ def index():
         total_amount=total_amount,
         months=months,
         selected_month=selected_month,
-        total_budget=total_budget,  # חשוב - זה מה שהיה חסר
+        total_budget=total_budget,
+        budget_used=budget_used,
+        budget_left=budget_left,
     )
 
 
@@ -398,17 +380,14 @@ def add_expense():
                 payment_methods=payment_methods,
             )
 
-        # שמירה ל-Supabase עם לוגים (יעזרו לנו גם ב-Render)
         print("### ADD_EXPENSE: inserting to Supabase")
         insert_expense(date, category, amount, payment_method, description)
         print("### ADD_EXPENSE: insert done")
 
-        # מחזירים לחודש של ההוצאה החדשה, כדי שלא "תיעלם" בגלל סינון חודש
-        selected_month = month_key_from_date(date)  # מחזיר משהו כמו "2025-11"
+        selected_month = month_key_from_date(date)
         if selected_month:
             return redirect(url_for("index", month=selected_month))
         else:
-            # אם מסיבה כלשהי אין חודש תקין - נחזור לרשימה בלי פילטר
             return redirect(url_for("index"))
 
     # GET - טופס ריק
@@ -418,8 +397,6 @@ def add_expense():
         categories=categories,
         payment_methods=payment_methods,
     )
-
-
 
 
 @app.route("/edit/<int:expense_id>", methods=["GET", "POST"])
@@ -625,7 +602,6 @@ def manage_budget():
     cur = conn.cursor()
 
     if request.method == "POST":
-        # עדכון סכומים
         cur.execute("SELECT id, category, amount FROM budget ORDER BY category;")
         existing_rows = cur.fetchall()
 
@@ -634,7 +610,6 @@ def manage_budget():
             amount_raw = (request.form.get(field_name, "") or "").strip()
             delete_flag = request.form.get(f"delete_{row['id']}", "")
 
-            # מחיקה
             if delete_flag:
                 cur.execute("DELETE FROM budget WHERE id = ?;", (row["id"],))
                 continue
@@ -652,7 +627,6 @@ def manage_budget():
                 (amount, row["id"]),
             )
 
-        # הוספת קטגוריה חדשה
         new_category = (request.form.get("new_category", "") or "").strip()
         new_amount_raw = (request.form.get("new_amount", "") or "").strip()
         if new_category and new_amount_raw:
@@ -696,7 +670,6 @@ def export_csv():
     csv_data = output.getvalue()
     output.close()
 
-    # BOM בשביל אקסל בעברית
     csv_data = "\ufeff" + csv_data
 
     return Response(
