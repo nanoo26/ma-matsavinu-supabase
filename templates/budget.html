@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <title>מה מצבינו - תקציב</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+<div class="app-shell">
+
+  <header class="app-header">
+    <h1 class="app-title">תקציב חודשי</h1>
+    <p class="app-subtitle">קביעת תקציב לכל קטגוריה</p>
+  </header>
+
+  <div class="content">
+
+    <a class="btn-main" href="{{ url_for('index') }}">חזרה לרשימת ההוצאות</a>
+
+    <form method="post" class="budget-form">
+      <ul class="budget-list">
+        {% for row in budget_rows %}
+        <li class="budget-item">
+          <span class="budget-cat">{{ row.category }}</span>
+
+          <div class="budget-input-wrap">
+            <input type="hidden"
+                   name="category_{{ loop.index0 }}"
+                   value="{{ row.category }}">
+
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              class="budget-input"
+              name="budget_{{ loop.index0 }}"
+              value="{% if row.monthly_budget %}{{ '%.2f'|format(row.monthly_budget) }}{% endif %}"
+              placeholder="0">
+
+            <span class="currency-label">ש"ח</span>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+
+      <button type="submit" class="btn-main">שמור תקציב</button>
+    </form>
+
+  </div>
+</div>
+</body>
+</html>

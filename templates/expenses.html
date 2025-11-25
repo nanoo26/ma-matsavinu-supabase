@@ -18,19 +18,20 @@
   <div class="content">
 
     <a class="btn-main" href="/add">הוספת הוצאה חדשה</a>
+    <a class="btn-main" href="/budget">ניהול תקציב</a>
 
     <ul class="expense-list">
       {% for e in expenses %}
       <li class="expense-item">
         <div class="expense-row">
-          <span class="exp-date">{{ e["date"] }}</span>
+          <span class="exp-note">{{ e["description"] }}</span>
           <span class="exp-amount">{{ "%.2f"|format(e["amount"]) }} ש"ח</span>
         </div>
 
         <div class="exp-meta">
-          <span class="exp-note">{{ e["description"] }}</span>
-          <span class="exp-pay">{{ e["payment_method"] }}</span>
-          <span class="exp-cat">{{ e["category"] }}</span>
+          
+          <span class="exp-date">{{ e["date"] }}</span>
+          
         </div>
 
         <div class="exp-actions">

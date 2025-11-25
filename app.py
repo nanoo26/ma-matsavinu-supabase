@@ -1,7 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for
 import os
 import requests
-from datetime import datetime  # חדש - בשביל המיון לפי תאריך
 
 app = Flask(__name__)
 
@@ -11,17 +10,21 @@ app = Flask(__name__)
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "").rstrip("/")
 SUPABASE_KEY = (
     os.environ.get("SUPABASE_KEY")
-    or os.environ.get("SUPABASE_API_KEY")  # גיבוי אם ישן יישאר בטעות
+    or os.environ.get("SUPABASE_API_KEY")  # גיבוי אם נשאר משתנה ישן
     or ""
 )
 
 if not SUPABASE_URL or not SUPABASE_KEY:
     raise RuntimeError(
-        "SUPABASE_URL או SUPABASE_KEY לא מוגדרים ב-Environment של Render"
+        "SUPABASE_URL או SUPABASE_KEY לא מוגדרים ב-Environment"
     )
 
 
 def supabase_headers(extra=None):
+    """
+    מחזיר כותרות בסיס לסופבייס.
+    אפשר להעביר dict נוסף שיתמזג לכותרות.
+    """
     headers = {
         "apikey": SUPABASE_KEY,
         "Authorization": f"Bearer {SUPABASE_KEY}",
@@ -33,7 +36,29 @@ def supabase_headers(extra=None):
     return headers
 
 
+# רשימת קטגוריות קבועה לכל האפליקציה
+CATEGORIES = [
+    "מזון",
+    "בילויים",
+    "בית",
+    "ילדים",
+    "רכב",
+    "בריאות",
+    "חוגים",
+    "קניות",
+    "שונות",
+    "טבק",
+]
+
+
+# =========================
+# עזר לתאריכים
+# =========================
 def normalize_date(date_str: str) -> str:
+    """
+    מקבל תאריך מפורמט input type="date" (YYYY-MM-DD)
+    ומחזיר DD/MM/YYYY כמו בטבלה בסופבייס.
+    """
     if not date_str:
         return ""
     parts = date_str.split("-")
@@ -44,6 +69,9 @@ def normalize_date(date_str: str) -> str:
 
 
 def date_for_input(db_date: str) -> str:
+    """
+    הופך DD/MM/YYYY לפורמט של input date כלומר YYYY-MM-DD.
+    """
     if not db_date:
         return ""
     parts = db_date.split("/")
@@ -53,30 +81,14 @@ def date_for_input(db_date: str) -> str:
     return f"{year}-{month}-{day}"
 
 
-def expense_sort_key(e: dict):
-    """
-    מחזיר מפתח מיון:
-    קודם לפי תאריך אמיתי (DD/MM/YYYY),
-    ואם אין/לא תקין - לפי id.
-    """
-    raw_date = e.get("date") or ""
-    try:
-        dt = datetime.strptime(raw_date, "%d/%m/%Y")
-    except ValueError:
-        dt = datetime.min
-
-    return (dt, e.get("id", 0))
-
-
 # =========================
-# Routes
+# מסך ההוצאות
 # =========================
 @app.route("/")
 def index():
     url = f"{SUPABASE_URL}/rest/v1/expenses"
     params = {
         "select": "id,date,category,amount,payment_method,description",
-        # נשאיר גם order בצד Supabase, אבל נמיין שוב בצד פייתון ליתר ביטחון
         "order": "id.desc",
     }
 
@@ -87,20 +99,19 @@ def index():
         return f"Supabase error {resp.status_code}", 500
 
     expenses = resp.json()
-
-    # מיון סופי - מהחדש לישן לפי תאריך (ואז לפי id)
-    expenses.sort(key=expense_sort_key, reverse=True)
-
     categories = sorted({e.get("category") for e in expenses if e.get("category")})
 
     return render_template(
         "expenses.html",
         expenses=expenses,
         categories=categories,
-        selected_category=""
+        selected_category="",
     )
 
 
+# =========================
+# הוספת הוצאה
+# =========================
 @app.route("/add", methods=["GET", "POST"])
 def add_expense():
     if request.method == "POST":
@@ -130,12 +141,12 @@ def add_expense():
 
         return redirect(url_for("index"))
 
-    categories = ["מזון", "בילויים", "בית", "ילדים", "רכב",
-                  "בריאות", "חוגים", "קניות", "שונות", "טבק"]
-
-    return render_template("add_expense.html", categories=categories)
+    return render_template("add_expense.html", categories=CATEGORIES)
 
 
+# =========================
+# עריכת הוצאה
+# =========================
 @app.route("/edit/<int:expense_id>", methods=["GET", "POST"])
 def edit_expense(expense_id):
     url = f"{SUPABASE_URL}/rest/v1/expenses"
@@ -185,17 +196,17 @@ def edit_expense(expense_id):
 
     expense = rows[0]
 
-    categories = ["מזון", "בילויים", "בית", "ילדים", "רכב",
-                  "בריאות", "חוגים", "קניות", "שונות", "טבק"]
-
     return render_template(
         "edit_expense.html",
         expense=expense,
-        categories=categories,
+        categories=CATEGORIES,
         date_for_input=date_for_input,
     )
 
 
+# =========================
+# מחיקת הוצאה
+# =========================
 @app.route("/delete/<int:expense_id>")
 def delete_expense(expense_id):
     url = f"{SUPABASE_URL}/rest/v1/expenses"
@@ -213,5 +224,75 @@ def delete_expense(expense_id):
     return redirect(url_for("index"))
 
 
+# =========================
+# מסך תקציב לפי קטגוריה
+# =========================
+@app.route("/budget", methods=["GET", "POST"])
+def budget():
+    url = f"{SUPABASE_URL}/rest/v1/budgets"
+
+    # ====== POST - שמירת תקציבים ======
+    if request.method == "POST":
+        rows = []
+
+        for idx, cat in enumerate(CATEGORIES):
+            raw_val = request.form.get(f"budget_{idx}", "").strip()
+
+            if not raw_val:
+                amount = 0.0
+            else:
+                try:
+                    amount = float(raw_val.replace(",", ""))
+                except ValueError:
+                    amount = 0.0
+
+            rows.append({
+                "category": cat,
+                "monthly_budget": amount,
+            })
+
+        resp = requests.post(
+            url + "?on_conflict=category",
+            headers=supabase_headers({
+                "Prefer": "resolution=merge-duplicates"
+            }),
+            json=rows,
+        )
+        print("DEBUG /budget POST:", resp.status_code, resp.text)
+
+        if not resp.ok:
+            return f"Supabase upsert error {resp.status_code}", 500
+
+        return redirect(url_for("budget"))
+
+    # ====== GET - טעינת תקציבים ======
+    resp = requests.get(
+        url,
+        headers=supabase_headers(),
+        params={"select": "category,monthly_budget"},
+    )
+    print("DEBUG /budget GET:", resp.status_code)
+
+    budgets_map = {}
+    if resp.ok:
+        for row in resp.json():
+            budgets_map[row["category"]] = row.get("monthly_budget", 0)
+    else:
+        print("DEBUG /budget GET body:", resp.text)
+
+    budget_rows = []
+    for cat in CATEGORIES:
+        budget_rows.append({
+            "category": cat,
+            "monthly_budget": budgets_map.get(cat, 0),
+        })
+
+    return render_template("budget.html", budget_rows=budget_rows)
+
+
+
+# =========================
+# main
+# =========================
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
