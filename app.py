@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for
 import os
 import requests
+from datetime import datetime  # חדש - בשביל המיון לפי תאריך
 
 app = Flask(__name__)
 
@@ -52,6 +53,21 @@ def date_for_input(db_date: str) -> str:
     return f"{year}-{month}-{day}"
 
 
+def expense_sort_key(e: dict):
+    """
+    מחזיר מפתח מיון:
+    קודם לפי תאריך אמיתי (DD/MM/YYYY),
+    ואם אין/לא תקין - לפי id.
+    """
+    raw_date = e.get("date") or ""
+    try:
+        dt = datetime.strptime(raw_date, "%d/%m/%Y")
+    except ValueError:
+        dt = datetime.min
+
+    return (dt, e.get("id", 0))
+
+
 # =========================
 # Routes
 # =========================
@@ -83,7 +99,6 @@ def index():
         categories=categories,
         selected_category=""
     )
-
 
 
 @app.route("/add", methods=["GET", "POST"])
