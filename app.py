@@ -60,6 +60,7 @@ def index():
     url = f"{SUPABASE_URL}/rest/v1/expenses"
     params = {
         "select": "id,date,category,amount,payment_method,description",
+        # נשאיר גם order בצד Supabase, אבל נמיין שוב בצד פייתון ליתר ביטחון
         "order": "id.desc",
     }
 
@@ -70,6 +71,10 @@ def index():
         return f"Supabase error {resp.status_code}", 500
 
     expenses = resp.json()
+
+    # מיון סופי - מהחדש לישן לפי תאריך (ואז לפי id)
+    expenses.sort(key=expense_sort_key, reverse=True)
+
     categories = sorted({e.get("category") for e in expenses if e.get("category")})
 
     return render_template(
@@ -78,6 +83,7 @@ def index():
         categories=categories,
         selected_category=""
     )
+
 
 
 @app.route("/add", methods=["GET", "POST"])
