@@ -11,14 +11,27 @@
 <div class="app-shell">
 
   <header class="app-header">
-    <h1 class="app-title">מעקב הוצאות</h1>
-    <p class="app-subtitle">כל ההוצאות במקום אחד</p>
-  </header>
+  <h1 class="app-title">מעקב הוצאות</h1>
+  <p class="app-subtitle">כל ההוצאות במקום אחד</p>
+
+  <div class="top-nav">
+    <a class="btn-main" href="{{ url_for('index') }}">הוצאות</a>
+    <a class="btn-main" href="{{ url_for('budget') }}">תקציב</a>
+    <!-- בהמשך נוסיף כאן גם "דוחות" -->
+  </div>
+</header>
+
 
   <div class="content">
 
     <a class="btn-main" href="/add">הוספת הוצאה חדשה</a>
-    <a class="btn-main" href="/budget">ניהול תקציב</a>
+    <a class="btn-secondary" href="/budget">ניהול תקציב חודשי</a>
+    <div style="display: flex; gap: 8px; margin-top: 10px;">
+  <a class="btn-main" href="{{ url_for('budget') }}">ניהול תקציב</a>
+  <a class="btn-main" href="{{ url_for('reports') }}">דוחות</a>
+</div>
+
+    
 
     <ul class="expense-list">
       {% for e in expenses %}

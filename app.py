@@ -1,8 +1,25 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for 
 import os
 import requests
+from datetime import datetime
+from collections import defaultdict
 
 app = Flask(__name__)
+
+
+# כל הקטגוריות במקום אחד
+CATEGORIES = [
+    "מזון",
+    "בילויים",
+    "בית",
+    "ילדים",
+    "רכב",
+    "בריאות",
+    "חוגים",
+    "קניות",
+    "שונות",
+    "טבק",
+]
 
 # =========================
 # Supabase config
@@ -36,21 +53,6 @@ def supabase_headers(extra=None):
     return headers
 
 
-# רשימת קטגוריות קבועה לכל האפליקציה
-CATEGORIES = [
-    "מזון",
-    "בילויים",
-    "בית",
-    "ילדים",
-    "רכב",
-    "בריאות",
-    "חוגים",
-    "קניות",
-    "שונות",
-    "טבק",
-]
-
-
 # =========================
 # עזר לתאריכים
 # =========================
@@ -79,6 +81,24 @@ def date_for_input(db_date: str) -> str:
         return db_date
     day, month, year = parts
     return f"{year}-{month}-{day}"
+
+def parse_ddmmyyyy(date_str: str):
+    """קולט מחרוזת 'dd/mm/yyyy' ומחזיר (day, month, year) או None אם לא תקין."""
+    try:
+        day, month, year = date_str.split("/")
+        return int(day), int(month), int(year)
+    except Exception:
+        return None
+
+
+def sort_by_date_desc(exp):
+    """מפתח מיון להוצאות מהחדש לישן."""
+    date_str = exp.get("date") or ""
+    parsed = parse_ddmmyyyy(date_str)
+    if not parsed:
+        return (0, 0, 0, 0)
+    day, month, year = parsed
+    return (year, month, day, exp.get("id", 0))
 
 
 # =========================
@@ -141,7 +161,10 @@ def add_expense():
 
         return redirect(url_for("index"))
 
-    return render_template("add_expense.html", categories=CATEGORIES)
+    # כאן השתמשנו ברשימת הקטגוריות הגלובלית
+    categories = CATEGORIES
+    return render_template("add_expense.html", categories=categories)
+
 
 
 # =========================
@@ -196,12 +219,14 @@ def edit_expense(expense_id):
 
     expense = rows[0]
 
+    categories = CATEGORIES
     return render_template(
         "edit_expense.html",
         expense=expense,
-        categories=CATEGORIES,
+        categories=categories,
         date_for_input=date_for_input,
     )
+
 
 
 # =========================
@@ -223,71 +248,219 @@ def delete_expense(expense_id):
 
     return redirect(url_for("index"))
 
+from datetime import date
 
-# =========================
-# מסך תקציב לפי קטגוריה
-# =========================
+# רשימת קטגוריות מרכזית
+CATEGORIES = [
+    "מזון",
+    "בילויים",
+    "בית",
+    "ילדים",
+    "רכב",
+    "בריאות",
+    "חוגים",
+    "קניות",
+    "שונות",
+    "טבק",
+]
+
+
 @app.route("/budget", methods=["GET", "POST"])
 def budget():
+    # חודש נבחר מה־query string (למשל ?month=2025-11) או החודש הנוכחי כברירת מחדל
+    month = request.args.get("month") or datetime.now().strftime("%Y-%m")
+
     url = f"{SUPABASE_URL}/rest/v1/budgets"
 
-    # ====== POST - שמירת תקציבים ======
     if request.method == "POST":
-        rows = []
+        # קוראים את החודש גם מהטופס (יש hidden בשם month)
+        month = request.form.get("month") or month
 
-        for idx, cat in enumerate(CATEGORIES):
-            raw_val = request.form.get(f"budget_{idx}", "").strip()
+        rows = []
+        for cat in CATEGORIES:
+            field_name = f"budget_{cat}"
+            raw_val = (request.form.get(field_name) or "").strip()
 
             if not raw_val:
                 amount = 0.0
             else:
                 try:
-                    amount = float(raw_val.replace(",", ""))
+                    amount = float(raw_val)
                 except ValueError:
                     amount = 0.0
 
-            rows.append({
-                "category": cat,
-                "monthly_budget": amount,
-            })
+            rows.append(
+                {
+                    "month": month,
+                    "category": cat,
+                    "amount": amount,
+                }
+            )
 
-        resp = requests.post(
-            url + "?on_conflict=category",
-            headers=supabase_headers({
-                "Prefer": "resolution=merge-duplicates"
-            }),
+        # 1) מוחקים את כל התקציבים של החודש הזה
+        delete_resp = requests.delete(
+            url,
+            headers=supabase_headers({"Prefer": "return=minimal"}),
+            params={"month": f"eq.{month}"},
+        )
+        print("DEBUG /budget DELETE status:", delete_resp.status_code, delete_resp.text)
+        if not delete_resp.ok:
+            return (
+                f"Supabase delete error {delete_resp.status_code}: {delete_resp.text}",
+                500,
+            )
+
+        # 2) מכניסים מחדש את כל השורות מהטופס
+        insert_resp = requests.post(
+            url,
+            headers=supabase_headers(),  # לא צריך Prefer מיוחד
             json=rows,
         )
-        print("DEBUG /budget POST:", resp.status_code, resp.text)
+        print("DEBUG /budget INSERT status:", insert_resp.status_code, insert_resp.text)
+        if not insert_resp.ok:
+            return (
+                f"Supabase insert error {insert_resp.status_code}: {insert_resp.text}",
+                500,
+            )
 
-        if not resp.ok:
-            return f"Supabase upsert error {resp.status_code}", 500
+        # חוזרים לעמוד התקציב לאותו חודש
+        return redirect(url_for("budget", month=month))
 
-        return redirect(url_for("budget"))
+    # ----- GET: טעינת תקציב קיים -----
+    params = {
+        "select": "category, month, amount",
+        "month": f"eq.{month}",
+    }
+    resp = requests.get(url, headers=supabase_headers(), params=params)
+    print("DEBUG /budget GET status:", resp.status_code, resp.text)
+    if not resp.ok:
+        return f"Supabase get error {resp.status_code}: {resp.text}", 500
 
-    # ====== GET - טעינת תקציבים ======
-    resp = requests.get(
-        url,
-        headers=supabase_headers(),
-        params={"select": "category,monthly_budget"},
-    )
-    print("DEBUG /budget GET:", resp.status_code)
+    existing_rows = resp.json()
+    existing_map = {row["category"]: row["amount"] for row in existing_rows}
 
-    budgets_map = {}
-    if resp.ok:
-        for row in resp.json():
-            budgets_map[row["category"]] = row.get("monthly_budget", 0)
-    else:
-        print("DEBUG /budget GET body:", resp.text)
-
-    budget_rows = []
+    # בונים רשימה מסודרת לפי CATEGORIES, גם אם אין עדיין שורה בטבלה
+    budgets = []
     for cat in CATEGORIES:
-        budget_rows.append({
+        budgets.append(
+            {
+                "category": cat,
+                "amount": existing_map.get(cat, 0.0),
+            }
+        )
+
+    return render_template("budget.html", month=month, budgets=budgets)
+
+
+
+from datetime import date
+
+# ...
+
+@app.route("/reports")
+def reports():
+    # חודש נבחר כ-YYYY-MM, למשל "2025-11"
+    month = request.args.get("month")
+    if not month:
+        today = date.today()
+        month = f"{today.year}-{today.month:02d}"
+
+    year_str, month_str = month.split("-")
+    display_month = f"{month_str}/{year_str}"  # ככה התאריכים נשמרים אצלך: 11/2025
+
+    # ---------- 1. הוצאות לפי חודש ----------
+    url_exp = f"{SUPABASE_URL}/rest/v1/expenses"
+    params_exp = {
+        "select": "category,amount,date",
+        "date": f"like.*{display_month}",
+    }
+    r_exp = requests.get(url_exp, headers=supabase_headers(), params=params_exp)
+    if not r_exp.ok:
+        print("DEBUG /reports expenses:", r_exp.status_code, r_exp.text)
+        return f"Supabase expenses error {r_exp.status_code}", 400
+    expenses = r_exp.json()
+
+    spent_by_cat = {c: 0.0 for c in CATEGORIES}
+    for row in expenses:
+        cat = row.get("category")
+        try:
+            amount = float(row.get("amount") or 0)
+        except (TypeError, ValueError):
+            amount = 0.0
+        if cat in spent_by_cat:
+            spent_by_cat[cat] += amount
+        else:
+            spent_by_cat[cat] = amount
+
+    # ---------- 2. תקציבים לפי חודש ----------
+    url_bud = f"{SUPABASE_URL}/rest/v1/budgets"
+    params_bud = {
+        "select": "category,amount",
+        "month": f"eq.{month}",
+    }
+    r_bud = requests.get(url_bud, headers=supabase_headers(), params=params_bud)
+    if not r_bud.ok:
+        print("DEBUG /reports budgets:", r_bud.status_code, r_bud.text)
+        return f"Supabase budgets error {r_bud.status_code}", 400
+    budget_rows = r_bud.json()
+    budget_by_cat = {
+        row["category"]: float(row.get("amount") or 0)
+        for row in budget_rows
+    }
+
+    # ---------- 3. בניית שורות לדוח + סיכומים ----------
+    rows = []
+    total_budget = 0.0
+    total_spent = 0.0
+
+    for cat in CATEGORIES:
+        b = budget_by_cat.get(cat, 0.0)
+        s = spent_by_cat.get(cat, 0.0)
+        diff = b - s
+        percent = (s / b * 100) if b > 0 else 0.0
+
+        rows.append({
             "category": cat,
-            "monthly_budget": budgets_map.get(cat, 0),
+            "budget": b,
+            "spent": s,
+            "diff": diff,
+            "percent_used": percent,
+            "overspend": (b > 0 and s > b),
         })
 
-    return render_template("budget.html", budget_rows=budget_rows)
+        total_budget += b
+        total_spent += s
+
+    used_percent = (total_spent / total_budget * 100) if total_budget > 0 else 0.0
+
+    summary = {
+        "total_budget": total_budget,
+        "total_spent": total_spent,
+        "used_percent": used_percent,
+        "display_month": display_month,
+    }
+
+    # ---------- 4. רשימת חודשים לבחירה (6 חודשים אחרונים) ----------
+    month_options = []
+    today = date.today()
+    cur_y, cur_m = today.year, today.month
+    for i in range(6):
+        y = cur_y
+        m = cur_m - i
+        while m <= 0:
+            y -= 1
+            m += 12
+        value = f"{y}-{m:02d}"
+        label = f"{m:02d}/{y}"
+        month_options.append({"value": value, "label": label})
+
+    return render_template(
+        "reports.html",
+        summary=summary,
+        rows=rows,
+        month=month,
+        month_options=month_options,
+    )
 
 
 

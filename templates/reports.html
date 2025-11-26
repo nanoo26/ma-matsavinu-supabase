@@ -4,72 +4,72 @@
   <meta charset="utf-8">
   <title>מה מצבינו - דוחות</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
 <div class="app-shell">
 
-  <!-- כותרת עליונה -->
   <header class="app-header">
-    <div class="app-header-top">
-      <h1 class="app-title">מה מצבינו</h1>
-      <nav class="header-actions">
-        <a href="{{ url_for('index', month=selected_month) }}" class="btn-secondary">
-          חזרה לרשימת ההוצאות
-        </a>
-        <a href="{{ url_for('report_budget', month=selected_month) }}" class="btn-secondary">
-          דוח תקציב מול ביצוע
-        </a>
-      </nav>
-    </div>
+    <h1 class="app-title">מה מצבינו</h1>
+    <p class="app-subtitle">תקציב מול ביצוע לפי קטגוריות</p>
+  </header>
 
-    {% if months %}
-      <form method="get" class="filter-bar">
-        <label for="month-select">חודש:</label>
-        <select id="month-select" name="month" onchange="this.form.submit()">
-          {% for m in months %}
-            <option value="{{ m.key }}" {% if m.key == selected_month %}selected{% endif %}>
-              {{ m.label }}
+  <div class="content">
+
+    <!-- בר עליון: סיכום + בחירת חודש -->
+    <div class="summary-card">
+      <div class="summary-main">
+        <div>
+          <div>סה"כ תקציב:</div>
+          <strong>{{ "%.2f"|format(summary.total_budget) }} ש"ח</strong>
+        </div>
+        <div>
+          <div>סה"כ הוצאות:</div>
+          <strong>{{ "%.2f"|format(summary.total_spent) }} ש"ח</strong>
+        </div>
+        <div>
+          <div>ניצול תקציב:</div>
+          <strong>{{ "%.1f"|format(summary.used_percent) }}%</strong>
+        </div>
+      </div>
+
+      <form class="month-filter" method="get" action="{{ url_for('reports') }}">
+        <label for="month">חודש:</label>
+        <select id="month" name="month">
+          {% for opt in month_options %}
+            <option value="{{ opt.value }}"
+                    {% if opt.value == month %}selected{% endif %}>
+              {{ opt.label }}
             </option>
           {% endfor %}
         </select>
+        <button type="submit" class="btn-main">החלף חודש</button>
       </form>
-    {% endif %}
-  </header>
+    </div>
 
-  <!-- תוכן הדוח -->
-  <main class="content reports-content">
+    <!-- קישור חזרה לרשימת ההוצאות -->
+    <a class="btn-main" href="{{ url_for('index') }}">חזרה לרשימת ההוצאות</a>
 
-    {% if monthly_summary %}
-    <section class="card reports-card">
-      <h2 class="section-title">סיכום חודשי</h2>
-      {% for row in monthly_summary %}
-        <div class="report-row report-total-row">
-          <span class="report-total-month">{{ row.month }}/{{ row.year }}</span>
-          <span class="report-total-amount">{{ "%.2f" | format(row.total) }} ₪</span>
+    <!-- רשימת קטגוריות: תקציב מול ביצוע -->
+    <ul class="expense-list">
+      {% for row in rows %}
+      <li class="expense-item">
+        <div class="expense-row">
+          <span class="exp-cat">{{ row.category }}</span>
+          <span class="exp-amount">{{ "%.2f"|format(row.spent) }} ש"ח</span>
         </div>
-        <p class="report-total-caption">סה"כ הוצאות בחודש זה</p>
+
+        <div class="exp-meta">
+          <div>תקציב: {{ "%.2f"|format(row.budget) }} ש"ח</div>
+          <div>פער: {{ "%.2f"|format(row.diff) }} ש"ח</div>
+          <div>ניצול: {{ "%.1f"|format(row.percent_used) }}%</div>
+        </div>
+
+      </li>
       {% endfor %}
-    </section>
-    {% endif %}
+    </ul>
 
-    {% if category_summary %}
-    <section class="card reports-card">
-      <h2 class="section-title">לפי קטגוריה</h2>
-      <div class="report-list">
-        {% for row in category_summary %}
-          <div class="report-row">
-            <span class="report-category">{{ row.category }}</span>
-            <span class="report-amount">{{ "%.2f" | format(row.total) }} ₪</span>
-          </div>
-        {% endfor %}
-      </div>
-    </section>
-    {% else %}
-      <p class="empty-state">אין נתונים לחודש שנבחר.</p>
-    {% endif %}
-
-  </main>
+  </div>
 </div>
 </body>
 </html>

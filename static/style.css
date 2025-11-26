@@ -227,3 +227,27 @@ body {
   font-size: 16px;
   color: #4b5563;
 }
+
+.top-nav {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+}
+
+.exp-note {
+  font-size: 16px;
+  color: #374151;
+  }
+
+.exp-amount {
+  font-weight: bold;
+  color: #dc2626;
+  font-size: 18px;
+}
+
+.exp-meta {
+  margin-top: 7px;
+  font-size: 18px;
+  color: #475569;
+}
+
