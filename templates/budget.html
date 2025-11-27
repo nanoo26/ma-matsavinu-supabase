@@ -9,22 +9,40 @@
 <body>
   <div class="app-shell">
 
+    <!-- כותרת עליונה -->
     <header class="app-header">
       <h1 class="app-title">מה מצבינו</h1>
       <p class="app-subtitle">מעקב הוצאות משפחתי</p>
-      
-      {% include "tabs.html" %}
-</header>
 
+      <!-- ניווט ראשי - שורה אחת לכל האפליקציה -->
+      <nav class="main-tabs">
+        <a href="{{ url_for('budget') }}"
+           class="main-tab {% if request.path.startswith('/budget') %}active{% endif %}">
+          🏅 תקציב
+        </a>
+
+        <a href="{{ url_for('reports') }}"
+           class="main-tab {% if request.path.startswith('/reports') %}active{% endif %}">
+          📊 דוחות
+        </a>
+
+        <a href="{{ url_for('expenses') }}"
+           class="main-tab {% if request.path.startswith('/expenses') or request.path == '/' %}active{% endif %}">
+          🧾 הוצאות
+        </a>
+      </nav>
+    </header>
 
     <main class="content">
 
-      <!-- כרטיס סיכום תקציב כולל -->
+      {# סך הכל תקציב לחודש הנבחר #}
       {% set total_budget = budgets|sum(attribute='amount') %}
+
+      <!-- כרטיס סיכום תקציב כולל -->
       <div class="stat-card green" style="margin-bottom: 24px;">
         <div class="stat-card-icon">💰</div>
         <div class="stat-card-value">{{ "%.0f"|format(total_budget) }} ₪</div>
-        <div class="stat-card-label">סה"כ תקציב חודשי - {{ month }}</div>
+        <div class="stat-card-label">סהכ תקציב חודשי - {{ month }}</div>
       </div>
 
       <!-- בחירת חודש לתקציב -->
@@ -48,7 +66,7 @@
         </div>
       </section>
 
-    <!-- טופס עריכת תקציב -->
+      <!-- טופס עריכת תקציב -->
       <section class="card">
         <div class="card-header">
           <h2 class="card-title">✏️ עריכת תקציב חודשי</h2>
@@ -62,48 +80,46 @@
             <input type="hidden" name="month" value="{{ month }}">
 
             {% for row in budgets %}
-  <div class="budget-row">
-    <label>
-      <span style="font-size: 18px; margin-left: 8px;">
-        {% if row.category == 'מזון' %}🍕
-        {% elif row.category == 'בריאות' %}💊
-        {% elif row.category == 'חינוך' %}📚
-        {% elif row.category == 'תחבורה' %}🚗
-        {% elif row.category == 'בילויים' %}🎉
-        {% elif row.category == 'ביגוד' %}👕
-        {% elif row.category == 'בית' %}🏠
-        {% elif row.category == 'רכב' %}🚗
-        {% elif row.category == 'ילדים' %}👶
-        {% elif row.category == 'חוגים' %}🎨
-        {% elif row.category == 'קניות' %}🛒
-        {% elif row.category == 'טבק' %}🚬
-        {% else %}💼
-        {% endif %}
-      </span>
-      {{ row.category }}
-    </label>
+              <div class="budget-row">
+                <label>
+                  <span style="font-size: 18px; margin-left: 8px;">
+                    {% if row.category == 'מזון' %}🍕
+                    {% elif row.category == 'בריאות' %}💊
+                    {% elif row.category == 'חינוך' %}📚
+                    {% elif row.category == 'תחבורה' %}🚗
+                    {% elif row.category == 'בילויים' %}🎉
+                    {% elif row.category == 'ביגוד' %}👕
+                    {% elif row.category == 'בית' %}🏠
+                    {% elif row.category == 'רכב' %}🚗
+                    {% elif row.category == 'ילדים' %}👶
+                    {% elif row.category == 'חוגים' %}🎨
+                    {% elif row.category == 'קניות' %}🛒
+                    {% elif row.category == 'טבק' %}🚬
+                    {% else %}💼
+                    {% endif %}
+                  </span>
+                  {{ row.category }}
+                </label>
 
-    <!-- תקציב לחודש הנוכחי (ניתן לעריכה) -->
-    <div class="budget-input-wrap">
-      <input
-        type="number"
-        step="0.01"
-        min="0"
-        name="budget_{{ row.category }}"
-        value="{{ row.amount }}"
-        placeholder="0.00"
-      >
-      <span>₪</span>
-    </div>
+                <div class="budget-input-wrap">
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    name="budget_{{ row.category }}"
+                    value="{{ row.amount }}"
+                    placeholder="0.00"
+                  >
+                  <span>₪</span>
+                </div>
 
-    <!-- תצוגת תקציב החודש הקודם -->
-    <div style="min-width: 120px; font-size: 13px; color: var(--text-secondary); text-align: left;">
-      תקציב קודם:
-      {{ "%.0f"|format(row.previous_amount) }} ₪
-    </div>
-  </div>
-{% endfor %}
-
+                {% if row.previous_amount and row.previous_amount > 0 %}
+                  <div style="width: 100%; font-size: 12px; color: var(--text-muted); margin-top: 4px;">
+                    תקציב בחודש קודם: {{ "%.0f"|format(row.previous_amount) }} ₪
+                  </div>
+                {% endif %}
+              </div>
+            {% endfor %}
 
             <button class="btn-main full-width" type="submit" style="margin-top: 20px;">
               💾 שמור תקציב
@@ -113,14 +129,14 @@
       </section>
 
       <!-- כרטיסי התפלגות תקציב -->
-      <div class="summary-grid" style="margin: 20px 0;">
+      <div class="summary-grid" style="margin: 24px 0;">
         {% if budgets and budgets|length > 0 %}
-          {% for row in budgets[:4] %}
+          {% for row in budgets[:3] %}
             {% if row.amount > 0 %}
               <div class="summary-item">
                 <span class="summary-label">{{ row.category }}</span>
                 <span class="summary-value">{{ "%.0f"|format(row.amount) }} ₪</span>
-                <div style="margin-top: 14px;">
+                <div style="margin-top: 8px;">
                   <span class="data-pill success">
                     {% if total_budget > 0 %}
                       {{ ((row.amount / total_budget) * 100)|int }}% מהתקציב
@@ -133,7 +149,6 @@
         {% endif %}
       </div>
 
-      
       <!-- גרף עמודות - חלוקת תקציב -->
       <section class="chart-container">
         <h3 class="chart-title">📊 חלוקת התקציב לפי קטגוריות</h3>
@@ -151,7 +166,6 @@
                       {% elif row.category == 'תחבורה' %}🚗
                       {% elif row.category == 'בילויים' %}🎉
                       {% elif row.category == 'ביגוד' %}👕
-                      {% elif row.category == 'בילויים' %}🎭
                       {% elif row.category == 'בית' %}🏠
                       {% elif row.category == 'רכב' %}🚗
                       {% elif row.category == 'ילדים' %}👶
@@ -184,7 +198,6 @@
           {% endif %}
         </div>
       </section>
-
 
       <!-- טיפים לניהול תקציב -->
       <section class="card" style="background: linear-gradient(135deg, rgba(16,185,129,0.05), rgba(5,150,105,0.05)); border: 2px solid var(--primary-green);">

@@ -471,10 +471,8 @@ def root():
 
 @app.route("/expenses")
 def expenses():
-    # מביא את כל ההוצאות מה-Supabase
     expenses_raw = fetch_expenses()
 
-    # מיון מהחדש לישן לפי תאריך DD/MM/YYYY
     def to_dt(e):
         try:
             return datetime.strptime(e.get("date", ""), "%d/%m/%Y")
@@ -483,12 +481,10 @@ def expenses():
 
     expenses_sorted = sorted(expenses_raw, key=to_dt, reverse=True)
 
-    # סכום כולל של כל ההוצאות
     total_amount = sum(
         parse_amount(e.get("amount", 0)) for e in expenses_sorted
     )
 
-    # כרטיס סיכום עליון
     main_summary = {
         "month_key": current_month_key(),
         "spent_total": total_amount,
@@ -502,9 +498,6 @@ def expenses():
         total_amount=total_amount,
         active_tab="expenses",
     )
-
-
-
 
 @app.route("/add", methods=["GET", "POST"])
 def add_expense():
@@ -751,6 +744,7 @@ def reports():
         category_rows=category_rows,
         payment_rows=payment_rows,
         expenses=report_expenses,
+        active_tab="reports",   # לא חובה כי ה־HTML משתמש ב-request.path, אבל זה נקי
     )
 
 @app.route("/budget", methods=["GET", "POST"])
@@ -768,15 +762,16 @@ def budget():
         today = date.today()
         if today.day < 10:
             # עדיין "מסיימים" את החודש הקודם
-            # למשל ב-5/12 נראה את נובמבר
             first_of_this_month = date(today.year, today.month, 1)
-            prev = first_of_this_month.replace(day=1) - timedelta(days=1)
+            prev = first_of_this_month - timedelta(days=1)
             selected_month = f"{prev.year}-{prev.month:02d}"
         else:
             # מה־10 בחודש - מתחילים אוטומטית תקציב חדש
             selected_month = f"{today.year}-{today.month:02d}"
 
-    # POST - שמירת התקציב
+    # =========================
+    # POST - שמירת התקציב לחודש
+    # =========================
     if request.method == "POST":
         rows = []
         for cat in CATEGORIES:
@@ -840,7 +835,11 @@ def budget():
         "budget.html",
         month=selected_month,
         budgets=budgets_for_template,
+        active_tab="budget",
     )
+
+    
+    
 
 
 

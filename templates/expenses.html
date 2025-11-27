@@ -15,15 +15,89 @@
       <p class="app-subtitle">מעקב הוצאות משפחתי</p>
       
       {% include "tabs.html" %}
-</header>
+    </header>
 
+    <!-- כרטיס סטטיסטיקה ראשי עם גרף קטגוריות -->
+    {% if expenses and expenses|length > 0 %}
+      <div class="stat-card purple" style="margin-bottom: 24px; padding: 32px;">
+        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 32px; align-items: center;">
+          
+          <!-- צד שמאל - סכום ואייקון -->
+          <div style="text-align: center;">
+            <div class="stat-card-icon" style="font-size: 72px; margin-bottom: 16px;">💸</div>
+            <div class="stat-card-value" style="font-size: 48px; margin-bottom: 12px;">
+              {{ "%.0f"|format(total_amount) }} ₪
+            </div>
+            <div class="stat-card-label" style="font-size: 16px;">
+              סה"כ הוצאות החודש
+            </div>
+          </div>
+          
+          <!-- צד ימין - "גרף" התפלגות לפי קטגוריות -->
+          <div style="position: relative; z-index: 1;">
+            <h3 style="color: #ffffff; font-size: 18px; font-weight: 700; margin-bottom: 20px; text-align: center;">
+              📊 התפלגות לפי קטגוריות
+            </h3>
 
-        <!-- כרטיס סטטיסטיקה ראשי -->
-    <div class="stat-card purple" style="margin-bottom: 24px;">
-      <div class="stat-card-icon">💸</div>
-      <div class="stat-card-value">{{ "%.0f"|format(total_amount) }} ₪</div>
-      <div class="stat-card-label">סה"כ הוצאות החודש</div>
-    </div>
+            {% if top_categories and top_categories|length > 0 %}
+              <div style="display: flex; flex-direction: column; gap: 14px;">
+                {% for row in top_categories %}
+                  <div style="display: flex; align-items: center; gap: 12px;">
+                    <span style="font-size: 22px; min-width: 35px;">
+                      {% if row.category == 'מזון' %}🍕
+                      {% elif row.category == 'בריאות' %}💊
+                      {% elif row.category == 'חינוך' %}📚
+                      {% elif row.category == 'תחבורה' %}🚗
+                      {% elif row.category == 'בילויים' %}🎉
+                      {% elif row.category == 'ביגוד' %}👕
+                      {% elif row.category == 'דיור' %}🏠
+                      {% elif row.category == 'בית' %}🏠
+                      {% elif row.category == 'רכב' %}🚗
+                      {% elif row.category == 'ילדים' %}👶
+                      {% elif row.category == 'חוגים' %}🎨
+                      {% elif row.category == 'קניות' %}🛒
+                      {% elif row.category == 'שונות' %}💼
+                      {% elif row.category == 'טבק' %}🚬
+                      {% else %}💼
+                      {% endif %}
+                    </span>
+                    <div style="flex: 1;">
+                      <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                        <span style="font-size: 14px; font-weight: 600; color: #ffffff;">
+                          {{ row.category }}
+                        </span>
+                        <span style="font-size: 14px; font-weight: 700; color: #ffffff; opacity: 0.95;">
+                          {{ "%.0f"|format(row.amount) }} ₪ ({{ "%.0f"|format(row.percent) }}%)
+                        </span>
+                      </div>
+                      <div style="width: 100%; height: 10px; background: rgba(255,255,255,0.2); border-radius: 20px; overflow: hidden;">
+                        <div style="
+                          height: 100%;
+                          background: linear-gradient(90deg, #ffffff, rgba(255,255,255,0.8));
+                          border-radius: 20px;
+                          width: {{ row.percent|round(0, 'floor') }}%;
+                          transition: width 600ms cubic-bezier(0.4, 0, 0.2, 1);
+                        "></div>
+                      </div>
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            {% else %}
+              <p style="color: rgba(255,255,255,0.85); text-align: center;">
+                אין מספיק נתונים להצגת התפלגות
+              </p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    {% else %}
+      <div class="stat-card purple" style="margin-bottom: 24px;">
+        <div class="stat-card-icon">💸</div>
+        <div class="stat-card-value">0 ₪</div>
+        <div class="stat-card-label">אין עדיין הוצאות לחודש</div>
+      </div>
+    {% endif %}
 
     <!-- אזור עליון עם כפתור -->
     <section class="top-bar">
@@ -32,7 +106,7 @@
       </a>
     </section>
 
-        <!-- רשימת הוצאות -->
+    <!-- רשימת הוצאות -->
     <main class="content">
       {% if expenses and expenses|length > 0 %}
         
@@ -65,6 +139,13 @@
                   {% elif e.category == 'ביגוד' %}👕
                   {% elif e.category == 'ביליים' %}🎭
                   {% elif e.category == 'דיור' %}🏠
+                  {% elif e.category == 'בית' %}🏠
+                  {% elif e.category == 'רכב' %}🚗
+                  {% elif e.category == 'ילדים' %}👶
+                  {% elif e.category == 'חוגים' %}🎨
+                  {% elif e.category == 'קניות' %}🛒
+                  {% elif e.category == 'שונות' %}💼
+                  {% elif e.category == 'טבק' %}🚬
                   {% else %}💼
                   {% endif %}
                   {{ e.category }}
@@ -84,15 +165,6 @@
               {% if e.notes %}
                 <div class="expense-notes">
                   💬 {{ e.notes }}
-                </div>
-              {% endif %}
-
-              <!-- מד התקדמות (אופציונלי - אם יש תקציב) -->
-              {% if e.category and e.amount %}
-                <div class="progress-indicator" style="margin-top: 12px;">
-                  <div class="progress-bar-bg">
-                    <div class="progress-bar-fill success" style="width: {{ [((e.amount / 5000) * 100)|int, 100]|min }}%;"></div>
-                  </div>
                 </div>
               {% endif %}
 
@@ -116,22 +188,24 @@
         </div>
 
         <!-- סיכום מהיר -->
-    {% if expenses and expenses|length > 0 %}
-      <div class="summary-grid" style="margin-bottom: 24px;">
-        <div class="summary-item">
-          <span class="summary-label">מספר הוצאות</span>
-          <span class="summary-value">{{ expenses|length }}</span>
+        <div class="summary-grid" style="margin-bottom: 24px;">
+          <div class="summary-item">
+            <span class="summary-label">מספר הוצאות</span>
+            <span class="summary-value">{{ expenses|length }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">ממוצע להוצאה</span>
+            <span class="summary-value">
+              {{ "%.0f"|format(total_amount / expenses|length) }} ₪
+            </span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">הוצאה הכי גבוהה</span>
+            <span class="summary-value">
+              {{ "%.0f"|format(expenses|map(attribute='amount')|max) }} ₪
+            </span>
+          </div>
         </div>
-        <div class="summary-item">
-          <span class="summary-label">ממוצע להוצאה</span>
-          <span class="summary-value">{{ "%.0f"|format(total_amount / expenses|length) }} ₪</span>
-        </div>
-        <div class="summary-item">
-          <span class="summary-label">הוצאה הכי גבוהה</span>
-          <span class="summary-value">{{ "%.0f"|format(expenses|map(attribute='amount')|max) }} ₪</span>
-        </div>
-      </div>
-    {% endif %}
 
         <!-- סיכום תחתון -->
         <div class="card" style="margin-top: 24px; background: linear-gradient(135deg, rgba(139,92,246,0.05), rgba(124,58,237,0.05)); border: 2px solid var(--primary-purple);">
@@ -141,7 +215,7 @@
               ניהול חכם של ההוצאות
             </div>
             <div style="font-size: 14px; color: var(--text-secondary);">
-              עקוב אחר ההוצאות שלך באופן קבוע כדי לשמור על איזון פינסי
+              עקוב אחר ההוצאות שלך באופן קבוע כדי לשמור על איזון פיננסי
             </div>
             <div style="margin-top: 16px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
               <a href="{{ url_for('reports') }}" class="data-pill" style="text-decoration: none;">

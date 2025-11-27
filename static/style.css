@@ -1444,3 +1444,65 @@ body {
 header * {
   pointer-events: auto;
 }
+
+/* התאמה למובייל - גרפים */
+@media (max-width: 768px) {
+  div[style*="grid-template-columns: 1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .chart-container, .donut-chart {
+    padding: 16px;
+  }
+  
+  .chart-title {
+    font-size: 16px;
+  }
+}
+
+/* התאמה למובייל - גרפים בעמוד הוצאות */
+@media (max-width: 768px) {
+  
+  /* הגרפים יעברו לעמודה אחת במובייל */
+  div[style*="grid-template-columns: 1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .chart-container, .donut-chart {
+    padding: 16px;
+  }
+  
+  .chart-title {
+    font-size: 16px;
+    margin-bottom: 16px;
+  }
+  
+  .chart-bar-row {
+    gap: 8px;
+  }
+  
+  .chart-label {
+    font-size: 13px;
+    min-width: 80px;
+  }
+}
+
+@media (max-width: 480px) {
+  .chart-container, .donut-chart {
+    padding: 12px;
+  }
+  
+  .chart-title {
+    font-size: 15px;
+  }
+  
+  .chart-bar-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+  
+  .chart-label {
+    min-width: auto;
+  }
+}
