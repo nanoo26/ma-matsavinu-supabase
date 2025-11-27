@@ -1375,34 +1375,47 @@ body {
   transform: scale(0.97);
 }
 
+/* אזור ניווט עליון */
 .main-tabs {
-  margin: 16px;
-  padding: 4px;
-  background: #e5edff;
-  border-radius: 999px;
+  width: calc(100% - 32px);
+  margin: 16px auto;
+  padding: 6px;
+  background: #eef4ff;
+  border-radius: 40px;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 4px;
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.15);
+  gap: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
 }
 
+/* כפתור ניווט */
 .main-tab {
-  border-radius: 999px;
-  text-align: center;
-  padding: 8px 4px;
-  font-size: 14px;
-  font-weight: 500;
-  text-decoration: none;
-  color: #0f172a;
-  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
+
+  padding: 14px 0;
+  width: 100%;
+  font-size: 15px;
+  font-weight: 600;
+
+  background: #f8fbff;
+  border-radius: 40px;
+
+  text-decoration: none;
+  color: #1e293b;
+
+  cursor: pointer;
+
+  /* הכי חשוב – כל השטח לחיץ */
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
 }
 
+/* כפתור פעיל */
 .main-tab.active {
   background: linear-gradient(90deg, #2563eb, #06b6d4);
-  color: #ffffff;
-  font-weight: 600;
+  color: #ffffff !important;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.18);
 }

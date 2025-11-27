@@ -1,0 +1,17 @@
+<!-- templates/tabs.html -->
+<nav class="main-tabs">
+  <a href="{{ url_for('budget') }}"
+     class="main-tab {% if request.path.startswith('/budget') %}active{% endif %}">
+    🏅 תקציב
+  </a>
+
+  <a href="{{ url_for('reports') }}"
+     class="main-tab {% if request.path.startswith('/reports') %}active{% endif %}">
+    📊 דוחות
+  </a>
+
+  <a href="{{ url_for('expenses') }}"
+     class="main-tab {% if request.path.startswith('/expenses') or request.path == '/' %}active{% endif %}">
+    🧾 הוצאות
+  </a>
+</nav>

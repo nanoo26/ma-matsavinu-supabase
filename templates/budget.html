@@ -9,30 +9,12 @@
 <body>
   <div class="app-shell">
 
-    <!-- כותרת עליונה -->
     <header class="app-header">
       <h1 class="app-title">מה מצבינו</h1>
       <p class="app-subtitle">מעקב הוצאות משפחתי</p>
-
-          <!-- ניווט ראשי - שורה אחת לכל האפליקציה -->
-    <nav class="main-tabs">
-      <a href="{{ url_for('budget') }}"
-         class="main-tab {% if request.path.startswith('/budget') %}active{% endif %}">
-        🏅 תקציב
-      </a>
-
-      <a href="{{ url_for('reports') }}"
-         class="main-tab {% if request.path.startswith('/reports') %}active{% endif %}">
-        📊 דוחות
-      </a>
-
-      <a href="{{ url_for('expenses') }}"
-         class="main-tab {% if request.path.startswith('/expenses') or request.path == '/' %}active{% endif %}">
-        🧾 הוצאות
-      </a>
-    </nav>
-
-    </header>
+      
+      {% include "tabs.html" %}
+</header>
 
 
     <main class="content">
