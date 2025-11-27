@@ -15,32 +15,60 @@
       
       {% include "tabs.html" %}
 </header>
-    
-    <main class="content">
-      {# מכאן תשאיר את כל תוכן הדוחות שהיה לך קודם #}
-
 
   <main class="content">
 
     <!-- בחירת חודש -->
     <section class="card">
-      <div class="card-header">
-        <h2 class="card-title">🗓️ בחירת חודש לדוח</h2>
+  <div class="card-header">
+    <h2 class="card-title">🗓️ בחירת חודש וסינון דוח</h2>
+    <p class="card-subtitle">בחר חודש ואפשר לסנן לפי קטגוריה ואמצעי תשלום</p>
+  </div>
+  <div class="card-body">
+    <form method="get" action="{{ url_for('reports') }}" class="inline-form">
+
+      <!-- בחירת חודש -->
+      <div class="form-group">
+        <label for="month-select">חודש:</label>
+        <select id="month-select" name="month">
+          {% for m in months %}
+            <option value="{{ m }}" {% if m == selected_month %}selected{% endif %}>
+              {{ m }}
+            </option>
+          {% endfor %}
+        </select>
       </div>
-      <div class="card-body">
-        <form method="get" action="{{ url_for('reports') }}" class="inline-form">
-          <label for="month-select">חודש:</label>
-          <select id="month-select" name="month">
-            {% for m in months %}
-              <option value="{{ m }}" {% if m == selected_month %}selected{% endif %}>
-                {{ m }}
-              </option>
-            {% endfor %}
-          </select>
-          <button type="submit" class="btn-main">הצג</button>
-        </form>
+
+      <!-- סינון לפי קטגוריה -->
+      <div class="form-group">
+        <label for="category-filter">קטגוריה:</label>
+        <select id="category-filter" name="category_filter">
+          <option value="">כל הקטגוריות</option>
+          {% for cat in categories %}
+            <option value="{{ cat }}" {% if category_filter == cat %}selected{% endif %}>
+              {{ cat }}
+            </option>
+          {% endfor %}
+        </select>
       </div>
-    </section>
+
+      <!-- סינון לפי אמצעי תשלום -->
+      <div class="form-group">
+        <label for="payment-filter">אמצעי תשלום:</label>
+        <select id="payment-filter" name="payment_filter">
+          <option value="">כל האמצעים</option>
+          {% for pm in payment_methods %}
+            <option value="{{ pm }}" {% if payment_filter == pm %}selected{% endif %}>
+              {{ pm }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <button type="submit" class="btn-main">הצג דוח</button>
+    </form>
+  </div>
+</section>
 
     <!-- סיכום עליון עם כרטיסי סטטיסטיקה -->
     <div class="summary-grid">

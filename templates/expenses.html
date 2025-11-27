@@ -32,26 +32,7 @@
       </a>
     </section>
 
-    <!-- סיכום מהיר -->
-    {% if expenses and expenses|length > 0 %}
-      <div class="summary-grid" style="margin-bottom: 24px;">
-        <div class="summary-item">
-          <span class="summary-label">מספר הוצאות</span>
-          <span class="summary-value">{{ expenses|length }}</span>
-        </div>
-        <div class="summary-item">
-          <span class="summary-label">ממוצע להוצאה</span>
-          <span class="summary-value">{{ "%.0f"|format(total_amount / expenses|length) }} ₪</span>
-        </div>
-        <div class="summary-item">
-          <span class="summary-label">הוצאה הכי גבוהה</span>
-          <span class="summary-value">{{ "%.0f"|format(expenses|map(attribute='amount')|max) }} ₪</span>
-        </div>
-      </div>
-    {% endif %}
-
-
-    <!-- רשימת הוצאות -->
+        <!-- רשימת הוצאות -->
     <main class="content">
       {% if expenses and expenses|length > 0 %}
         
@@ -133,6 +114,24 @@
             </article>
           {% endfor %}
         </div>
+
+        <!-- סיכום מהיר -->
+    {% if expenses and expenses|length > 0 %}
+      <div class="summary-grid" style="margin-bottom: 24px;">
+        <div class="summary-item">
+          <span class="summary-label">מספר הוצאות</span>
+          <span class="summary-value">{{ expenses|length }}</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">ממוצע להוצאה</span>
+          <span class="summary-value">{{ "%.0f"|format(total_amount / expenses|length) }} ₪</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">הוצאה הכי גבוהה</span>
+          <span class="summary-value">{{ "%.0f"|format(expenses|map(attribute='amount')|max) }} ₪</span>
+        </div>
+      </div>
+    {% endif %}
 
         <!-- סיכום תחתון -->
         <div class="card" style="margin-top: 24px; background: linear-gradient(135deg, rgba(139,92,246,0.05), rgba(124,58,237,0.05)); border: 2px solid var(--primary-purple);">

@@ -2,17 +2,19 @@
 <html lang="he" dir="rtl">
 <head>
   <meta charset="utf-8">
-  <title>מה מצבינו - הוצאות</title>
+  <title>מה מצבינו - הוספת הוצאה</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
   <div class="app-shell">
 
+    <!-- כותרת עליונה -->
     <header class="app-header">
       <h1 class="app-title">מה מצבינו</h1>
       <p class="app-subtitle">מעקב הוצאות משפחתי</p>
 
+      <!-- ניווט ראשי - שורה אחת לכל האפליקציה -->
       <nav class="segmented-nav">
         <a href="{{ url_for('budget') }}"
            class="segmented-tab {% if active_tab == 'budget' %}is-active{% endif %}">
@@ -30,17 +32,25 @@
     </header>
 
     <main class="content">
-      {# מכאן כל רשימת ההוצאות כמו שיש לך #}
-
-
-    <main class="content">
       {% if error_message %}
         <div class="alert-error">
           {{ error_message }}
         </div>
       {% endif %}
 
+      <!-- טופס הוספת הוצאה -->
       <form action="{{ url_for('add_expense') }}" method="post" class="form-card">
+
+        <!-- סוג הוצאה -->
+        <div class="form-group">
+          <label for="expense_type">סוג הוצאה</label>
+          <select name="expense_type" id="expense_type">
+            <option value="single">חד פעמית</option>
+            <option value="standing">הוראת קבע חודשית</option>
+            <option value="installments">רכישה בתשלומים</option>
+          </select>
+        </div>
+
         <div class="form-group">
           <label for="date">תאריך</label>
           <input

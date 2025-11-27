@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for
 import os
 import requests
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 
 def parse_amount(val) -> float:
     """קלט (עם פסיקים/רווחים) -> מספר float נקי."""
@@ -30,6 +30,8 @@ if not SUPABASE_URL or not SUPABASE_KEY:
 
 SUPABASE_EXPENSES_TABLE = "expenses"
 SUPABASE_BUDGETS_TABLE = "budgets"
+PAYMENT_PLANS_TABLE = "payment_plans"
+PAYMENT_PLANS_URL = f"{SUPABASE_URL}/rest/v1/{PAYMENT_PLANS_TABLE}"
 SUPABASE_EXPENSES_URL = f"{SUPABASE_URL}/rest/v1/{SUPABASE_EXPENSES_TABLE}"
 SUPABASE_BUDGETS_URL = f"{SUPABASE_URL}/rest/v1/{SUPABASE_BUDGETS_TABLE}"
 
@@ -40,6 +42,143 @@ def supabase_headers():
         "Authorization": f"Bearer {SUPABASE_KEY}",
         "Content-Type": "application/json",
     }
+
+def insert_payment_plan(payload: dict) -> bool:
+    """הכנסת הוראת קבע / תשלומים ל payment_plans."""
+    try:
+        resp = requests.post(
+            PAYMENT_PLANS_URL,
+            headers=supabase_headers(),
+            params={"select": "*"},
+            json=payload,
+            timeout=10,
+        )
+        if not resp.ok:
+            print("=== Supabase PAYMENT_PLAN INSERT ERROR ===")
+            print("Status:", resp.status_code)
+            try:
+                print("Body:", resp.json())
+            except Exception:
+                print("Raw text:", resp.text)
+            resp.raise_for_status()
+    except requests.exceptions.RequestException as e:
+        print("שגיאה בהוספת תוכנית תשלום ל Supabase:", e)
+        return False
+    return True
+
+def fetch_payment_plans_for_month(selected_month: str):
+    """
+    מחזיר רשימת 'הוצאות וירטואליות' מחושבות מהוראות קבע ותשלומים
+    עבור חודש בפורמט YYYY-MM.
+    כל רשומה יחידה מייצגת תשלום אחד בחודש.
+    """
+    try:
+        resp = requests.get(
+            PAYMENT_PLANS_URL,
+            headers=supabase_headers(),
+            params={
+                "select": "*",
+                "is_active": "eq.true",
+            },
+            timeout=10,
+        )
+        resp.raise_for_status()
+    except requests.exceptions.RequestException as e:
+        print("שגיאה בשליפת תוכניות תשלום מ Supabase:", e)
+        return []
+
+    data = resp.json()
+
+    # selected_month בסגנון "2025-11"
+    try:
+        year_str, month_str = selected_month.split("-")
+        year = int(year_str)
+        month = int(month_str)
+    except Exception:
+        return []
+
+    # נשתמש בתאריך 10 לחודש כתאריך תשלום וירטואלי
+    month_first = date(year, month, 1)
+
+    virtual_expenses = []
+
+    for row in data:
+        expense_type = (row.get("expense_type") or "standing").strip()
+
+        start_str = row.get("start_date")
+        if not start_str:
+            continue
+
+        try:
+            start_dt = datetime.strptime(start_str, "%Y-%m-%d").date()
+        except Exception:
+            continue
+
+        # אם החודש הנבחר לפני חודש ההתחלה - לא רלוונטי
+        if month_first < start_dt.replace(day=1):
+            continue
+
+        # טיפול ב end_date אם קיים
+        end_dt = None
+        end_str = row.get("end_date")
+        if end_str:
+            try:
+                end_dt = datetime.strptime(end_str, "%Y-%m-%d").date()
+            except Exception:
+                end_dt = None
+
+        if end_dt and month_first > end_dt.replace(day=1):
+            continue
+
+        installments_count = row.get("installments_count")
+
+        # אם זו רכישה בתשלומים - בודקים שלא עבר מספר התשלומים
+        if expense_type == "installments" and installments_count:
+            try:
+                installments_count_int = int(installments_count)
+            except Exception:
+                installments_count_int = None
+
+            if installments_count_int is not None:
+                start_index = start_dt.year * 12 + start_dt.month
+                current_index = year * 12 + month
+                diff_months = current_index - start_index
+
+                # diff_months מתחיל מ 0 בתשלום הראשון
+                if diff_months < 0 or diff_months >= installments_count_int:
+                    continue
+
+        # סכום חודשי
+        monthly_amount = row.get("monthly_amount")
+        total_amount = row.get("total_amount")
+
+        try:
+            if monthly_amount is not None:
+                amount_val = float(monthly_amount)
+            elif total_amount is not None and installments_count:
+                amount_val = float(total_amount) / float(installments_count)
+            else:
+                # אין לנו איך לחשב סכום
+                continue
+        except Exception:
+            continue
+
+        # תאריך לתצוגה DD/MM/YYYY
+        display_date_str = f"10/{month:02d}/{year}"
+
+        virtual_expenses.append(
+            {
+                "id": row.get("id"),
+                "raw_date": f"{year}-{month:02d}-10",
+                "date": display_date_str,
+                "category": row.get("category") or "",
+                "amount": amount_val,
+                "payment_method": row.get("payment_method") or "",
+                "notes": row.get("description") or "",
+            }
+        )
+
+    return virtual_expenses
 
 
 # =========================
@@ -100,10 +239,28 @@ def date_for_input(db_value: str) -> str:
     return db_value
 
 
-def current_month_key() -> str:
-    """YYYY-MM של החודש הנוכחי."""
+def current_month_key():
     today = date.today()
     return f"{today.year}-{today.month:02d}"
+
+def previous_month_of(month_key: str) -> str:
+    """
+    מקבל מחרוזת בפורמט YYYY-MM ומחזיר את החודש הקודם באותו פורמט.
+    אם יש בעיה בפענוח - מחזיר את המחרוזת כמו שהיא.
+    """
+    try:
+        year_str, month_str = month_key.split("-")
+        year = int(year_str)
+        month = int(month_str)
+    except Exception:
+        return month_key
+
+    month -= 1
+    if month == 0:
+        month = 12
+        year -= 1
+
+    return f"{year}-{month:02d}"
 
 
 # =========================
@@ -450,13 +607,25 @@ def delete_expense_view(expense_id):
     delete_expense(expense_id)
     return redirect(url_for("expenses"))
 
+def fetch_all_budgets():
+    """שליפת כל התקציבים מטבלת budgets (אם קיימת)"""
+    url = f"{SUPABASE_URL}/rest/v1/budgets?select=*"
+    try:
+        r = requests.get(url, headers=supabase_headers(), timeout=20)
+        r.raise_for_status()
+        return r.json()
+    except Exception as e:
+        print("שגיאה בשליפת budgets מ-Supabase:", e)
+        # אם אין טבלה או שיש שגיאה - נסתדר בלי תקציבים
+        return []
+
 
 @app.route("/reports")
 def reports():
     # כל ההוצאות הקיימות (כמו למסך הראשי)
-    expenses = fetch_expenses()
+    all_db_expenses = fetch_expenses()
 
-    # פונקציה שמחזירה מפתח חודש בפורמט YYYY-MM מתוך תאריך DD/MM/YYYY
+    # פונקציה לפירוק תאריך DD/MM/YYYY לחודש
     def month_key(date_str: str) -> str:
         try:
             dt = datetime.strptime(date_str, "%d/%m/%Y")
@@ -464,93 +633,89 @@ def reports():
         except Exception:
             return ""
 
-    # כל החודשים שקיימים בנתונים
+    # רשימת כל החודשים שיש עבורם הוצאות
     month_set = set()
-    for e in expenses:
+    for e in all_db_expenses:
         mk = month_key(e.get("date", ""))
         if mk:
             month_set.add(mk)
     months = sorted(month_set, reverse=True)
 
-    # חודש ברירת מחדל
     if months:
         default_month = months[0]
     else:
         default_month = datetime.now().strftime("%Y-%m")
 
-    # מה שנבחר ב־URL או ברירת המחדל
     selected_month = request.args.get("month") or default_month
 
-    # סינון הוצאות לחודש הנבחר
+    # הוצאות רגילות לחודש הנבחר
     month_expenses = [
-        e for e in expenses
+        e for e in all_db_expenses
         if month_key(e.get("date", "")) == selected_month
     ]
 
-    # --- תקציבים לחודש הנבחר מטבלת budgets ---
-    budgets_rows = fetch_budgets_for_month(selected_month)
-    budgets_map = {
-        row.get("category"): parse_amount(row.get("amount", 0))
-        for row in budgets_rows
-    }
+    # הוצאות וירטואליות מהוראות קבע ותשלומים לחודש הנבחר
+    plan_expenses = fetch_payment_plans_for_month(selected_month)
 
-    # סיכום הוצאות לפי קטגוריות
+    # מחברים הכל לרשימה אחת שעל בסיסה נסכם את הכל
+    all_expenses = month_expenses + plan_expenses
+
+    # -----------------------------
+    # תקציבים לחודש הנבחר
+    # -----------------------------
+    budgets_rows = fetch_budgets_for_month(selected_month)
+    budgets_map = {}
+    total_budget = 0.0
+
+    for row in budgets_rows:
+        cat = row.get("category") or "לא מסווג"
+        amt = parse_amount(row.get("amount", 0))
+        budgets_map[cat] = budgets_map.get(cat, 0.0) + amt
+        total_budget += amt
+
+    # -----------------------------
+    # סיכום לפי קטגוריות
+    # -----------------------------
     category_totals = {}
-    for e in month_expenses:
+    for e in all_expenses:
         cat = e.get("category") or "לא מסווג"
         amt = parse_amount(e.get("amount", 0))
         category_totals[cat] = category_totals.get(cat, 0.0) + amt
 
     category_rows = []
     total_spent = 0.0
-    total_budget = 0.0
 
     for cat, spent in category_totals.items():
-        budget = budgets_map.get(cat, 0.0)
-        diff = budget - spent
-        percent = (spent / budget * 100) if budget > 0 else 0.0
-
         total_spent += spent
-        total_budget += budget
+        budget_cat = budgets_map.get(cat, 0.0)
+        diff = budget_cat - spent
+        percent = (spent / budget_cat * 100) if budget_cat > 0 else 0.0
 
         category_rows.append(
             {
                 "category": cat,
-                "budget": budget,
+                "budget": budget_cat,
                 "spent": spent,
                 "diff": diff,
                 "percent": percent,
             }
         )
 
-    # אם יש קטגוריות עם תקציב אבל בלי הוצאות - נוסיף גם אותן
-    for cat, budget in budgets_map.items():
-        if cat not in category_totals:
-            total_budget += budget
-            category_rows.append(
-                {
-                    "category": cat,
-                    "budget": budget,
-                    "spent": 0.0,
-                    "diff": budget,
-                    "percent": 0.0,
-                }
-            )
-
-    # סיכום עליון
-    total_diff = total_budget - total_spent
-    total_percent = (total_spent / total_budget * 100) if total_budget > 0 else 0.0
-
+    # -----------------------------
+    # סיכום עליון כללי
+    # -----------------------------
     summary = {
-        "total_budget": total_budget,   # זה מה שמופיע ב"תקציב חודשי"
+        "total_budget": total_budget,
         "total_spent": total_spent,
-        "total_diff": total_diff,
-        "total_percent": total_percent,
+        "total_diff": total_budget - total_spent,
+        "total_percent": (total_spent / total_budget * 100) if total_budget > 0 else 0.0,
     }
 
+    # -----------------------------
     # סיכום לפי אמצעי תשלום
+    # -----------------------------
     payments_map = {}
-    for e in month_expenses:
+    for e in all_expenses:
         pm = e.get("payment_method") or "לא ידוע"
         amt = parse_amount(e.get("amount", 0))
         payments_map[pm] = payments_map.get(pm, 0.0) + amt
@@ -559,9 +724,11 @@ def reports():
         {"method": m, "total": t} for m, t in payments_map.items()
     ]
 
-    # רשימת הוצאות למסך הדוחות
+    # -----------------------------
+    # רשימת הוצאות מלאה לטבלת "כל ההוצאות בחודש"
+    # -----------------------------
     report_expenses = []
-    for e in month_expenses:
+    for e in all_expenses:
         report_expenses.append(
             {
                 "date": e.get("date", ""),
@@ -572,32 +739,45 @@ def reports():
             }
         )
 
+    # אם משום מה אין חודשים, שלא יישבר התפריט
     if not months:
         months = [selected_month]
 
     return render_template(
-    "reports.html",
-    months=months,
-    selected_month=selected_month,
-    summary=summary,
-    category_rows=category_rows,
-    payment_rows=payment_rows,
-    expenses=report_expenses,
-    active_tab="reports",
-)
-
-
-
+        "reports.html",
+        months=months,
+        selected_month=selected_month,
+        summary=summary,
+        category_rows=category_rows,
+        payment_rows=payment_rows,
+        expenses=report_expenses,
+    )
 
 @app.route("/budget", methods=["GET", "POST"])
 def budget():
     """מסך עריכת תקציב חודשי על בסיס טבלת budgets."""
     month_from_query = request.args.get("month")
     month_hidden = request.form.get("month") if request.method == "POST" else None
-    selected_month = month_from_query or month_hidden or current_month_key()
 
+    # בחירת חודש נוכחי לעריכה:
+    # - אם המשתמש בחר ידנית (GET/POST) - נכבד את הבחירה
+    # - אחרת: עד ה־9 בחודש נציג את החודש הקודם, מה־10 ומעלה את החודש הנוכחי
+    if month_from_query or month_hidden:
+        selected_month = month_from_query or month_hidden
+    else:
+        today = date.today()
+        if today.day < 10:
+            # עדיין "מסיימים" את החודש הקודם
+            # למשל ב-5/12 נראה את נובמבר
+            first_of_this_month = date(today.year, today.month, 1)
+            prev = first_of_this_month.replace(day=1) - timedelta(days=1)
+            selected_month = f"{prev.year}-{prev.month:02d}"
+        else:
+            # מה־10 בחודש - מתחילים אוטומטית תקציב חדש
+            selected_month = f"{today.year}-{today.month:02d}"
+
+    # POST - שמירת התקציב
     if request.method == "POST":
-        # קריאת תקציב מכל שורה בטופס
         rows = []
         for cat in CATEGORIES:
             field_name = f"budget_{cat}"
@@ -615,28 +795,53 @@ def budget():
         if ok:
             return redirect(url_for("budget", month=selected_month))
 
-    # GET - טוען תקציבים לחודש
+    # =========================
+    # GET - טעינת נתונים למסך
+    # =========================
+
+    # תקציב קיים לחודש הנבחר
     existing = fetch_budgets_for_month(selected_month)
     existing_map = {
         row.get("category"): float(row.get("amount") or 0)
         for row in existing
     }
 
+    # תקציב של החודש הקודם (עבור החודש שנבחר במסך)
+    prev_month = previous_month_of(selected_month)
+    prev_existing = fetch_budgets_for_month(prev_month)
+    prev_map = {
+        row.get("category"): float(row.get("amount") or 0)
+        for row in prev_existing
+    }
+
+    # בניית רשימת תקציבים למסך:
+    # - אם אין ערך לחודש הנבחר ויש ערך לחודש הקודם -> נשתמש בערך של החודש הקודם כברירת מחדל
     budgets_for_template = []
     for cat in CATEGORIES:
+        prev_amount = prev_map.get(cat, 0.0)
+        current_amount = existing_map.get(cat)
+
+        if current_amount is None:
+            # אין שורה קיימת לחודש הזה - נמלא אוטומטית מהחודש הקודם (אם קיים)
+            if prev_amount > 0:
+                current_amount = prev_amount
+            else:
+                current_amount = 0.0
+
         budgets_for_template.append(
             {
                 "category": cat,
-                "amount": existing_map.get(cat, 0.0),
+                "amount": current_amount,
+                "previous_amount": prev_amount,
             }
         )
 
     return render_template(
-    "budget.html",
-    month=selected_month,
-    budgets=budgets_for_template,
-    active_tab="budget",
-)
+        "budget.html",
+        month=selected_month,
+        budgets=budgets_for_template,
+    )
+
 
 
 if __name__ == "__main__":
