@@ -1421,3 +1421,22 @@ body {
   color: #ffffff !important;
   box-shadow: 0 3px 10px rgba(0,0,0,0.18);
 }
+
+/* תיקון שכבת טאבים שלא לוחיצה במובייל */
+.main-tabs {
+  position: relative;
+  z-index: 9999;
+  pointer-events: auto;
+}
+
+.main-tab {
+  pointer-events: auto !important;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ביטול חפיפה של header כדי שלא יכסה על הטאבים */
+.app-header {
+  position: relative;
+  z-index: 1;
+}
