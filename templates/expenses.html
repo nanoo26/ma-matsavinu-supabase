@@ -25,6 +25,13 @@
       <div class="stat-card-label">סה"כ הוצאות החודש</div>
     </div>
 
+    <!-- אזור עליון עם כפתור -->
+    <section class="top-bar">
+      <a href="{{ url_for('add_expense') }}" class="btn-primary" style="flex: 1;">
+        ➕ הוספת הוצאה חדשה
+      </a>
+    </section>
+
     <!-- סיכום מהיר -->
     {% if expenses and expenses|length > 0 %}
       <div class="summary-grid" style="margin-bottom: 24px;">
@@ -43,12 +50,6 @@
       </div>
     {% endif %}
 
-    <!-- אזור עליון עם כפתור -->
-    <section class="top-bar">
-      <a href="{{ url_for('add_expense') }}" class="btn-primary" style="flex: 1;">
-        ➕ הוספת הוצאה חדשה
-      </a>
-    </section>
 
     <!-- רשימת הוצאות -->
     <main class="content">
