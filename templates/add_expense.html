@@ -2,47 +2,106 @@
 <html lang="he" dir="rtl">
 <head>
   <meta charset="utf-8">
-  <title>הוספת הוצאה</title>
+  <title>מה מצבינו - הוצאות</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-
 <body>
-<div class="app-shell">
-  <header class="app-header">
-    <h1 class="app-title">הוספת הוצאה</h1>
-  </header>
+  <div class="app-shell">
 
-  <form class="form-box" method="post">
+    <header class="app-header">
+      <h1 class="app-title">מה מצבינו</h1>
+      <p class="app-subtitle">מעקב הוצאות משפחתי</p>
 
-    <label>תאריך:</label>
-    <input type="date" name="date" required>
+      <nav class="segmented-nav">
+        <a href="{{ url_for('budget') }}"
+           class="segmented-tab {% if active_tab == 'budget' %}is-active{% endif %}">
+          🏅 <span>תקציב</span>
+        </a>
+        <a href="{{ url_for('reports') }}"
+           class="segmented-tab {% if active_tab == 'reports' %}is-active{% endif %}">
+          📊 <span>דוחות</span>
+        </a>
+        <a href="{{ url_for('expenses') }}"
+           class="segmented-tab {% if active_tab == 'expenses' %}is-active{% endif %}">
+          🧾 <span>הוצאות</span>
+        </a>
+      </nav>
+    </header>
 
-    <label>קטגוריה:</label>
-    <select name="category" required>
-      {% for c in categories %}
-      <option value="{{ c }}">{{ c }}</option>
-      {% endfor %}
-    </select>
+    <main class="content">
+      {# מכאן כל רשימת ההוצאות כמו שיש לך #}
 
-    <label>סכום:</label>
-    <input type="number" step="0.01" name="amount" required>
 
-    <label>אמצעי תשלום:</label>
-    <select name="payment_method">
-      <option>מקס שלום</option>
-      <option>מקס חגית</option>
-      <option>כאל ויזה</option>
-      <option>לאומי שלום</option>
-      <option>עו"ש</option>
-    </select>
+    <main class="content">
+      {% if error_message %}
+        <div class="alert-error">
+          {{ error_message }}
+        </div>
+      {% endif %}
 
-    <label>הערות:</label>
-    <input type="text" name="description">
+      <form action="{{ url_for('add_expense') }}" method="post" class="form-card">
+        <div class="form-group">
+          <label for="date">תאריך</label>
+          <input
+            type="date"
+            id="date"
+            name="date"
+            value="{{ today }}"
+            required>
+        </div>
 
-    <button class="btn-main" type="submit">שמור</button>
-    <a class="btn-main" href="{{ url_for('index') }}">חזרה לרשימת ההוצאות</a>
-  </form>
-</div>
+        <div class="form-group">
+          <label for="category">קטגוריה</label>
+          <select id="category" name="category" required>
+            <option value="" disabled selected>בחר קטגוריה</option>
+            {% for c in categories %}
+              <option value="{{ c }}">{{ c }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="amount">סכום (₪)</label>
+          <input
+            type="number"
+            id="amount"
+            name="amount"
+            step="0.01"
+            min="0"
+            required>
+        </div>
+
+        <div class="form-group">
+          <label for="payment_method">אמצעי תשלום</label>
+          <select id="payment_method" name="payment_method" required>
+            <option value="" disabled selected>בחר אמצעי תשלום</option>
+            {% for p in payment_methods %}
+              <option value="{{ p }}">{{ p }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="notes">הערות</label>
+          <textarea
+            id="notes"
+            name="notes"
+            rows="2"
+            placeholder="הערות (לא חובה)"></textarea>
+        </div>
+
+        <button type="submit" class="btn-primary full-width">
+          שמירת הוצאה
+        </button>
+      </form>
+
+      <div class="bottom-links">
+        <a href="{{ url_for('expenses') }}" class="link-back">
+          ← חזרה לרשימת ההוצאות
+        </a>
+      </div>
+    </main>
+  </div>
 </body>
 </html>

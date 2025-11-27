@@ -2,60 +2,190 @@
 <html lang="he" dir="rtl">
 <head>
   <meta charset="utf-8">
-  <title>מה מצבינו - הוצאות</title>
+  <title>מה מצבינו - מעקב הוצאות</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-
 <body>
-<div class="app-shell">
+  <div class="app-shell">
+    <!-- כותרת עליונה -->
+    <header class="app-header">
+  <h1 class="app-title">מה מצבינו</h1>
+  <p class="app-subtitle">מעקב הוצאות משפחתי</p>
 
-  <header class="app-header">
-  <h1 class="app-title">מעקב הוצאות</h1>
-  <p class="app-subtitle">כל ההוצאות במקום אחד</p>
+      <!-- ניווט ראשי - שורה אחת לכל האפליקציה -->
+    <nav class="main-tabs">
+      <a href="{{ url_for('budget') }}"
+         class="main-tab {% if request.path.startswith('/budget') %}active{% endif %}">
+        🏅 תקציב
+      </a>
 
-  <div class="top-nav">
-    <a class="btn-main" href="{{ url_for('index') }}">הוצאות</a>
-    <a class="btn-main" href="{{ url_for('budget') }}">תקציב</a>
-    <!-- בהמשך נוסיף כאן גם "דוחות" -->
-  </div>
+      <a href="{{ url_for('reports') }}"
+         class="main-tab {% if request.path.startswith('/reports') %}active{% endif %}">
+        📊 דוחות
+      </a>
+
+      <a href="{{ url_for('expenses') }}"
+         class="main-tab {% if request.path.startswith('/expenses') or request.path == '/' %}active{% endif %}">
+        🧾 הוצאות
+      </a>
+    </nav>
+
 </header>
 
 
-  <div class="content">
+        <!-- כרטיס סטטיסטיקה ראשי -->
+    <div class="stat-card purple" style="margin-bottom: 24px;">
+      <div class="stat-card-icon">💸</div>
+      <div class="stat-card-value">{{ "%.0f"|format(total_amount) }} ₪</div>
+      <div class="stat-card-label">סה"כ הוצאות החודש</div>
+    </div>
 
-    <a class="btn-main" href="/add">הוספת הוצאה חדשה</a>
-    <a class="btn-secondary" href="/budget">ניהול תקציב חודשי</a>
-    <div style="display: flex; gap: 8px; margin-top: 10px;">
-  <a class="btn-main" href="{{ url_for('budget') }}">ניהול תקציב</a>
-  <a class="btn-main" href="{{ url_for('reports') }}">דוחות</a>
-</div>
+    <!-- סיכום מהיר -->
+    {% if expenses and expenses|length > 0 %}
+      <div class="summary-grid" style="margin-bottom: 24px;">
+        <div class="summary-item">
+          <span class="summary-label">מספר הוצאות</span>
+          <span class="summary-value">{{ expenses|length }}</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">ממוצע להוצאה</span>
+          <span class="summary-value">{{ "%.0f"|format(total_amount / expenses|length) }} ₪</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">הוצאה הכי גבוהה</span>
+          <span class="summary-value">{{ "%.0f"|format(expenses|map(attribute='amount')|max) }} ₪</span>
+        </div>
+      </div>
+    {% endif %}
 
-    
+    <!-- אזור עליון עם כפתור -->
+    <section class="top-bar">
+      <a href="{{ url_for('add_expense') }}" class="btn-primary" style="flex: 1;">
+        ➕ הוספת הוצאה חדשה
+      </a>
+    </section>
 
-    <ul class="expense-list">
-      {% for e in expenses %}
-      <li class="expense-item">
-        <div class="expense-row">
-          <span class="exp-note">{{ e["description"] }}</span>
-          <span class="exp-amount">{{ "%.2f"|format(e["amount"]) }} ש"ח</span>
+    <!-- רשימת הוצאות -->
+    <main class="content">
+      {% if expenses and expenses|length > 0 %}
+        
+        <!-- כותרת רשימה -->
+        <div class="card-header" style="margin-bottom: 16px;">
+          <h2 class="card-title">📋 רשימת הוצאות אחרונות</h2>
+          <p class="card-subtitle">{{ expenses|length }} הוצאות נרשמו</p>
         </div>
 
-        <div class="exp-meta">
-          
-          <span class="exp-date">{{ e["date"] }}</span>
-          
+        <div class="expenses-list">
+          {% for e in expenses %}
+            <article class="expense-card">
+              <!-- שורה עליונה עם תאריך וסכום -->
+              <div class="expense-main-row">
+                <div class="expense-date">
+                  <span style="font-size: 16px; margin-left: 6px;">📅</span>
+                  {{ e.date }}
+                </div>
+                <div class="expense-amount">{{ "%.0f"|format(e.amount) }} ₪</div>
+              </div>
+
+              <!-- תגיות קטגוריה ותשלום -->
+              <div class="expense-meta-row">
+                <span class="expense-chip">
+                  {% if e.category == 'מזון' %}🍕
+                  {% elif e.category == 'בריאות' %}💊
+                  {% elif e.category == 'חינוך' %}📚
+                  {% elif e.category == 'תחבורה' %}🚗
+                  {% elif e.category == 'בילויים' %}🎉
+                  {% elif e.category == 'ביגוד' %}👕
+                  {% elif e.category == 'ביליים' %}🎭
+                  {% elif e.category == 'דיור' %}🏠
+                  {% else %}💼
+                  {% endif %}
+                  {{ e.category }}
+                </span>
+                <span class="expense-chip secondary">
+                  {% if e.payment_method == 'מזומן' %}💵
+                  {% elif e.payment_method == 'אשראי' %}💳
+                  {% elif e.payment_method == 'העברה בנקאית' %}🏦
+                  {% elif e.payment_method == 'צ׳ק' %}📝
+                  {% else %}💰
+                  {% endif %}
+                  {{ e.payment_method }}
+                </span>
+              </div>
+
+              <!-- הערות -->
+              {% if e.notes %}
+                <div class="expense-notes">
+                  💬 {{ e.notes }}
+                </div>
+              {% endif %}
+
+              <!-- מד התקדמות (אופציונלי - אם יש תקציב) -->
+              {% if e.category and e.amount %}
+                <div class="progress-indicator" style="margin-top: 12px;">
+                  <div class="progress-bar-bg">
+                    <div class="progress-bar-fill success" style="width: {{ [((e.amount / 5000) * 100)|int, 100]|min }}%;"></div>
+                  </div>
+                </div>
+              {% endif %}
+
+              <!-- פעולות -->
+              <div class="expense-actions">
+                <a href="{{ url_for('edit_expense_view', expense_id=e.id) }}" class="btn-ghost">
+                  ✏️ עריכה
+                </a>
+
+                <form action="{{ url_for('delete_expense_view', expense_id=e.id) }}"
+                      method="post"
+                      class="inline-form"
+                      onsubmit="return confirm('❌ למחוק את ההוצאה הזו?');">
+                  <button type="submit" class="btn-danger">
+                    🗑️ מחיקה
+                  </button>
+                </form>
+              </div>
+            </article>
+          {% endfor %}
         </div>
 
-        <div class="exp-actions">
-          <a href="/edit/{{ e['id'] }}" class="btn-small edit-btn">ערוך</a>
-          <a href="/delete/{{ e['id'] }}" class="btn-small delete-btn">מחק</a>
+        <!-- סיכום תחתון -->
+        <div class="card" style="margin-top: 24px; background: linear-gradient(135deg, rgba(139,92,246,0.05), rgba(124,58,237,0.05)); border: 2px solid var(--primary-purple);">
+          <div class="card-body" style="padding: 20px; text-align: center;">
+            <div style="font-size: 24px; margin-bottom: 8px;">📊</div>
+            <div style="font-size: 18px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">
+              ניהול חכם של ההוצאות
+            </div>
+            <div style="font-size: 14px; color: var(--text-secondary);">
+              עקוב אחר ההוצאות שלך באופן קבוע כדי לשמור על איזון פינסי
+            </div>
+            <div style="margin-top: 16px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+              <a href="{{ url_for('reports') }}" class="data-pill" style="text-decoration: none;">
+                📊 צפה בדוחות
+              </a>
+              <a href="{{ url_for('budget') }}" class="data-pill success" style="text-decoration: none;">
+                💰 נהל תקציב
+              </a>
+            </div>
+          </div>
         </div>
-      </li>
-      {% endfor %}
-    </ul>
 
+      {% else %}
+        <!-- מצב ריק משופר -->
+        <div class="card" style="text-align: center; padding: 60px 20px; background: linear-gradient(135deg, rgba(37,99,235,0.05), rgba(139,92,246,0.05));">
+          <div style="font-size: 64px; margin-bottom: 20px; opacity: 0.5;">💸</div>
+          <h3 style="font-size: 24px; font-weight: 700; color: var(--text-primary); margin-bottom: 12px;">
+            אין עדיין הוצאות
+          </h3>
+          <p class="empty-state" style="padding: 0; margin-bottom: 24px;">
+            לחץ על "הוספת הוצאה חדשה" כדי להתחיל לעקוב אחר ההוצאות שלך
+          </p>
+          <a href="{{ url_for('add_expense') }}" class="btn-primary">
+            ➕ הוספת הוצאה ראשונה
+          </a>
+        </div>
+      {% endif %}
+    </main>
   </div>
-</div>
 </body>
 </html>
