@@ -471,8 +471,10 @@ def root():
 
 @app.route("/expenses")
 def expenses():
+    # מביא את כל ההוצאות מה-Supabase
     expenses_raw = fetch_expenses()
 
+    # מיון מהחדש לישן לפי תאריך DD/MM/YYYY
     def to_dt(e):
         try:
             return datetime.strptime(e.get("date", ""), "%d/%m/%Y")
@@ -481,21 +483,52 @@ def expenses():
 
     expenses_sorted = sorted(expenses_raw, key=to_dt, reverse=True)
 
-    total_amount = sum(
-        parse_amount(e.get("amount", 0)) for e in expenses_sorted
-    )
+    # סכום כולל של כל ההוצאות
+    amounts = [parse_amount(e.get("amount", 0)) for e in expenses_sorted]
+    total_amount = sum(amounts)
+    max_expense_amount = max(amounts) if amounts else 0
 
+    # כרטיס סיכום עליון (אם תרצה להשתמש בו בהמשך)
     main_summary = {
         "month_key": current_month_key(),
         "spent_total": total_amount,
         "used_percent": 0,
     }
 
+    # סיכום לפי קטגוריות לגרף העליון
+    category_map: dict[str, float] = {}
+    for e in expenses_sorted:
+        cat = e.get("category") or "לא מסווג"
+        amt = parse_amount(e.get("amount", 0))
+        category_map[cat] = category_map.get(cat, 0.0) + amt
+
+    top_categories = []
+    if total_amount > 0:
+        # מיון לפי סכום מהגבוה לנמוך
+        sorted_items = sorted(
+            category_map.items(),
+            key=lambda x: x[1],
+            reverse=True,
+        )
+        # לוקחים רק שלוש קטגוריות ראשונות
+        for idx, (cat, amt) in enumerate(sorted_items, start=1):
+            if idx > 3:
+                break
+            top_categories.append(
+                {
+                    "category": cat,
+                    "amount": amt,
+                    "percent": (amt / total_amount) * 100,
+                }
+            )
+
     return render_template(
         "expenses.html",
         expenses=expenses_sorted,
         main_summary=main_summary,
         total_amount=total_amount,
+        max_expense_amount=max_expense_amount,
+        top_categories=top_categories,
         active_tab="expenses",
     )
 

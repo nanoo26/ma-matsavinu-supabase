@@ -48,7 +48,7 @@ body {
 }
 
 .app-shell {
-  max-width: 1200px;
+  max-width: 480px;
   margin: 0 auto;
   padding: 20px;
 }
@@ -390,7 +390,7 @@ body {
 .form-box, .form-card {
   background: var(--bg-card);
   border-radius: 16px;
-  padding: 24px;
+  padding: 18px;
   box-shadow: var(--shadow-md);
   margin-bottom: 20px;
 }
@@ -793,7 +793,7 @@ body {
 .stat-card {
   background: linear-gradient(135deg, var(--primary-blue), var(--primary-purple));
   color: #ffffff;
-  padding: 24px;
+  padding: 18px;
   border-radius: 16px;
   box-shadow: var(--shadow-lg);
   position: relative;
@@ -889,9 +889,9 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 14px 0;
+  padding: 10px 0;
   border-bottom: 1px solid var(--bg-light);
-  gap: 16px;
+  gap: 10px;
   flex-wrap: wrap;
 }
 
@@ -900,7 +900,7 @@ body {
 }
 
 .budget-row label {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--text-primary);
   flex: 1;
@@ -923,10 +923,10 @@ body {
 
 .budget-input-wrap input {
   flex: 1;
-  padding: 10px 14px;
+  padding: 6px 8px;
   border: 2px solid #e2e8f0;
   border-radius: 10px;
-  font-size: 15px;
+  font-size: 14px;
   font-family: 'Heebo', sans-serif;
   transition: all 200ms ease;
 }
@@ -1024,7 +1024,7 @@ body {
 }
 
 /* רספונסיבי */
-@media (max-width: 768px) {
+@media (max-width: 480px) {
   .app-shell {
     padding: 12px;
   }
@@ -1504,5 +1504,73 @@ header * {
   
   .chart-label {
     min-width: auto;
+  }
+}
+
+/* =========================
+   התאמות מסך צר עד 480px
+   ========================= */
+@media (max-width: 480px) {
+  .app-shell {
+    max-width: 480px;
+    padding: 8px;
+  }
+
+  .app-header {
+    padding: 14px 12px;
+    border-radius: 16px;
+  }
+
+  /* כרטיס סטטיסטיקה ראשי */
+  .main-stat-card {
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+
+  .stat-layout-grid {
+    display: block !important;
+  }
+
+  .stat-layout-grid-left {
+    margin-bottom: 16px;
+  }
+
+  .stat-card-icon {
+    font-size: 40px;
+    margin-bottom: 8px;
+  }
+
+  .stat-card-value {
+    font-size: 24px;
+    margin-bottom: 4px;
+  }
+
+  .stat-card-label {
+    font-size: 13px;
+  }
+
+  /* הצפפת רשימת הקטגוריות בכרטיס העליון */
+  .main-stat-card .chart-row {
+    margin-bottom: 8px;
+  }
+
+  /* כרטיסי הוצאות */
+  .expense-card {
+    padding: 12px;
+    margin-bottom: 10px;
+  }
+
+  .expense-amount {
+    font-size: 18px;
+  }
+
+  .summary-grid {
+    gap: 10px;
+    margin-top: 12px;
+    margin-bottom: 16px;
+  }
+
+  .summary-item {
+    padding: 12px;
   }
 }
