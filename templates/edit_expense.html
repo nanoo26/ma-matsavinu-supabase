@@ -19,10 +19,17 @@
 
     <main class="content">
 
-      <section class="form-box" style="background:#ffffff; margin:16px; border-radius:12px; box-shadow:0 1px 6px rgba(0,0,0,0.08);">
-        <form method="post">
+      {% if error_message %}
+        <div class="alert-error">
+          {{ error_message }}
+        </div>
+      {% endif %}
 
-          <!-- תאריך -->
+      <!-- טופס עריכת הוצאה - אותו סגנון כמו add_expense -->
+      <form method="post" class="form-card">
+
+        <!-- תאריך -->
+        <div class="form-group">
           <label for="date">תאריך</label>
           <input
             type="date"
@@ -31,8 +38,10 @@
             required
             value="{{ expense.date_for_input }}"
           >
+        </div>
 
-          <!-- קטגוריה -->
+        <!-- קטגוריה -->
+        <div class="form-group">
           <label for="category">קטגוריה</label>
           <select id="category" name="category" required>
             <option value="">בחר קטגוריה</option>
@@ -42,9 +51,11 @@
               </option>
             {% endfor %}
           </select>
+        </div>
 
-          <!-- סכום -->
-          <label for="amount">סכום</label>
+        <!-- סכום -->
+        <div class="form-group">
+          <label for="amount">סכום (₪)</label>
           <input
             type="number"
             id="amount"
@@ -54,8 +65,10 @@
             required
             value="{{ expense.amount }}"
           >
+        </div>
 
-          <!-- אמצעי תשלום -->
+        <!-- אמצעי תשלום -->
+        <div class="form-group">
           <label for="payment_method">אמצעי תשלום</label>
           <select id="payment_method" name="payment_method" required>
             <option value="">בחר אמצעי תשלום</option>
@@ -65,8 +78,10 @@
               </option>
             {% endfor %}
           </select>
+        </div>
 
-          <!-- סוג הוצאה -->
+        <!-- סוג הוצאה -->
+        <div class="form-group">
           <label for="expense_type">סוג הוצאה</label>
           <select id="expense_type" name="expense_type">
             <option value="">בחר סוג הוצאה</option>
@@ -80,40 +95,45 @@
               רכישה בתשלומים
             </option>
           </select>
+        </div>
 
-          <!-- הוצאה קבועה (V) -->
-          <label style="display:flex; align-items:center; gap:8px; margin-top:12px; font-size:14px;">
+        <!-- הוצאה קבועה (V) -->
+        <div class="form-group checkbox-group">
+          <label for="is_fixed">
             <input
               type="checkbox"
+              id="is_fixed"
               name="is_fixed"
               value="1"
-              style="width:auto; margin-top:0;"
               {% if expense.is_fixed %}checked{% endif %}
             >
-            <span>הוצאה קבועה (תשלום חוזר / הוראת קבע)</span>
+            הוצאה קבועה (תשלום חוזר / הוראת קבע)
           </label>
+        </div>
 
-          <!-- הערות -->
+        <!-- הערות -->
+        <div class="form-group">
           <label for="note">הערות</label>
           <textarea
             id="note"
             name="note"
             rows="2"
-            style="width:100%; padding:8px; margin-top:4px; border-radius:8px; border:1px solid #cbd5e1; font-size:15px;"
+            placeholder="הערות (לא חובה)"
           >{{ expense.note or "" }}</textarea>
+        </div>
 
-          <!-- כפתורים -->
-          <div style="display:flex; gap:8px; margin-top:20px;">
-            <button type="submit" class="btn-small" style="flex:1; border:none; cursor:pointer;">
-              💾 שמירת שינוי
-            </button>
-            <a href="{{ url_for('expenses') }}" class="btn-small" style="flex:1; text-align:center;">
-              ביטול
-            </a>
-          </div>
+        <!-- כפתורים -->
+        <div class="form-actions">
+          <button type="submit" class="btn-primary full-width">
+            💾 שמירת שינוי
+          </button>
 
-        </form>
-      </section>
+          <a href="{{ url_for('expenses') }}" class="link-back" style="margin-top:8px; display:block; text-align:center;">
+            ביטול וחזרה לרשימת ההוצאות
+          </a>
+        </div>
+
+      </form>
     </main>
   </div>
 </body>
