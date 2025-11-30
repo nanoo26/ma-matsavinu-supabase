@@ -12,23 +12,9 @@
     <!-- כותרת עליונה -->
     <header class="app-header">
       <h1 class="app-title">מה מצבינו</h1>
-      <p class="app-subtitle">מעקב הוצאות משפחתי</p>
+      <p class="app-subtitle">הוספת הוצאה</p>
 
-      <!-- ניווט ראשי - שורה אחת לכל האפליקציה -->
-      <nav class="segmented-nav">
-        <a href="{{ url_for('budget') }}"
-           class="segmented-tab {% if active_tab == 'budget' %}is-active{% endif %}">
-          🏅 <span>תקציב</span>
-        </a>
-        <a href="{{ url_for('reports') }}"
-           class="segmented-tab {% if active_tab == 'reports' %}is-active{% endif %}">
-          📊 <span>דוחות</span>
-        </a>
-        <a href="{{ url_for('expenses') }}"
-           class="segmented-tab {% if active_tab == 'expenses' %}is-active{% endif %}">
-          🧾 <span>הוצאות</span>
-        </a>
-      </nav>
+      {% include "tabs.html" %}
     </header>
 
     <main class="content">
@@ -45,12 +31,13 @@
         <div class="form-group">
           <label for="expense_type">סוג הוצאה</label>
           <select name="expense_type" id="expense_type">
-            <option value="single">חד פעמית</option>
-            <option value="standing">הוראת קבע חודשית</option>
-            <option value="installments">רכישה בתשלומים</option>
+            <option value="חד פעמית">חד פעמית</option>
+            <option value="הוראת קבע חודשית">הוראת קבע חודשית</option>
+            <option value="רכישה בתשלומים">רכישה בתשלומים</option>
           </select>
         </div>
 
+        <!-- תאריך -->
         <div class="form-group">
           <label for="date">תאריך</label>
           <input
@@ -61,6 +48,7 @@
             required>
         </div>
 
+        <!-- קטגוריה -->
         <div class="form-group">
           <label for="category">קטגוריה</label>
           <select id="category" name="category" required>
@@ -71,6 +59,7 @@
           </select>
         </div>
 
+        <!-- סכום -->
         <div class="form-group">
           <label for="amount">סכום (₪)</label>
           <input
@@ -82,6 +71,7 @@
             required>
         </div>
 
+        <!-- אמצעי תשלום -->
         <div class="form-group">
           <label for="payment_method">אמצעי תשלום</label>
           <select id="payment_method" name="payment_method" required>
@@ -92,15 +82,25 @@
           </select>
         </div>
 
+        <!-- הערות -->
         <div class="form-group">
-          <label for="notes">הערות</label>
+          <label for="note">הערות</label>
           <textarea
-            id="notes"
-            name="notes"
+            id="note"
+            name="note"
             rows="2"
             placeholder="הערות (לא חובה)"></textarea>
         </div>
 
+        <!-- הוצאה קבועה -->
+        <div class="form-group checkbox-group">
+          <label for="is_fixed">
+            <input type="checkbox" id="is_fixed" name="is_fixed" value="1">
+            הוצאה קבועה (תשלום חוזר / הוראת קבע)
+          </label>
+        </div>
+
+        <!-- כפתור שמירה -->
         <button type="submit" class="btn-primary full-width">
           שמירת הוצאה
         </button>

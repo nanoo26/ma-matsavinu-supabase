@@ -215,42 +215,44 @@
     </section>
 
     <!-- רשימת הוצאות מפורטת -->
-    <section class="card">
-      <div class="card-header">
-        <h2 class="card-title">🗂️ כל ההוצאות בחודש</h2>
-      </div>
-      <div class="card-body">
-        <div class="table-wrapper">
-          <table class="simple-table">
-            <thead>
-              <tr>
-                <th>תאריך</th>
-                <th>קטגוריה</th>
-                <th>אמצעי תשלום</th>
-                <th>הערות</th>
-                <th>סכום</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for e in expenses %}
-                <tr>
-                  <td>{{ e.date }}</td>
-                  <td>{{ e.category }}</td>
-                  <td>{{ e.payment_method }}</td>
-                  <td>{{ e.note }}</td>
-                  <td>{{ "%.0f"|format(e.amount) }} ₪</td>
-                </tr>
-              {% endfor %}
-              {% if expenses|length == 0 %}
-                <tr>
-                  <td colspan="5" style="text-align:center;">אין הוצאות לחודש שנבחר.</td>
-                </tr>
-              {% endif %}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
+<section class="card">
+  <div class="card-header">
+    <h2 class="card-title">🗂️ כל ההוצאות בחודש {{ selected_month }}</h2>
+  </div>
+  <div class="card-body">
+    <div class="table-wrapper">
+      {% if expenses and expenses|length > 0 %}
+      <table class="simple-table">
+        <thead>
+          <tr>
+            <th>תאריך</th>
+            <th>קטגוריה</th>
+            <th>אמצעי תשלום</th>
+            <th>הערות</th>
+            <th>סכום</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for e in expenses %}
+            <tr>
+              <td>{{ e.date }}</td>
+              <td>{{ e.category or "ללא קטגוריה" }}</td>
+              <td>{{ e.payment_method or "לא צוין" }}</td>
+              <td>{{ e.notes or "" }}</td>
+              <td>{{ "%.0f"|format(e.amount) }} ₪</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+        <p style="text-align:center; color: var(--text-secondary);">
+          אין הוצאות לחודש שנבחר.
+        </p>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
 
   </main>
 </div>

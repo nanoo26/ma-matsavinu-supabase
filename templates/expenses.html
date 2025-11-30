@@ -14,32 +14,58 @@
       <h1 class="app-title">מה מצבינו</h1>
       <p class="app-subtitle">מעקב הוצאות משפחתי</p>
 
-      {# ניווט עליון משותף #}
       {% include "tabs.html" %}
     </header>
 
     <main class="content">
 
-      {# אם יש הוצאות - מציגים כרטיס סטטיסטיקה ורשימה #}
       {% if expenses and expenses|length > 0 %}
 
-        <!-- כרטיס סטטיסטיקה ראשי + 3 הקטגוריות המובילות -->
+        <!-- ========================= -->
+        <!-- גרף סוללה + 3 קטגוריות מובילות -->
+        <!-- ========================= -->
+
+        {% set month_total = expenses|sum(attribute='amount') %}
+
         <section class="stat-card purple main-stat-card" style="margin-bottom: 24px; padding: 24px;">
           <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px; align-items: center;">
 
-            <!-- צד שמאל - סכום כולל -->
+            <!-- צד ימין - גרף סוללה -->
             <div style="text-align: center;">
-              <div class="stat-card-icon" style="font-size: 56px; margin-bottom: 12px;">💸</div>
-              <div class="stat-card-value" style="font-size: 36px; margin-bottom: 8px;">
-                {{ "%.0f"|format(total_amount) }} ₪
+
+              <!-- כותרת הכרטיס - סך כל ההוצאות לחודש -->
+              <div style="font-size: 22px; font-weight: 700; color: #fff; margin-bottom: 12px;">
+                💡 סך כל ההוצאות לחודש: {{ "%.0f"|format(month_total) }} ₪
               </div>
-              <div class="stat-card-label" style="font-size: 14px;">
-                סה"כ הוצאות
+
+              <div style="font-size: 15px; color: rgba(255,255,255,0.85); margin-bottom: 8px;">
+                הוצאות חד פעמיות: {{ "%.0f"|format(spent_single) }} ₪ מתוך {{ "%.0f"|format(total_budget) }} ₪
+              </div>
+
+              <!-- סוללה -->
+              <div style="width: 100%; max-width: 200px; height: 28px; border: 2px solid #fff; border-radius: 8px; margin: 0 auto; overflow: hidden; background: rgba(255,255,255,0.1); position: relative;">
+                <div style="
+                  width: {{ battery_percent }}%;
+                  height: 100%;
+                  {% if battery_percent >= 85 %}
+                    background: linear-gradient(90deg, #ef4444, #f97373);
+                  {% elif battery_percent >= 70 %}
+                    background: linear-gradient(90deg, #f59e0b, #fbbf24);
+                  {% else %}
+                    background: linear-gradient(90deg, #22c55e, #4ade80);
+                  {% endif %}
+                  transition: width 1s ease-in-out;
+                "></div>
+
+                <!-- כיתוב אחוז -->
+                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff;">
+                  {{ "%.0f"|format(battery_percent) }}%
+                </div>
               </div>
             </div>
 
-            <!-- צד ימין - 3 קטגוריות מובילות -->
-            <div style="position: relative; z-index: 1;">
+            <!-- צד שמאל - קטגוריות מובילות -->
+            <div>
               <h3 style="color: #ffffff; font-size: 16px; font-weight: 700; margin-bottom: 16px; text-align: right;">
                 📊 3 הקטגוריות המובילות
               </h3>
@@ -96,11 +122,78 @@
                 </p>
               {% endif %}
             </div>
-
           </div>
         </section>
 
-        <!-- סיכום מהיר -->
+        <!-- רשימת הוצאות - כרטיסים מעוצבים לפי סקיצה -->
+        <section>
+          <ul class="expenses-list">
+            {% for e in expenses %}
+              <li class="expense-item">
+                <div class="expense-card-outer">
+                  <div class="expense-card-inner">
+
+                    <!-- שורה עליונה - סכום + תאריך -->
+                    <div class="expense-card-header">
+                      <div class="expense-amount-main">
+                        <span class="currency-icon">₪</span>
+                        <span class="amount-value">
+                          {{ "%.0f"|format(e.amount or 0) }}
+                        </span>
+                      </div>
+                      <div class="expense-date-main">
+                        {{ e.date }}
+                      </div>
+                    </div>
+
+                    <!-- שורה שנייה - תגיות + כפתורים -->
+                    <div class="expense-middle-row">
+
+                      <!-- תגיות קטגוריה / אמצעי תשלום -->
+                      <div class="expense-tags">
+                        <span class="expense-tag tag-primary">
+                          {{ e.category or "ללא קטגוריה" }}
+                        </span>
+                        {% if e.payment_method %}
+                          <span class="expense-tag tag-secondary">
+                            {{ e.payment_method }}
+                          </span>
+                        {% endif %}
+                      </div>
+
+                      <!-- כפתורי עריכה/מחיקה -->
+                      <div class="expense-actions-new">
+                        <form action="{{ url_for('delete_expense', expense_id=e.id) }}"
+                              method="post"
+                              onsubmit="return confirm('למחוק את ההוצאה הזו?');">
+                          <button type="submit" class="btn-expense-delete">
+                            מחיקה 🗑️
+                          </button>
+                        </form>
+
+                        <a href="{{ url_for('edit_expense', expense_id=e.id) }}"
+                           class="btn-expense-edit">
+                          עריכה ✏️
+                        </a>
+                      </div>
+                    </div>
+
+                    <!-- שורה תחתונה - הערה -->
+                     {% if e.notes %}
+                     <div class="expense-notes note-ltr">
+                       {{ e.notes }}
+                      </div>
+                    {% endif %}
+
+                  
+                  </div>
+                </div>
+              </li>
+            {% endfor %}
+          </ul>
+        </section>
+
+        <!-- סיכומים -->
         <section class="summary-grid" style="margin-bottom: 24px;">
           <div class="summary-item">
             <span class="summary-label">מספר הוצאות</span>
@@ -108,90 +201,16 @@
           </div>
           <div class="summary-item">
             <span class="summary-label">ממוצע להוצאה</span>
-            <span class="summary-value">
-              {{ "%.0f"|format(total_amount / expenses|length) }} ₪
-            </span>
+            <span class="summary-value">{{ "%.0f"|format(total_amount / expenses|length) }} ₪</span>
           </div>
           <div class="summary-item">
             <span class="summary-label">הוצאה הכי גבוהה</span>
-            <span class="summary-value">
-              {{ "%.0f"|format(max_expense_amount) }} ₪
-            </span>
-          </div>
-        </section>
-
-        <!-- רשימת הוצאות ככרטיסים -->
-        <section>
-          {% for e in expenses %}
-            <article class="expense-card">
-              <!-- שורה עליונה: תאריך + סכום -->
-              <div class="expense-main-row">
-                <div class="expense-date">{{ e.date }}</div>
-                <div class="expense-amount">
-                  {{ "%.0f"|format(e.amount) }} ₪
-                </div>
-              </div>
-
-              <!-- קטגוריה + אמצעי תשלום -->
-              <div class="expense-meta-row">
-                <span class="expense-chip">
-                  {{ e.category or "ללא קטגוריה" }}
-                </span>
-                <span class="expense-chip secondary">
-                  {{ e.payment_method }}
-                </span>
-              </div>
-
-              <!-- הערות -->
-              {% if e.notes %}
-                <div class="expense-notes">
-                  💬 {{ e.notes }}
-                </div>
-              {% endif %}
-
-              <!-- פעולות -->
-              <div class="expense-actions">
-                <a href="{{ url_for('edit_expense_view', expense_id=e.id) }}" class="btn-ghost">
-                  ✏️ עריכה
-                </a>
-
-                <form action="{{ url_for('delete_expense_view', expense_id=e.id) }}"
-                      method="post"
-                      class="inline-form"
-                      onsubmit="return confirm('❌ למחוק את ההוצאה הזו?');">
-                  <button type="submit" class="btn-danger">
-                    🗑️ מחיקה
-                  </button>
-                </form>
-              </div>
-            </article>
-          {% endfor %}
-        </section>
-
-        <!-- סיכום תחתון עם קישורים לדוחות ותקציב -->
-        <section class="card" style="margin-top: 24px; background: linear-gradient(135deg, rgba(139,92,246,0.05), rgba(124,58,237,0.05)); border: 2px solid var(--primary-purple);">
-          <div class="card-body" style="padding: 20px; text-align: center;">
-            <div style="font-size: 24px; margin-bottom: 8px;">📊</div>
-            <div style="font-size: 18px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">
-              ניהול חכם של ההוצאות
-            </div>
-            <div style="font-size: 14px; color: var(--text-secondary);">
-              עקוב אחר ההוצאות שלך באופן קבוע כדי לשמור על איזון פיננסי
-            </div>
-            <div style="margin-top: 16px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
-              <a href="{{ url_for('reports') }}" class="data-pill" style="text-decoration: none;">
-                📊 צפה בדוחות
-              </a>
-              <a href="{{ url_for('budget') }}" class="data-pill success" style="text-decoration: none;">
-                💰 נהל תקציב
-              </a>
-            </div>
+            <span class="summary-value">{{ "%.0f"|format(max_expense_amount) }} ₪</span>
           </div>
         </section>
 
       {% else %}
-
-        <!-- מצב ריק - אין הוצאות בכלל -->
+        <!-- מצב ריק -->
         <section class="card" style="text-align: center; padding: 60px 20px; background: linear-gradient(135deg, rgba(37,99,235,0.05), rgba(139,92,246,0.05)); margin-top: 16px;">
           <div style="font-size: 64px; margin-bottom: 20px; opacity: 0.5;">💸</div>
           <h3 style="font-size: 24px; font-weight: 700; color: var(--text-primary); margin-bottom: 12px;">
@@ -200,14 +219,16 @@
           <p class="empty-state" style="padding: 0; margin-bottom: 24px;">
             לחץ על "הוספת הוצאה חדשה" כדי להתחיל לעקוב אחר ההוצאות שלך
           </p>
-          <a href="{{ url_for('add_expense') }}" class="btn-primary">
-            ➕ הוספת הוצאה ראשונה
-          </a>
+          <a href="{{ url_for('add_expense') }}" class="btn-primary">➕ הוספת הוצאה חדשה</a>
         </section>
-
       {% endif %}
-
     </main>
+
+    <!-- כפתור צף -->
+    <a href="{{ url_for('add_expense') }}" class="fab-add" title="">
+      <span class="material-icons-round">➕</span>
+      <span class="fab-tooltip">הוספת הוצאה</span>
+    </a>
   </div>
 </body>
 </html>

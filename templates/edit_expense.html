@@ -2,90 +2,118 @@
 <html lang="he" dir="rtl">
 <head>
   <meta charset="utf-8">
-  <title>עריכת הוצאה - מה מצבינו</title>
+  <title>מה מצבינו - עריכת הוצאה</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
   <div class="app-shell">
+
+    <!-- כותרת עליונה -->
     <header class="app-header">
-      <h1 class="app-title">עריכת הוצאה</h1>
-      <p class="app-subtitle">עדכון נתוני ההוצאה</p>
+      <h1 class="app-title">מה מצבינו</h1>
+      <p class="app-subtitle">עריכת הוצאה</p>
+
+      {% include "tabs.html" %}
     </header>
 
     <main class="content">
-      {% if error_message %}
-        <div class="alert-error">
-          {{ error_message }}
-        </div>
-      {% endif %}
 
-      <form action="{{ url_for('edit_expense_view', expense_id=expense.id) }}"
-            method="post"
-            class="form-card">
-        <div class="form-group">
+      <section class="form-box" style="background:#ffffff; margin:16px; border-radius:12px; box-shadow:0 1px 6px rgba(0,0,0,0.08);">
+        <form method="post">
+
+          <!-- תאריך -->
           <label for="date">תאריך</label>
           <input
             type="date"
             id="date"
             name="date"
+            required
             value="{{ expense.date_for_input }}"
-            required>
-        </div>
+          >
 
-        <div class="form-group">
+          <!-- קטגוריה -->
           <label for="category">קטגוריה</label>
           <select id="category" name="category" required>
-            {% for c in categories %}
-              <option value="{{ c }}" {% if c == expense.category %}selected{% endif %}>
-                {{ c }}
+            <option value="">בחר קטגוריה</option>
+            {% for cat in categories %}
+              <option value="{{ cat }}" {% if expense.category == cat %}selected{% endif %}>
+                {{ cat }}
               </option>
             {% endfor %}
           </select>
-        </div>
 
-        <div class="form-group">
-          <label for="amount">סכום (₪)</label>
+          <!-- סכום -->
+          <label for="amount">סכום</label>
           <input
             type="number"
             id="amount"
             name="amount"
             step="0.01"
             min="0"
-            value="{{ "%.2f"|format(expense.amount) }}"
-            required>
-        </div>
+            required
+            value="{{ expense.amount }}"
+          >
 
-        <div class="form-group">
+          <!-- אמצעי תשלום -->
           <label for="payment_method">אמצעי תשלום</label>
           <select id="payment_method" name="payment_method" required>
-            {% for p in payment_methods %}
-              <option value="{{ p }}" {% if p == expense.payment_method %}selected{% endif %}>
-                {{ p }}
+            <option value="">בחר אמצעי תשלום</option>
+            {% for pm in payment_methods %}
+              <option value="{{ pm }}" {% if expense.payment_method == pm %}selected{% endif %}>
+                {{ pm }}
               </option>
             {% endfor %}
           </select>
-        </div>
 
-        <div class="form-group">
-          <label for="notes">הערות</label>
+          <!-- סוג הוצאה -->
+          <label for="expense_type">סוג הוצאה</label>
+          <select id="expense_type" name="expense_type">
+            <option value="">בחר סוג הוצאה</option>
+            <option value="חד פעמית" {% if expense.expense_type == "חד פעמית" %}selected{% endif %}>
+              חד פעמית
+            </option>
+            <option value="הוראת קבע חודשית" {% if expense.expense_type == "הוראת קבע חודשית" %}selected{% endif %}>
+              הוראת קבע חודשית
+            </option>
+            <option value="רכישה בתשלומים" {% if expense.expense_type == "רכישה בתשלומים" %}selected{% endif %}>
+              רכישה בתשלומים
+            </option>
+          </select>
+
+          <!-- הוצאה קבועה (V) -->
+          <label style="display:flex; align-items:center; gap:8px; margin-top:12px; font-size:14px;">
+            <input
+              type="checkbox"
+              name="is_fixed"
+              value="1"
+              style="width:auto; margin-top:0;"
+              {% if expense.is_fixed %}checked{% endif %}
+            >
+            <span>הוצאה קבועה (תשלום חוזר / הוראת קבע)</span>
+          </label>
+
+          <!-- הערות -->
+          <label for="note">הערות</label>
           <textarea
-            id="notes"
-            name="notes"
+            id="note"
+            name="note"
             rows="2"
-          >{{ expense.notes }}</textarea>
-        </div>
+            style="width:100%; padding:8px; margin-top:4px; border-radius:8px; border:1px solid #cbd5e1; font-size:15px;"
+          >{{ expense.note or "" }}</textarea>
 
-        <button type="submit" class="btn-primary full-width">
-          שמירת שינויים
-        </button>
-      </form>
+          <!-- כפתורים -->
+          <div style="display:flex; gap:8px; margin-top:20px;">
+            <button type="submit" class="btn-small" style="flex:1; border:none; cursor:pointer;">
+              💾 שמירת שינוי
+            </button>
+            <a href="{{ url_for('expenses') }}" class="btn-small" style="flex:1; text-align:center;">
+              ביטול
+            </a>
+          </div>
 
-      <div class="bottom-links">
-        <a href="{{ url_for('expenses') }}" class="link-back">
-          ← חזרה לרשימת ההוצאות
-        </a>
-      </div>
+        </form>
+      </section>
     </main>
   </div>
 </body>
