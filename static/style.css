@@ -1897,3 +1897,814 @@ header * {
   text-align: right;
   unicode-bidi: plaintext;
 }
+
+.installments-panel {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.12);
+  position: relative;
+}
+
+.installments-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.installments-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.installments-chip {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #e0f2fe;
+  color: #0369a1;
+  font-weight: 600;
+}
+
+.installments-hint {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 6px;
+}
+
+.multi-actions-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  margin: 8px 16px 4px;
+  background: #e5e7eb;
+  border-radius: 10px;
+  font-size: 13px;
+}
+
+.select-all-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-danger-small {
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: none;
+  font-size: 13px;
+  background: #dc2626;
+  color: #fff;
+  cursor: pointer;
+}
+
+.btn-danger-small:active {
+  transform: scale(0.97);
+}
+
+.expense-select-col {
+  display: flex;
+  align-items: flex-start;
+  padding-top: 4px;
+  margin-inline-start: 4px;
+}
+
+.expense-checkbox {
+  width: 18px;
+  height: 18px;
+}
+
+/* ===== טבלת קטגוריות בדוחות ===== */
+
+.category-table .cat-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.category-table .cat-name {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.cat-percent-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #e5e7eb;
+  color: #4b5563;
+}
+
+.cat-percent-chip.ok {
+  background: rgba(16,185,129,0.12);
+  color: #15803d;
+}
+
+.cat-percent-chip.warn {
+  background: rgba(245,158,11,0.12);
+  color: #b45309;
+}
+
+.cat-percent-chip.over {
+  background: rgba(239,68,68,0.12);
+  color: #b91c1c;
+}
+
+.amount-positive {
+  color: #16a34a;
+  font-weight: 700;
+}
+
+.amount-negative {
+  color: #dc2626;
+  font-weight: 700;
+}
+
+.category-table td:last-child {
+  min-width: 120px;
+}
+
+@media (max-width: 480px) {
+  .category-table th:nth-child(2),
+  .category-table th:nth-child(3),
+  .category-table th:nth-child(4),
+  .category-table td:nth-child(2),
+  .category-table td:nth-child(3),
+  .category-table td:nth-child(4) {
+    font-size: 11px;
+  }
+}
+
+.installment-label {
+  font-size: 11px;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+/* =========================
+   טבלת הוצאות חודש - קבלה של סופר
+   ========================= */
+
+.receipt-section {
+  margin-top: 16px;
+}
+
+.receipt-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.receipt-subtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+/* כרטיס קבלה צר בתוך הדוח */
+.receipt-card {
+  max-width: 360px;
+  margin: 0 auto;
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 12px 14px 8px;
+  box-shadow: 0 6px 18px rgba(15,23,42,0.16);
+  border: 1px solid #e2e8f0;
+  position: relative;
+}
+
+/* קווי חיתוך כמו בקבלה */
+.receipt-card::before,
+.receipt-card::after {
+  content: "";
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  height: 6px;
+  border-top: 1px dashed #cbd5f5;
+}
+
+.receipt-card::before {
+  top: 0;
+}
+
+.receipt-card::after {
+  bottom: 0;
+}
+
+/* גוף הקבלה */
+.receipt-list {
+  list-style: none;
+  padding: 0;
+  margin: 4px 0 0;
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+/* שורה ב"קבלה" */
+.receipt-row {
+  padding: 6px 0;
+  border-bottom: 1px dashed #e5e7eb;
+}
+
+.receipt-row:last-child {
+  border-bottom: none;
+}
+
+.receipt-row-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+/* סכום - צד שמאל */
+.receipt-left {
+  min-width: 70px;
+  text-align: left;
+}
+
+.receipt-amount {
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.receipt-currency {
+  font-size: 12px;
+  color: #6b7280;
+  margin-inline-start: 2px;
+}
+
+/* מידע - צד ימין */
+.receipt-right {
+  flex: 1;
+}
+
+.receipt-date {
+  font-size: 13px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.receipt-meta {
+  margin-top: 2px;
+  font-size: 12px;
+  color: #6b7280;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.receipt-sep {
+  opacity: 0.6;
+}
+
+.receipt-notes {
+  margin-top: 2px;
+  font-size: 12px;
+  color: #4b5563;
+  direction: rtl;
+  text-align: right;
+}
+
+.receipt-notes-label {
+  font-weight: 600;
+}
+
+.receipt-total-price {
+  font-size: 1.4rem;      /* גודל */
+  font-weight: 700;       /* עובי */
+  color: #10b981;         /* צבע טקסט */
+  direction: rtl;         /* כיוון, אם צריך */
+}
+
+/* התאמה למובייל - שלא תהיה גלילה אופקית */
+@media (max-width: 480px) {
+  .receipt-card {
+    max-width: 320px;
+    padding-inline: 10px;
+  }
+
+  .receipt-row-main {
+    gap: 8px;
+  }
+
+  .receipt-amount {
+    font-size: 15px;
+  }
+
+  .receipt-date {
+    font-size: 12px;
+  }
+
+  .receipt-meta {
+    font-size: 11px;
+  }
+
+  .receipt-notes {
+    font-size: 11px;
+  }
+}
+
+.installment-info {
+  margin-top: 5px;
+  color: #6a5acd;
+  font-weight: bold;
+  font-size: 0.9em;
+}
+
+/* עיצוב חלונית תשלומים */
+#installments-panel {
+  display: none;
+  background: #f8f9ff;
+  border: 2px solid rgba(99, 102, 241, 0.25);
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
+}
+
+#installments-panel label {
+  font-weight: 600;
+  color: #333;
+  display: block;
+  margin-bottom: 6px;
+}
+
+#installments-panel input[type="number"] {
+  width: 100%;
+  max-width: 120px;
+  padding: 6px 8px;
+  font-size: 15px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  text-align: center;
+}
+
+/* העיצוב של המסגרת החיצונית לכרטיס */
+.expense-card-outer {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+  padding: 14px;
+  margin-bottom: 16px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.expense-card-outer:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+}
+
+/* טקסט תשלום X מתוך Y */
+.installment-info {
+  margin-top: 6px;
+  color: #6a5acd;
+  font-weight: 600;
+  font-size: 0.9em;
+}
+
+/* 🪄 עיצוב כרטיס עריכת/הוספת הוצאה */
+form {
+  background: linear-gradient(180deg, #ffffff, #f8f9ff);
+  border: 2px solid rgba(138, 99, 245, 0.2);
+  border-radius: 16px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+  padding: 24px;
+  max-width: 460px;
+  margin: 0 auto 40px;
+  transition: all 0.3s ease-in-out;
+}
+
+form:hover {
+  box-shadow: 0 6px 18px rgba(99, 102, 241, 0.2);
+  transform: translateY(-2px);
+}
+
+/* כותרת חלונית תשלומים */
+#installments-panel {
+  display: none;
+  background: #f3f0ff;
+  border: 2px solid rgba(138, 99, 245, 0.3);
+  border-radius: 12px;
+  padding: 18px;
+  margin-top: 16px;
+  box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+#installments-panel label {
+  font-weight: 700;
+  color: #3d2f91;
+  margin-bottom: 8px;
+  display: block;
+}
+
+#installments-panel input[type="number"] {
+  width: 90px;
+  padding: 6px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 1px solid #bbb;
+  text-align: center;
+  background-color: #fff;
+  transition: border 0.2s;
+}
+
+#installments-panel input[type="number"]:focus {
+  outline: none;
+  border: 1px solid #8a63f5;
+}
+
+/* 🟣 כפתור שמירת שינויים */
+button[type="submit"], .btn-primary {
+  background: linear-gradient(90deg, #7a5cf5, #5b3fe0);
+  border: none;
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.3s, transform 0.2s;
+}
+
+button[type="submit"]:hover, .btn-primary:hover {
+  background: linear-gradient(90deg, #6a4ae3, #4a2fd8);
+  transform: translateY(-2px);
+}
+
+/* 🔙 כפתור ביטול */
+a[href*="cancel"], a[href*="ביטול"], .btn-cancel {
+  color: #7a5cf5;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+a[href*="cancel"]:hover, a[href*="ביטול"]:hover {
+  color: #4a2fd8;
+  text-decoration: underline;
+}
+
+/* ✏️ שדות טופס */
+input[type="text"], input[type="number"], select, textarea {
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  padding: 6px 10px;
+  font-size: 15px;
+  transition: all 0.2s;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: #7a5cf5;
+  box-shadow: 0 0 0 2px rgba(138, 99, 245, 0.2);
+  outline: none;
+}
+
+/* 📘 כותרת עמוד */
+.app-header h1 {
+  font-weight: 800;
+  font-size: 2.2em;
+  color: #fff;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.15);
+}
+
+/* 🎨 הערות */
+textarea {
+  min-height: 70px;
+  resize: vertical;
+  background: #fafaff;
+}
+
+/* 🌈 מעבר רך בין מצבים */
+input, select, textarea, button {
+  transition: all 0.3s ease;
+}
+/* =========================
+   התאמות מסך בינוני עד 480px
+   ========================= */
+@media (max-width: 480px) {
+  .summary-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px;
+  }
+  
+  .summary-item {
+    padding: 16px;
+  }
+  
+  .summary-label {
+    font-size: 14px;
+  }
+  
+  .summary-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  /* 🎯 עיצוב קומפקטי לרשימת ההוצאות */
+.expense-item {
+  margin-bottom: 10px;
+}
+
+.expense-card-outer {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  padding: 10px 12px;
+  transition: all 0.2s ease;
+}
+
+.expense-card-outer:hover {
+  transform: scale(1.01);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+}
+
+/* כותרת הכרטיס - תאריך וסכום */
+.expense-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.expense-amount-main {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #22c55e;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.expense-date-main {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+/* מידע על תשלומים */
+.installment-info {
+  font-size: 0.8rem;
+  color: #5b3fe0;
+  text-align: right;
+  margin-top: -4px;
+  margin-bottom: 6px;
+}
+
+/* שורה אמצעית */
+.expense-middle-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 4px;
+}
+
+/* תגיות קטנות יותר */
+.expense-tag {
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 8px;
+  display: inline-block;
+}
+
+.tag-primary {
+  background-color: #eef2ff;
+  color: #4338ca;
+}
+
+.tag-secondary {
+  background-color: #f3f4f6;
+  color: #6b7280;
+}
+
+/* כפתורי עריכה ומחיקה קומפקטיים */
+.btn-expense-edit,
+.btn-expense-delete {
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-expense-edit {
+  background-color: #eef2ff;
+  color: #4338ca;
+}
+
+.btn-expense-delete {
+  background-color: #fef2f2;
+  color: #dc2626;
+}
+
+.btn-expense-edit:hover {
+  background-color: #e0e7ff;
+}
+
+.btn-expense-delete:hover {
+  background-color: #fee2e2;
+}
+
+/* הערות קטנות יותר */
+.expense-notes {
+  font-size: 0.8rem;
+  color: #555;
+  margin-top: 6px;
+  background: #f9fafb;
+  border-radius: 6px;
+  padding: 4px 6px;
+}
+
+/* 📱 התאמה למובייל */
+@media (max-width: 600px) {
+  .expense-card-outer {
+    padding: 8px 10px;
+    border-radius: 10px;
+  }
+
+  .expense-amount-main {
+    font-size: 0.95rem;
+  }
+
+  .expense-date-main {
+    font-size: 0.8rem;
+  }
+
+  .expense-tag {
+    font-size: 0.7rem;
+    padding: 2px 6px;
+  }
+
+  .expense-middle-row {
+    flex-direction: row;
+    gap: 6px;
+  }
+
+  .btn-expense-edit,
+  .btn-expense-delete {
+    padding: 3px 6px;
+    font-size: 0.7rem;
+  }
+}
+
+/* 🌟 עיצוב אחיד, קומפקטי ונעים — בכל המכשירים */
+.expense-item {
+  margin-bottom: 10px;
+}
+
+.expense-card-outer {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  padding: 10px 12px;
+  transition: all 0.2s ease;
+}
+
+.expense-card-outer:hover {
+  transform: scale(1.01);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+}
+
+/* שורה עליונה - תאריך וסכום */
+.expense-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.expense-amount-main {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #22c55e;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.expense-date-main {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+/* 💳 תשלומים */
+.installment-info {
+  font-size: 0.85rem;
+  color: #5b3fe0;
+  text-align: right;
+  margin-bottom: 4px;
+}
+
+/* שורה אמצעית */
+.expense-middle-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 4px;
+}
+
+/* תגיות קטנות ונעימות */
+.expense-tag {
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 8px;
+  display: inline-block;
+}
+
+.tag-primary {
+  background-color: #eef2ff;
+  color: #4338ca;
+}
+
+.tag-secondary {
+  background-color: #f3f4f6;
+  color: #6b7280;
+}
+
+/* 🟣 כפתורים קומפקטיים */
+.btn-expense-edit,
+.btn-expense-delete {
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.btn-expense-edit {
+  background-color: #eef2ff;
+  color: #4338ca;
+}
+
+.btn-expense-delete {
+  background-color: #fef2f2;
+  color: #dc2626;
+}
+
+.btn-expense-edit:hover {
+  background-color: #e0e7ff;
+}
+
+.btn-expense-delete:hover {
+  background-color: #fee2e2;
+}
+
+/* הערות */
+.expense-notes {
+  font-size: 0.8rem;
+  color: #555;
+  margin-top: 6px;
+  background: #f9fafb;
+  border-radius: 6px;
+  padding: 4px 6px;
+}
+
+/* ⚙️ חידוד נראות כללית */
+.expense-card-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.expense-actions-new {
+  display: flex;
+  gap: 6px;
+}
+
+.expense-tags {
+  display: flex;
+  gap: 4px;
+}
+
+/* 🌈 מגע של אפליקציה */
+.expense-card-outer {
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  background: linear-gradient(180deg, #ffffff, #fafbff);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.expense-card-outer:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 3px 10px rgba(138, 99, 245, 0.15);
+}

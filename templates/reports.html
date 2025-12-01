@@ -12,209 +12,238 @@
     <header class="app-header">
       <h1 class="app-title">מה מצבינו</h1>
       <p class="app-subtitle">מעקב הוצאות משפחתי</p>
-      
       {% include "tabs.html" %}
-</header>
+    </header>
 
-  <main class="content">
-
-    <!-- בחירת חודש -->
-    <section class="card">
-  <div class="card-header">
-    <h2 class="card-title">🗓️ בחירת חודש וסינון דוח</h2>
-    <p class="card-subtitle">בחר חודש ואפשר לסנן לפי קטגוריה ואמצעי תשלום</p>
-  </div>
-  <div class="card-body">
-    <form method="get" action="{{ url_for('reports') }}" class="inline-form">
+    <main class="content">
 
       <!-- בחירת חודש -->
-      <div class="form-group">
-        <label for="month-select">חודש:</label>
-        <select id="month-select" name="month">
-          {% for m in months %}
-            <option value="{{ m }}" {% if m == selected_month %}selected{% endif %}>
-              {{ m }}
-            </option>
-          {% endfor %}
-        </select>
-      </div>
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">🗓️ בחירת חודש וסינון דוח</h2>
+          <p class="card-subtitle">בחר חודש ואפשר לסנן לפי קטגוריה ואמצעי תשלום</p>
+        </div>
+        <div class="card-body">
+          <form method="get" action="{{ url_for('reports') }}" class="inline-form">
 
-      <!-- סינון לפי קטגוריה -->
-      <div class="form-group">
-        <label for="category-filter">קטגוריה:</label>
-        <select id="category-filter" name="category_filter">
-          <option value="">כל הקטגוריות</option>
-          {% for cat in categories %}
-            <option value="{{ cat }}" {% if category_filter == cat %}selected{% endif %}>
-              {{ cat }}
-            </option>
-          {% endfor %}
-        </select>
-      </div>
-
-      <!-- סינון לפי אמצעי תשלום -->
-      <div class="form-group">
-        <label for="payment-filter">אמצעי תשלום:</label>
-        <select id="payment-filter" name="payment_filter">
-          <option value="">כל האמצעים</option>
-          {% for pm in payment_methods %}
-            <option value="{{ pm }}" {% if payment_filter == pm %}selected{% endif %}>
-              {{ pm }}
-            </option>
-          {% endfor %}
-        </select>
-      </div>
-
-      <button type="submit" class="btn-main">הצג דוח</button>
-    </form>
-  </div>
-</section>
-
-    <!-- סיכום עליון עם כרטיסי סטטיסטיקה -->
-    <div class="summary-grid">
-      <div class="stat-card blue">
-        <div class="stat-card-icon">💵</div>
-        <div class="stat-card-value">{{ "%.0f"|format(summary.total_budget) }} ₪</div>
-        <div class="stat-card-label">תקציב חודשי</div>
-      </div>
-      <div class="stat-card {% if summary.total_spent <= summary.total_budget %}green{% else %}purple{% endif %}">
-        <div class="stat-card-icon">📊</div>
-        <div class="stat-card-value">{{ "%.0f"|format(summary.total_spent) }} ₪</div>
-        <div class="stat-card-label">הוצאות בפועל</div>
-      </div>
-      <div class="stat-card {% if summary.total_diff >= 0 %}cyan{% else %}purple{% endif %}">
-        <div class="stat-card-icon">💎</div>
-        <div class="stat-card-value">{{ "%.0f"|format(summary.total_diff) }} ₪</div>
-        <div class="stat-card-label">יתרה</div>
-      </div>
-    </div>
-
-    <!-- גרף עמודות לפי קטגוריות -->
-    <section class="chart-container">
-      <h3 class="chart-title">📈 התפלגות הוצאות לפי קטגוריות</h3>
-      <div class="chart-bars">
-        {% if category_rows and category_rows|length > 0 %}
-          {% set max_spent = category_rows|map(attribute='spent')|max %}
-          {% for row in category_rows %}
-            <div class="chart-bar-row">
-              <div class="chart-label">{{ row.category }}</div>
-              <div class="chart-bar-wrapper">
-                <div class="chart-bar {% if row.spent > row.budget %}negative{% elif row.spent > row.budget * 0.8 %}warning{% else %}positive{% endif %}" 
-                     style="width: {% if max_spent > 0 %}{{ (row.spent / max_spent * 100)|int }}%{% else %}0%{% endif %};">
-                  {{ "%.0f"|format(row.spent) }} ₪
-                </div>
-              </div>
-              <div class="chart-value">{{ "%.0f"|format(row.budget) }} ₪</div>
+            <!-- בחירת חודש -->
+            <div class="form-group">
+              <label for="month-select">חודש:</label>
+              <select id="month-select" name="month">
+                {% for m in months %}
+                  <option value="{{ m }}" {% if m == selected_month %}selected{% endif %}>
+                    {{ m }}
+                  </option>
+                {% endfor %}
+              </select>
             </div>
-          {% endfor %}
-        {% else %}
-          <p style="text-align:center; color: var(--text-secondary);">אין נתונים להצגה</p>
-        {% endif %}
-      </div>
-    </section>
 
-    <!-- מדדי התקדמות תקציב -->
-    <section class="card">
-      <div class="card-header">
-        <h2 class="card-title">📊 ניצול תקציב לפי קטגוריות</h2>
-      </div>
-      <div class="card-body">
-        {% if category_rows and category_rows|length > 0 %}
-          {% for row in category_rows %}
-            {% if row.budget > 0 %}
-              {% set percent = (row.spent / row.budget * 100)|int %}
-              <div class="progress-indicator">
-                <div class="progress-header">
-                  <span class="progress-label">{{ row.category }}</span>
-                  <span class="progress-percent">{{ percent }}%</span>
-                </div>
-                <div class="progress-bar-bg">
-                  <div class="progress-bar-fill {% if percent > 100 %}danger{% elif percent > 80 %}warning{% else %}success{% endif %}" 
-                       style="width: {% if percent > 100 %}100{% else %}{{ percent }}{% endif %}%;"></div>
-                </div>
-              </div>
-            {% endif %}
-          {% endfor %}
-        {% else %}
-          <p style="text-align:center; color: var(--text-secondary); padding: 20px;">אין נתונים להצגה</p>
-        {% endif %}
-      </div>
-    </section>
-
-    <!-- גרף עמודות - אמצעי תשלום -->
-    <section class="chart-container">
-      <h3 class="chart-title">💳 התפלגות לפי אמצעי תשלום</h3>
-      <div class="chart-bars">
-        {% if payment_rows and payment_rows|length > 0 %}
-          {% set max_payment = payment_rows|map(attribute='total')|max %}
-          {% for row in payment_rows %}
-            <div class="chart-bar-row">
-              <div class="chart-label">{{ row.method }}</div>
-              <div class="chart-bar-wrapper">
-                <div class="chart-bar" 
-                     style="width: {% if max_payment > 0 %}{{ (row.total / max_payment * 100)|int }}%{% else %}0%{% endif %};">
-                  {{ "%.0f"|format(row.total) }} ₪
-                </div>
-              </div>
-              <div class="chart-value">{{ "%.0f"|format(row.total) }} ₪</div>
+            <!-- סינון לפי קטגוריה -->
+            <div class="form-group">
+              <label for="category-filter">קטגוריה:</label>
+              <select id="category-filter" name="category_filter">
+                <option value="">כל הקטגוריות</option>
+                {% for cat in categories %}
+                  <option value="{{ cat }}" {% if category_filter == cat %}selected{% endif %}>
+                    {{ cat }}
+                  </option>
+                {% endfor %}
+              </select>
             </div>
-          {% endfor %}
-        {% else %}
-          <p style="text-align:center; color: var(--text-secondary);">אין נתונים להצגה</p>
-        {% endif %}
-      </div>
-    </section>
 
-    <!-- טבלת קטגוריות -->
-    <section class="card">
-      <div class="card-header">
-        <h2 class="card-title">📋 פירוט מלא לפי קטגוריות</h2>
-      </div>
-      <div class="card-body">
-        <div class="table-wrapper">
-          <table class="simple-table">
-            <thead>
-              <tr>
-                <th>קטגוריה</th>
-                <th>תקציב</th>
-                <th>הוצאה בפועל</th>
-                <th>הפרש</th>
-                <th>% ניצול</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for row in category_rows %}
-                <tr>
-                  <td>{{ row.category }}</td>
-                  <td>{{ "%.0f"|format(row.budget) }} ₪</td>
-                  <td>{{ "%.0f"|format(row.spent) }} ₪</td>
-                  <td style="{% if row.diff < 0 %}color: #ef4444; font-weight: 700;{% endif %}">
-                    {{ "%.0f"|format(row.diff) }} ₪
-                  </td>
-                  <td>
-                    {% if row.budget > 0 %}
-                      {% set usage = (row.spent / row.budget * 100)|int %}
-                      <span class="data-pill {% if usage > 100 %}warning{% elif usage > 80 %}warning{% else %}success{% endif %}">
-                        {{ usage }}%
-                      </span>
-                    {% else %}
-                      -
-                    {% endif %}
-                  </td>
-                </tr>
-              {% endfor %}
-              {% if category_rows|length == 0 %}
-                <tr>
-                  <td colspan="5" style="text-align:center;">אין נתונים לחודש שנבחר.</td>
-                </tr>
-              {% endif %}
-            </tbody>
-          </table>
+            <!-- סינון לפי אמצעי תשלום -->
+            <div class="form-group">
+              <label for="payment-filter">אמצעי תשלום:</label>
+              <select id="payment-filter" name="payment_filter">
+                <option value="">כל האמצעים</option>
+                {% for pm in payment_methods %}
+                  <option value="{{ pm }}" {% if payment_filter == pm %}selected{% endif %}>
+                    {{ pm }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <button type="submit" class="btn-main">הצג דוח</button>
+          </form>
+        </div>
+      </section>
+
+      <!-- סיכום עליון עם כרטיסי סטטיסטיקה -->
+      <div class="summary-grid">
+        <div class="stat-card blue">
+          <div class="stat-card-icon">💵</div>
+          <div class="stat-card-value">{{ "%.0f"|format(summary.total_budget) }} ₪</div>
+          <div class="stat-card-label">תקציב חודשי</div>
+        </div>
+        <div class="stat-card {% if summary.total_spent <= summary.total_budget %}green{% else %}purple{% endif %}">
+          <div class="stat-card-icon">📊</div>
+          <div class="stat-card-value">{{ "%.0f"|format(summary.total_spent) }} ₪</div>
+          <div class="stat-card-label">הוצאות בפועל</div>
+        </div>
+        <div class="stat-card {% if summary.total_diff >= 0 %}cyan{% else %}purple{% endif %}">
+          <div class="stat-card-icon">💎</div>
+          <div class="stat-card-value">{{ "%.0f"|format(summary.total_diff) }} ₪</div>
+          <div class="stat-card-label">יתרה</div>
         </div>
       </div>
-    </section>
 
-    <!-- רשימת הוצאות מפורטת -->
+      <!-- גרף עמודות לפי קטגוריות -->
+      <section class="chart-container">
+        <h3 class="chart-title">📈 התפלגות הוצאות לפי קטגוריות</h3>
+        <div class="chart-bars">
+          {% if category_rows and category_rows|length > 0 %}
+            {% set max_spent = category_rows|map(attribute='spent')|max %}
+            {% for row in category_rows %}
+              <div class="chart-bar-row">
+                <div class="chart-label">{{ row.category }}</div>
+                <div class="chart-bar-wrapper">
+                  <div class="chart-bar
+                    {% if row.spent > row.budget %}negative
+                    {% elif row.spent > row.budget * 0.8 %}warning
+                    {% else %}positive{% endif %}"
+                    style="width: {% if max_spent > 0 %}{{ (row.spent / max_spent * 100)|int }}%{% else %}0%{% endif %};">
+                    {{ "%.0f"|format(row.spent) }} ₪
+                  </div>
+                </div>
+                <div class="chart-value">{{ "%.0f"|format(row.budget) }} ₪</div>
+              </div>
+            {% endfor %}
+          {% else %}
+            <p style="text-align:center; color: var(--text-secondary);">אין נתונים להצגה</p>
+          {% endif %}
+        </div>
+      </section>
+
+      <!-- מדדי התקדמות תקציב -->
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">📊 ניצול תקציב לפי קטגוריות</h2>
+        </div>
+        <div class="card-body">
+          {% if category_rows and category_rows|length > 0 %}
+            {% for row in category_rows %}
+              {% if row.budget > 0 %}
+                {% set percent = (row.spent / row.budget * 100)|int %}
+                <div class="progress-indicator">
+                  <div class="progress-header">
+                    <span class="progress-label">{{ row.category }}</span>
+                    <span class="progress-percent">{{ percent }}%</span>
+                  </div>
+                  <div class="progress-bar-bg">
+                    <div class="progress-bar-fill
+                      {% if percent > 100 %}danger
+                      {% elif percent > 80 %}warning
+                      {% else %}success{% endif %}"
+                      style="width: {% if percent > 100 %}100{% else %}{{ percent }}{% endif %}%;"></div>
+                  </div>
+                </div>
+              {% endif %}
+            {% endfor %}
+          {% else %}
+            <p style="text-align:center; color: var(--text-secondary); padding: 20px;">אין נתונים להצגה</p>
+          {% endif %}
+        </div>
+      </section>
+
+      <!-- גרף עמודות - אמצעי תשלום -->
+      <section class="chart-container">
+        <h3 class="chart-title">💳 התפלגות לפי אמצעי תשלום</h3>
+        <div class="chart-bars">
+          {% if payment_rows and payment_rows|length > 0 %}
+            {% set max_payment = payment_rows|map(attribute='total')|max %}
+            {% for row in payment_rows %}
+              <div class="chart-bar-row">
+                <div class="chart-label">{{ row.method }}</div>
+                <div class="chart-bar-wrapper">
+                  <div class="chart-bar"
+                    style="width: {% if max_payment > 0 %}{{ (row.total / max_payment * 100)|int }}%{% else %}0%{% endif %};">
+                    {{ "%.0f"|format(row.total) }} ₪
+                  </div>
+                </div>
+                <div class="chart-value">{{ "%.0f"|format(row.total) }} ₪</div>
+              </div>
+            {% endfor %}
+          {% else %}
+            <p style="text-align:center; color: var(--text-secondary);">אין נתונים להצגה</p>
+          {% endif %}
+        </div>
+      </section>
+
+      <!-- טבלת קטגוריות -->
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">📋 פירוט מלא לפי קטגוריות</h2>
+        </div>
+        <div class="card-body">
+          <div class="table-wrapper">
+            <table class="simple-table category-table">
+              <thead>
+                <tr>
+                  <th>קטגוריה</th>
+                  <th>תקציב</th>
+                  <th>הוצאה בפועל</th>
+                  <th>פער</th>
+                  <th>ניצול תקציב</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in category_rows %}
+                  {% set percent = row.percent or 0 %}
+                  <tr>
+                    <!-- שם קטגוריה + צ'יפ של אחוז ניצול -->
+                    <td>
+                      <div class="cat-cell">
+                        <div class="cat-name">{{ row.category }}</div>
+                        <div class="cat-percent-chip
+                          {% if percent < 70 %}ok
+                          {% elif percent <= 100 %}warn
+                          {% else %}over{% endif %}">
+                          ניצול {{ "%.0f"|format(percent) }}%
+                        </div>
+                      </div>
+                    </td>
+
+                    <!-- תקציב -->
+                    <td>{{ "%.0f"|format(row.budget) }} ₪</td>
+
+                    <!-- הוצאה בפועל -->
+                    <td>{{ "%.0f"|format(row.spent) }} ₪</td>
+
+                    <!-- פער -->
+                    <td>
+                      <span class="{% if row.diff >= 0 %}amount-positive{% else %}amount-negative{% endif %}">
+                        {{ "%.0f"|format(row.diff) }} ₪
+                      </span>
+                    </td>
+
+                    <!-- מד התקדמות קטן -->
+                    <td>
+                      <div class="progress-indicator">
+                        <div class="progress-bar-bg">
+                          <div class="progress-bar-fill
+                            {% if percent < 70 %}success
+                            {% elif percent <= 100 %}warning
+                            {% else %}danger{% endif %}"
+                            style="width: {{ 130 if percent > 130 else percent }}%;"></div>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                {% else %}
+                  <tr>
+                    <td colspan="5" style="text-align:center;color:#9ca3af;">
+                      אין נתונים להצגה
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- רשימת הוצאות מפורטת -->
 <section class="card">
   <div class="card-header">
     <h2 class="card-title">🗂️ כל ההוצאות בחודש {{ selected_month }}</h2>
@@ -251,9 +280,13 @@
       {% endif %}
     </div>
   </div>
-</section>
-
-
+<div class="receipt-line"></div>
+  <div class="receipt-total">
+    <span>סה״כ לתשלום:</span>
+    <span class="receipt-total-price">
+      {{ "%.0f"|format(summary.total_spent) }} ₪
+    </span>
+  </div>
   </main>
 </div>
 </body>

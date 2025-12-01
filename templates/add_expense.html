@@ -37,6 +37,29 @@
           </select>
         </div>
 
+        <!-- חלונית תשלומים קטנה -->
+<div id="installments-panel" class="installments-panel" style="display:none;">
+  <div class="installments-header">
+    <span class="installments-title">תשלומים</span>
+    <span class="installments-chip">רכישה בתשלומים</span>
+  </div>
+
+  <!-- שדה מספר תשלומים תמיד קיים אבל ננעל כשלא נדרש -->
+  <label for="installments_count">מספר תשלומים</label>
+  <input
+    type="number"
+    id="installments_count"
+    name="installments_count"
+    min="1"
+    max="60"
+    value="1"
+    required
+  >
+  <p class="installments-hint">
+    סכום לחיוב חודשי יחושב מתוך הסכום הכולל.
+  </p>
+</div>
+
         <!-- תאריך -->
         <div class="form-group">
           <label for="date">תאריך</label>
@@ -113,5 +136,35 @@
       </div>
     </main>
   </div>
+
+  <script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const typeSelect = document.getElementById("expense_type");
+    const panel = document.getElementById("installments-panel");
+
+    function updatePanel() {
+      if (!typeSelect || !panel) return;
+
+      const isInstallment = typeSelect.value.trim() === "רכישה בתשלומים";
+
+      // מציג/מסתיר את חלונית התשלומים
+      panel.style.display = isInstallment ? "block" : "none";
+
+      // מוסיף רווח קטן כדי לא להסתיר את השדות הבאים
+      if (isInstallment) {
+        panel.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }
+
+    // מאזין לכל שינוי בבחירה, גם בלחיצה חוזרת
+    typeSelect.addEventListener("change", updatePanel);
+    typeSelect.addEventListener("input", updatePanel);
+
+    // עדכון ראשוני
+    updatePanel();
+  });
+</script>
+
+
 </body>
 </html>

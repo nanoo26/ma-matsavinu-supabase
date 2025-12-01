@@ -19,17 +19,10 @@
 
     <main class="content">
 
-      {% if error_message %}
-        <div class="alert-error">
-          {{ error_message }}
-        </div>
-      {% endif %}
+      <section class="form-box" style="background:#ffffff; margin:16px; border-radius:12px; box-shadow:0 1px 6px rgba(0,0,0,0.08);">
+        <form method="post">
 
-      <!-- טופס עריכת הוצאה - אותו סגנון כמו add_expense -->
-      <form method="post" class="form-card">
-
-        <!-- תאריך -->
-        <div class="form-group">
+          <!-- תאריך -->
           <label for="date">תאריך</label>
           <input
             type="date"
@@ -38,10 +31,8 @@
             required
             value="{{ expense.date_for_input }}"
           >
-        </div>
 
-        <!-- קטגוריה -->
-        <div class="form-group">
+          <!-- קטגוריה -->
           <label for="category">קטגוריה</label>
           <select id="category" name="category" required>
             <option value="">בחר קטגוריה</option>
@@ -51,11 +42,9 @@
               </option>
             {% endfor %}
           </select>
-        </div>
 
-        <!-- סכום -->
-        <div class="form-group">
-          <label for="amount">סכום (₪)</label>
+          <!-- סכום -->
+          <label for="amount">סכום</label>
           <input
             type="number"
             id="amount"
@@ -65,10 +54,8 @@
             required
             value="{{ expense.amount }}"
           >
-        </div>
 
-        <!-- אמצעי תשלום -->
-        <div class="form-group">
+          <!-- אמצעי תשלום -->
           <label for="payment_method">אמצעי תשלום</label>
           <select id="payment_method" name="payment_method" required>
             <option value="">בחר אמצעי תשלום</option>
@@ -78,10 +65,8 @@
               </option>
             {% endfor %}
           </select>
-        </div>
 
-        <!-- סוג הוצאה -->
-        <div class="form-group">
+          <!-- סוג הוצאה -->
           <label for="expense_type">סוג הוצאה</label>
           <select id="expense_type" name="expense_type">
             <option value="">בחר סוג הוצאה</option>
@@ -95,46 +80,89 @@
               רכישה בתשלומים
             </option>
           </select>
-        </div>
 
-        <!-- הוצאה קבועה (V) -->
-        <div class="form-group checkbox-group">
-          <label for="is_fixed">
+          <!-- חלונית תשלומים קטנה -->
+          <div id="installments-panel" class="installments-panel" style="display:none; margin-top:12px;">
+            <div class="installments-header">
+              <span class="installments-title">תשלומים</span>
+              <span class="installments-chip">
+                {% if expense.installments_count and expense.installments_count > 1 %}
+                  {{ expense.installments_count }} תשלומים
+                {% else %}
+                  הגדרת תשלומים
+                {% endif %}
+              </span>
+            </div>
+
+            <label for="installments_count">מספר תשלומים</label>
+            <input
+              type="number"
+              id="installments_count"
+              name="installments_count"
+              min="1"
+              max="60"
+              value="{{ expense.installments_count or 1 }}"
+            >
+            <p class="installments-hint">
+              ניתן לעדכן את מספר התשלומים במקרה של טעות בהגדרה.
+            </p>
+          </div>
+
+          <!-- הוצאה קבועה (V) -->
+          <label style="display:flex; align-items:center; gap:8px; margin-top:12px; font-size:14px;">
             <input
               type="checkbox"
-              id="is_fixed"
               name="is_fixed"
               value="1"
+              style="width:auto; margin-top:0;"
               {% if expense.is_fixed %}checked{% endif %}
             >
-            הוצאה קבועה (תשלום חוזר / הוראת קבע)
+            <span>הוצאה קבועה (תשלום חוזר / הוראת קבע)</span>
           </label>
-        </div>
 
-        <!-- הערות -->
-        <div class="form-group">
+          <!-- הערות -->
           <label for="note">הערות</label>
           <textarea
             id="note"
             name="note"
             rows="2"
-            placeholder="הערות (לא חובה)"
+            style="width:100%; padding:8px; margin-top:4px; border-radius:8px; border:1px solid #cbd5e1; font-size:15px;"
           >{{ expense.note or "" }}</textarea>
-        </div>
 
-        <!-- כפתורים -->
-        <div class="form-actions">
-          <button type="submit" class="btn-primary full-width">
-            💾 שמירת שינוי
-          </button>
+          <!-- כפתורים -->
+          <div style="display:flex; gap:8px; margin-top:20px;">
+            <button type="submit" class="btn-small" style="flex:1; border:none; cursor:pointer;">
+              💾 שמירת שינוי
+            </button>
+            <a href="{{ url_for('expenses') }}" class="btn-small" style="flex:1; text-align:center;">
+              ביטול
+            </a>
+          </div>
 
-          <a href="{{ url_for('expenses') }}" class="link-back" style="margin-top:8px; display:block; text-align:center;">
-            ביטול וחזרה לרשימת ההוצאות
-          </a>
-        </div>
-
-      </form>
+        </form>
+      </section>
     </main>
   </div>
+
+  <script>
+    (function () {
+      const typeSelect = document.getElementById("expense_type");
+      const panel = document.getElementById("installments-panel");
+
+      function updatePanel() {
+        if (!typeSelect || !panel) return;
+        if (typeSelect.value === "רכישה בתשלומים") {
+          panel.style.display = "block";
+        } else {
+          panel.style.display = "none";
+        }
+      }
+
+      if (typeSelect) {
+        typeSelect.addEventListener("change", updatePanel);
+        updatePanel();
+      }
+    })();
+  </script>
 </body>
 </html>
