@@ -70,10 +70,23 @@
       <section class="card">
         <div class="card-header">
           <h2 class="card-title">✏️ עריכת תקציב חודשי</h2>
-          <p class="card-subtitle">
+                  <p class="card-subtitle">
             הזן תקציב לכל קטגוריה עבור חודש {{ month }}
           </p>
         </div>
+        <div class="form-group">
+         <label for="income">💰 סה״כ הכנסות לחודש:</label>
+         <input 
+         type="number" 
+         id="income" 
+         name="income" 
+         step="0.01" 
+         min="0"
+         value="{{ income or 0 }}" 
+         placeholder="לדוגמה: 18000"
+         >
+       </div>
+
 
         <div class="card-body">
           <form method="post" class="form-box">

@@ -51,6 +51,19 @@
               </select>
             </div>
 
+             <!-- סינון לפי סוג הוצאה -->
+              <form method="get" action="{{ url_for('reports') }}" class="filter-bar">
+              <label for="expense_type">סוג הוצאה:</label>
+              <select id="expense_type" name="expense_type">
+                <option value="">הכל</option>
+                <option value="חד פעמית" {% if selected_type == "חד פעמית" %}selected{% endif %}>חד פעמית</option>
+                <option value="הוראת קבע חודשית" {% if selected_type == "הוראת קבע חודשית" %}selected{% endif %}>הוראת קבע חודשית</option>
+                <option value="רכישה בתשלומים" {% if selected_type == "רכישה בתשלומים" %}selected{% endif %}>רכישה בתשלומים</option>
+              </select>
+                <button type="submit" class="btn-primary small">סנן</button>
+               </form>
+
+
             <!-- סינון לפי אמצעי תשלום -->
             <div class="form-group">
               <label for="payment-filter">אמצעי תשלום:</label>
