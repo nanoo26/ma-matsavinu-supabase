@@ -221,7 +221,7 @@
           </h2>
         </div>
         <div class="card-body">
-          <table class="simple-table">
+          <table class="simple-table expenses-table">
             <thead>
               <tr>
                 <th>תאריך</th>
@@ -246,28 +246,26 @@
                       data-category="{{ e.category }}"
                       data-amount="{{ '%.0f'|format(e.amount or 0) }}"
                       data-edit-url="{{ url_for(
-                      'edit_expense',
-                      expense_id=e.id,
-                      next=url_for(
-                        'reports',
-                        month=selected_month,
-                        category_filter=category_filter,
-                        payment_filter=payment_filter,
-                        expense_type=expense_type,
-                        _anchor='exp-' ~ e.id
-                      )
-                    ) }}"
-
+                        'edit_expense',
+                        expense_id=e.id,
+                        next=url_for(
+                          'reports',
+                          month=selected_month,
+                          category_filter=category_filter,
+                          payment_filter=payment_filter,
+                          expense_type=expense_type,
+                          _anchor='exp-' ~ e.id
+                        )
+                      ) }}"
                       onclick="openExpenseModal(this)">
                       ⋮
                     </button>
-
                   </td>
                 </tr>
               {% endfor %}
               {% if not expenses %}
                 <tr>
-                  <td colspan="5" style="text-align:center; color:#94a3b8; font-size:14px;">
+                  <td colspan="4" style="text-align:center; color:#94a3b8; font-size:14px;">
                     אין הוצאות לחודש הפיננסי הזה.
                   </td>
                 </tr>
@@ -275,7 +273,7 @@
             </tbody>
             <tfoot>
               <tr>
-                <th colspan="4">סה״כ</th>
+                <th colspan="3">סה״כ</th>
                 <th>₪ {{ "%.0f"|format(summary.total_spent_filtered or 0) }}</th>
               </tr>
             </tfoot>
@@ -333,6 +331,7 @@
 
   <!-- התאמות עיצוב לדוחות ולמובייל -->
   <style>
+    /* פילטרים */
     .filters-form select {
       width: 100%;
       padding: 8px;
@@ -355,70 +354,129 @@
       margin-bottom: 4px;
     }
 
+    /* קוביות סיכום */
     .reports-summary-grid {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 12px;                 /* היה 10px - מעט יותר אוויר */
-      margin-bottom: 18px;       /* קצת יותר מרווח מהתוכן שמתחת */
-      align-items: stretch;      /* גובה אחיד לקלפים */
+      gap: 12px;
+      margin-bottom: 18px;
+      align-items: stretch;
     }
 
     .summary-card {
-    border-radius: 16px;
-    padding: 16px 14px;
-    color: #0f172a;              /* טקסט כהה וקריא */
-    background: #f8fafc;         /* רקע בהיר אחיד */
-    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.18);
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    min-height: 120px;
-  }
-
-  .summary-label {
-    font-size: 14px;
-    font-weight: 700;
-    margin-bottom: 6px;
-    color: #0f172a;              /* ללא שקיפות */
-  }
-
-  .summary-value {
-    font-size: 24px;
-    font-weight: 800;
-    letter-spacing: 0.2px;
-    color: #0f172a;
-  }
-
-  .summary-note {
-    margin-top: 8px;             /* מעט יותר ריווח */
-    font-size: 12px;
-    color: #334155;              /* אפור כהה קריא */
-    opacity: 1;                  /* ללא שקיפות */
-  }
-
-  .summary-note.negative {
-    color: #b91c1c;              /* אדום קריא */
-    font-weight: 700;
-  }
-
-    /* התאמות מובייל (עד 480px) */
-    @media (max-width: 480px) {
-      .reports-summary-grid {
-        grid-template-columns: 1fr 1fr;  /* שתי קוביות בשורה */
-        gap: 10px;
-      }
-      .summary-card {
-        min-height: 104px;
-        padding: 12px 10px;
-      }
-      .summary-value {
-        font-size: 21px;           /* מעט קטן יותר למובייל */
-      }
-      .summary-label {
-        font-size: 12px;
-      }
+      border-radius: 16px;
+      padding: 16px 14px;
+      color: #0f172a;
+      background: #f8fafc;
+      box-shadow: 0 6px 18px rgba(15, 23, 42, 0.18);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      min-height: 120px;
     }
-  
+
+    .summary-icon {
+      font-size: 22px;
+      margin-bottom: 4px;
+    }
+
+    .summary-label {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: #0f172a;
+    }
+
+    .summary-value {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: 0.2px;
+      color: #0f172a;
+    }
+
+    .summary-note {
+      margin-top: 8px;
+      font-size: 12px;
+      color: #334155;
+      opacity: 1;
+    }
+
+    .summary-note.negative {
+      color: #b91c1c;
+      font-weight: 700;
+    }
+
+    /* טבלאות בסיסיות */
+    .simple-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    .simple-table th,
+    .simple-table td {
+      padding: 6px 4px;
+      text-align: right;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .simple-table th {
+      font-size: 13px;
+      color: #64748b;
+      background: #f8fafc;
+    }
+
+    .simple-table td.pos { color: #16a34a; }
+    .simple-table td.neg { color: #dc2626; }
+
+    /* חלוקת רוחב בטבלת כל ההוצאות (4 עמודות) */
+    .expenses-table th:nth-child(1),
+    .expenses-table td:nth-child(1) {
+      width: 16%;
+      white-space: nowrap;
+    }
+
+    .expenses-table th:nth-child(2),
+    .expenses-table td:nth-child(2) {
+      width: 54%;
+    }
+
+    .expenses-table th:nth-child(3),
+    .expenses-table td:nth-child(3) {
+      width: 20%;
+      white-space: nowrap;
+    }
+
+    .expenses-table th:nth-child(4),
+    .expenses-table td:nth-child(4) {
+      width: 10%;
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    .col-notes {
+      word-break: break-word;
+    }
+
+    .actions-cell {
+      text-align: left;
+      width: 1%;
+      white-space: nowrap;
+    }
+
+    .table-action-btn {
+      border: none;
+      background: #f1f5f9;
+      border-radius: 999px;
+      padding: 4px 8px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .table-action-btn:active {
+      transform: scale(0.95);
+    }
+
     /* מודל הוצאה */
     .expense-modal.hidden {
       display: none;
@@ -507,29 +565,38 @@
       box-sizing: border-box;
     }
 
+    /* מובייל */
     @media (max-width: 480px) {
       .filters-row {
         grid-template-columns: 1fr;
       }
+
       .reports-summary-grid {
         grid-template-columns: 1fr 1fr;
+        gap: 10px;
       }
+
       .summary-card {
-        min-height: 100px;
+        min-height: 104px;
         padding: 12px 10px;
       }
+
+      .summary-value {
+        font-size: 21px;
+      }
+
+      .summary-label {
+        font-size: 12px;
+      }
+
       .expense-modal-content {
         margin: 0 10px;
       }
 
-      /* עמודת תאור - לוקחת הכי הרבה מקום */
-      .col-notes {
-        width: 80%;
-        max-width: 80%;
-        white-space: normal;
-        word-break: break-word;
+      .expenses-table th:nth-child(2),
+      .expenses-table td:nth-child(2) {
+        width: 60%;
       }
-
     }
   </style>
 

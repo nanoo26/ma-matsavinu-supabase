@@ -4,6 +4,15 @@ from flask import Flask, render_template, request, redirect, url_for, flash
 from datetime import datetime, date
 from calendar import monthrange
 
+# יצירת האפליקציה
+app = Flask(__name__)
+app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
+
+# ראוט ראשי - הפניה לעמוד הוצאות
+@app.route("/")
+def home_redirect():
+    return redirect(url_for("expenses"))
+
 now = datetime.now()
 
 # =========================
@@ -31,8 +40,10 @@ PAYMENT_METHODS = [
     "עו\"ש",
 ]
 
+
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
+
 
 # =========================
 # פונקציות עזר בסיסיות
