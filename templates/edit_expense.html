@@ -21,6 +21,8 @@
 
       <section class="form-box" style="background:#ffffff; margin:16px; border-radius:12px; box-shadow:0 1px 6px rgba(0,0,0,0.08);">
         <form method="post">
+          <!-- שדה חבוי לחזרה לעמוד הקודם (דוחות או מה שלא יהיה) -->
+          <input type="hidden" name="next" value="{{ request.args.get('next') or request.referrer or '' }}">
 
           <!-- תאריך -->
           <label for="date">תאריך</label>
@@ -49,7 +51,7 @@
             type="number"
             id="amount"
             name="amount"
-            step="0.01"
+            step="1"
             min="0"
             required
             value="{{ expense.amount }}"
@@ -67,22 +69,43 @@
           </select>
 
           <!-- סוג הוצאה -->
-          <label for="expense_type">סוג הוצאה</label>
-          <select id="expense_type" name="expense_type">
-            <option value="">בחר סוג הוצאה</option>
-            <option value="חד פעמית" {% if expense.expense_type == "חד פעמית" %}selected{% endif %}>
-              חד פעמית
-            </option>
-            <option value="הוראת קבע חודשית" {% if expense.expense_type == "הוראת קבע חודשית" %}selected{% endif %}>
-              הוראת קבע חודשית
-            </option>
-            <option value="רכישה בתשלומים" {% if expense.expense_type == "רכישה בתשלומים" %}selected{% endif %}>
-              רכישה בתשלומים
-            </option>
-          </select>
+          <div class="form-group">
+            <label for="expense_type">סוג הוצאה</label>
+            <select id="expense_type" name="expense_type" class="input">
+              <option value="">בחר סוג הוצאה</option>
+
+              <option value="single"
+                {% if expense.expense_type == 'single' %}
+                  selected
+                {% endif %}
+              >
+                רכישה חד פעמית
+              </option>
+
+              <option value="standing"
+                {% if expense.expense_type == 'standing' %}
+                  selected
+                {% endif %}
+              >
+                הוצאה קבועה (הוראת קבע)
+              </option>
+
+              <option value="installments"
+                {% if expense.expense_type == 'installments' %}
+                  selected
+                {% endif %}
+              >
+                רכישה בתשלומים
+              </option>
+            </select>
+          </div>
 
           <!-- חלונית תשלומים קטנה -->
-          <div id="installments-panel" class="installments-panel" style="display:none; margin-top:12px;">
+          <div
+            id="installments-panel"
+            class="installments-panel"
+            style="margin-top:12px; {% if expense.expense_type == 'installments' %}display:block;{% else %}display:none;{% endif %}"
+          >
             <div class="installments-header">
               <span class="installments-title">תשלומים</span>
               <span class="installments-chip">
@@ -109,16 +132,20 @@
           </div>
 
           <!-- הוצאה קבועה (V) -->
-          <label style="display:flex; align-items:center; gap:8px; margin-top:12px; font-size:14px;">
-            <input
-              type="checkbox"
-              name="is_fixed"
-              value="1"
-              style="width:auto; margin-top:0;"
-              {% if expense.is_fixed %}checked{% endif %}
-            >
-            <span>הוצאה קבועה (תשלום חוזר / הוראת קבע)</span>
-          </label>
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input
+                type="checkbox"
+                id="is_fixed"
+                name="is_fixed"
+                value="1"
+                {% if expense.is_fixed or expense.expense_type == 'standing' %}
+                  checked
+                {% endif %}
+              >
+              <span>הוצאה קבועה (תשלום חוזר / הוראת קבע)</span>
+            </label>
+          </div>
 
           <!-- הערות -->
           <label for="note">הערות</label>
@@ -134,11 +161,12 @@
             <button type="submit" class="btn-small" style="flex:1; border:none; cursor:pointer;">
               💾 שמירת שינוי
             </button>
-            <a href="{{ url_for('expenses') }}" class="btn-small" style="flex:1; text-align:center;">
+            <a href="{{ request.args.get('next') or request.referrer or url_for('expenses') }}"
+               class="btn-small"
+               style="flex:1; text-align:center;">
               ביטול
             </a>
           </div>
-
         </form>
       </section>
     </main>
@@ -148,20 +176,44 @@
     (function () {
       const typeSelect = document.getElementById("expense_type");
       const panel = document.getElementById("installments-panel");
+      const installmentsInput = document.getElementById("installments_count");
+      const fixedCheckbox = document.getElementById("is_fixed");
 
-      function updatePanel() {
-        if (!typeSelect || !panel) return;
-        if (typeSelect.value === "רכישה בתשלומים") {
-          panel.style.display = "block";
+      function applyTypeLogic() {
+        if (!typeSelect) return;
+        const v = (typeSelect.value || "").trim();
+
+        // תצוגת חלונית תשלומים
+        const isInstallments = v === "installments";
+        if (panel && installmentsInput) {
+          panel.style.display = isInstallments ? "block" : "none";
+          installmentsInput.required = isInstallments;
+          if (isInstallments && (!installmentsInput.value || parseInt(installmentsInput.value, 10) < 1)) {
+            installmentsInput.value = 1;
+          }
+        }
+
+        // צ׳קבוקס הוצאה קבועה
+        if (!fixedCheckbox) return;
+
+        if (v === "standing") {
+          fixedCheckbox.checked = true;
+          fixedCheckbox.disabled = true;
+        } else if (v === "installments") {
+          fixedCheckbox.checked = false;
+          fixedCheckbox.disabled = false;
         } else {
-          panel.style.display = "none";
+          fixedCheckbox.disabled = false;
         }
       }
 
       if (typeSelect) {
-        typeSelect.addEventListener("change", updatePanel);
-        updatePanel();
+        typeSelect.addEventListener("change", applyTypeLogic);
+        typeSelect.addEventListener("input", applyTypeLogic);
       }
+
+      // מצב התחלתי לפי הנתונים מהשרת
+      applyTypeLogic();
     })();
   </script>
 </body>

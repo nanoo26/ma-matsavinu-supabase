@@ -15,18 +15,124 @@
       <p class="app-subtitle">מעקב הוצאות משפחתי</p>
 
       {% include "tabs.html" %}
+
+      <!-- כרטיס בחירת חודש + פילטרים -->
+      <section class="card month-select-card">
+        <div class="card-header">
+          <h2 class="card-title">📅 בחירת חודש והצגת הוצאות</h2>
+          <p class="card-subtitle">בחר חודש וסנן לפי קטגוריה, אמצעי תשלום וסוג הוצאה</p>
+        </div>
+
+        <div class="card-body">
+          <form method="get" action="{{ url_for('expenses') }}" class="month-form">
+            <!-- שורת חודש עם חיצים -->
+            <div class="month-picker-row" style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+              <button type="button"
+                      class="month-nav-btn"
+                      id="month-prev-btn"
+                      aria-label="חודש קודם">
+                ←
+              </button>
+
+              <div class="month-input-wrapper" style="flex:1; display:flex; flex-direction:column; gap:4px;">
+                <label for="global-month-select" class="month-label">חודש:</label>
+                <input
+                  type="month"
+                  id="global-month-select"
+                  name="month"
+                  value="{{ selected_month or current_month }}"
+                  required
+                  onchange="this.form.submit()"
+                  style="width:100%; padding:10px 12px; border-radius:10px; border:1px solid #ddd; box-sizing:border-box;"
+                >
+              </div>
+
+              <button type="button"
+                      class="month-nav-btn"
+                      id="month-next-btn"
+                      aria-label="חודש הבא">
+                →
+              </button>
+            </div>
+
+            <!-- שורת פילטרים (קטגוריה / אמצעי תשלום / סוג הוצאה) -->
+            <div class="filters-row" style="display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:8px; margin-bottom:8px;">
+              <!-- קטגוריה -->
+              <div class="filter-item">
+                <label for="category_filter" style="font-size:13px; color:#64748b; display:block; margin-bottom:4px;">
+                  קטגוריה
+                </label>
+                <select id="category_filter"
+                        name="category_filter"
+                        style="width:100%; padding:8px; border-radius:8px; border:1px solid #cbd5e1; font-size:14px;">
+                  <option value="">הכל</option>
+                  <option value="fixed" {% if category_filter == "fixed" %}selected{% endif %}>
+                    רק הוצאות קבועות
+                  </option>
+                  {% for c in categories %}
+                    <option value="{{ c }}" {% if category_filter == c %}selected{% endif %}>
+                      {{ c }}
+                    </option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <!-- אמצעי תשלום -->
+              <div class="filter-item">
+                <label for="payment_filter" style="font-size:13px; color:#64748b; display:block; margin-bottom:4px;">
+                  אמצעי תשלום
+                </label>
+                <select id="payment_filter"
+                        name="payment_filter"
+                        style="width:100%; padding:8px; border-radius:8px; border:1px solid #cbd5e1; font-size:14px;">
+                  <option value="">הכל</option>
+                  {% for p in payment_methods %}
+                    <option value="{{ p }}" {% if payment_filter == p %}selected{% endif %}>
+                      {{ p }}
+                    </option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <!-- סוג הוצאה -->
+              <div class="filter-item">
+                <label for="expense_type" style="font-size:13px; color:#64748b; display:block; margin-bottom:4px;">
+                  סוג הוצאה
+                </label>
+                <select id="expense_type"
+                        name="expense_type"
+                        style="width:100%; padding:8px; border-radius:8px; border:1px solid #cbd5e1; font-size:14px;">
+                  <option value="">הכל</option>
+                  <option value="single" {% if expense_type == "single" %}selected{% endif %}>
+                    חד פעמית
+                  </option>
+                  <option value="standing" {% if expense_type == "standing" %}selected{% endif %}>
+                    קבועה / הוראת קבע
+                  </option>
+                  <option value="installments" {% if expense_type == "installments" %}selected{% endif %}>
+                    בתשלומים
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <div style="text-align:left; margin-top:4px;">
+              <button type="submit" class="btn-small">
+                סינון
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
     </header>
 
     <main class="content">
 
       {% if expenses and expenses|length > 0 %}
 
-        <!-- ========================= -->
-        <!-- גרף סוללה + 3 קטגוריות מובילות -->
-        <!-- ========================= -->
-
         {% set month_total = expenses|sum(attribute='amount') %}
 
+        <!-- גרף סוללה + 3 קטגוריות מובילות -->
         <section class="stat-card purple main-stat-card" style="margin-bottom: 24px; padding: 24px;">
           <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px; align-items: center;">
 
@@ -121,7 +227,7 @@
           </div>
         </section>
 
-        <!-- ===== בר עליון למחיקה מרובה ===== -->
+        <!-- בר עליון למחיקה מרובה -->
         <form id="bulk-delete-form"
               action="{{ url_for('delete_selected') }}"
               method="post"
@@ -172,7 +278,7 @@
                     </div>
 
                     <!-- הצגת תשלומים (אם מדובר ברכישה בתשלומים) -->
-                    {% if e.expense_type == "רכישה בתשלומים" and e.total_installments %}
+                    {% if e.expense_type == "רכישה בתשלומים" or e.total_installments %}
                       <div class="installment-info">
                         💳 תשלום {{ e.current_installment }}/{{ e.total_installments }}
                       </div>
@@ -204,7 +310,7 @@
                           </button>
                         </form>
 
-                        <a href="{{ url_for('edit_expense', expense_id=e.id) }}"
+                        <a href="{{ url_for('edit_expense', expense_id=e.id, month=selected_month) }}"
                            class="btn-expense-edit">
                           עריכה ✏️
                         </a>
@@ -264,15 +370,54 @@
 
   <script>
     (function() {
+      // בחירת כל ההוצאות
       var selectAll = document.getElementById('select-all-expenses');
-      if (!selectAll) return;
-
-      selectAll.addEventListener('change', function() {
-        var checkboxes = document.querySelectorAll('.expense-checkbox');
-        checkboxes.forEach(function(cb) {
-          cb.checked = selectAll.checked;
+      if (selectAll) {
+        selectAll.addEventListener('change', function() {
+          var checkboxes = document.querySelectorAll('.expense-checkbox');
+          checkboxes.forEach(function(cb) {
+            cb.checked = selectAll.checked;
+          });
         });
-      });
+      }
+
+      // ניווט חודש קודם / הבא
+      var monthInput = document.getElementById('global-month-select');
+      var prevBtn = document.getElementById('month-prev-btn');
+      var nextBtn = document.getElementById('month-next-btn');
+
+      function changeMonth(delta) {
+        if (!monthInput || !monthInput.value) return;
+
+        var parts = monthInput.value.split('-'); // "YYYY-MM"
+        if (parts.length !== 2) return;
+
+        var year = parseInt(parts[0], 10);
+        var month = parseInt(parts[1], 10) - 1; // 0 based
+
+        if (isNaN(year) || isNaN(month)) return;
+
+        var d = new Date(year, month, 1);
+        d.setMonth(d.getMonth() + delta);
+
+        var newYear = d.getFullYear();
+        var newMonth = (d.getMonth() + 1).toString().padStart(2, '0');
+
+        monthInput.value = newYear + '-' + newMonth;
+        monthInput.form.submit();
+      }
+
+      if (prevBtn && monthInput) {
+        prevBtn.addEventListener('click', function() {
+          changeMonth(-1);
+        });
+      }
+
+      if (nextBtn && monthInput) {
+        nextBtn.addEventListener('click', function() {
+          changeMonth(1);
+        });
+      }
     })();
   </script>
 </body>

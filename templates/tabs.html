@@ -1,5 +1,9 @@
-<!-- templates/tabs.html -->
 <nav class="main-tabs">
+  <a href="{{ url_for('expenses') }}"
+     class="main-tab {% if request.path.startswith('/expenses') or request.path == '/' %}active{% endif %}">
+    🧾 הוצאות
+  </a>
+
   <a href="{{ url_for('budget') }}"
      class="main-tab {% if request.path.startswith('/budget') %}active{% endif %}">
     🏅 תקציב
@@ -9,9 +13,78 @@
      class="main-tab {% if request.path.startswith('/reports') %}active{% endif %}">
     📊 דוחות
   </a>
-
-  <a href="{{ url_for('expenses') }}"
-     class="main-tab {% if request.path.startswith('/expenses') or request.path == '/' %}active{% endif %}">
-    🧾 הוצאות
-  </a>
 </nav>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const STORAGE_KEY = "ma_matsavinu_selected_month";
+
+  function getCurrentMonthKey() {
+    const d = new Date();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    return d.getFullYear() + "-" + m;
+  }
+
+  const url = new URL(window.location.href);
+  const params = url.searchParams;
+  const monthFromUrl = params.get("month");
+  const currentMonth = getCurrentMonthKey();
+
+  // ברירת מחדל: מה-URL, ואם אין - החודש הנוכחי
+  const selectedMonth = monthFromUrl || currentMonth;
+
+  // שדה החודש האחיד
+  let monthEl =
+    document.getElementById("global-month-select") ||
+    document.getElementById("month-select") ||
+    document.getElementById("month");
+
+  if (monthEl) {
+    if (monthEl.tagName === "SELECT") {
+      let hasOption = Array.from(monthEl.options).some(function (o) {
+        return o.value === selectedMonth;
+      });
+      if (!hasOption) {
+        const opt = document.createElement("option");
+        opt.value = selectedMonth;
+        opt.textContent = selectedMonth;
+        monthEl.appendChild(opt);
+      }
+      monthEl.value = selectedMonth;
+    } else if (monthEl.type === "month" || monthEl.type === "text") {
+      monthEl.value = selectedMonth;
+    }
+  }
+
+  // שמירה ב-localStorage (שימוש עתידי / סטטיסטיקה)
+  try {
+    localStorage.setItem(STORAGE_KEY, selectedMonth);
+  } catch (e) {}
+
+  // עדכון הלינקים של הטאבים עם month קבוע
+  const tabs = document.querySelectorAll(".main-tabs a");
+  tabs.forEach(function (link) {
+    const linkUrl = new URL(link.href, window.location.origin);
+    const linkParams = linkUrl.searchParams;
+    linkParams.set("month", selectedMonth);
+    link.href = linkUrl.pathname + "?" + linkParams.toString();
+  });
+
+  // שינוי חודש - טעינה מחדש של אותו עמוד עם month חדש
+  if (monthEl) {
+    monthEl.addEventListener("change", function () {
+      const newMonth = monthEl.value || currentMonth;
+
+      try {
+        localStorage.setItem(STORAGE_KEY, newMonth);
+      } catch (e) {}
+
+      const newUrl = new URL(window.location.href);
+      const newParams = newUrl.searchParams;
+      newParams.set("month", newMonth);
+      newUrl.search = newParams.toString();
+      window.location.href = newUrl.toString();
+    });
+  }
+});
+</script>

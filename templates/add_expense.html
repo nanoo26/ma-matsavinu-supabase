@@ -12,122 +12,140 @@
     <!-- כותרת עליונה -->
     <header class="app-header">
       <h1 class="app-title">מה מצבינו</h1>
-      <p class="app-subtitle">הוספת הוצאה</p>
+      <p class="app-subtitle">הוספת הוצאה חדשה</p>
 
       {% include "tabs.html" %}
     </header>
 
     <main class="content">
+
       {% if error_message %}
-        <div class="alert-error">
-          {{ error_message }}
-        </div>
+        <section class="card">
+          <div class="card-body">
+            <div class="alert-error">
+              {{ error_message }}
+            </div>
+          </div>
+        </section>
       {% endif %}
 
-      <!-- טופס הוספת הוצאה -->
-      <form action="{{ url_for('add_expense') }}" method="post" class="form-card">
-
-        <!-- סוג הוצאה -->
-        <div class="form-group">
-          <label for="expense_type">סוג הוצאה</label>
-          <select name="expense_type" id="expense_type">
-            <option value="חד פעמית">חד פעמית</option>
-            <option value="הוראת קבע חודשית">הוראת קבע חודשית</option>
-            <option value="רכישה בתשלומים">רכישה בתשלומים</option>
-          </select>
+      <!-- כרטיס הוספת הוצאה -->
+      <section class="card add-expense-card">
+        <div class="card-header">
+          <h2 class="card-title">✏️ הוספת הוצאה</h2>
+          <p class="card-subtitle">מלא את הפרטים הבאים והוסף הוצאה חדשה למעקב</p>
         </div>
 
-        <!-- חלונית תשלומים קטנה -->
-<div id="installments-panel" class="installments-panel" style="display:none;">
-  <div class="installments-header">
-    <span class="installments-title">תשלומים</span>
-    <span class="installments-chip">רכישה בתשלומים</span>
-  </div>
+        <div class="card-body">
+          <!-- טופס הוספת הוצאה -->
+          <form action="{{ url_for('add_expense') }}" method="post" class="expense-form">
 
-  <!-- שדה מספר תשלומים תמיד קיים אבל ננעל כשלא נדרש -->
-  <label for="installments_count">מספר תשלומים</label>
-  <input
-    type="number"
-    id="installments_count"
-    name="installments_count"
-    min="1"
-    max="60"
-    value="1"
-    required
-  >
-  <p class="installments-hint">
-    סכום לחיוב חודשי יחושב מתוך הסכום הכולל.
-  </p>
-</div>
+            <!-- סוג הוצאה -->
+            <div class="form-group">
+              <label for="expense_type">סוג הוצאה</label>
+              <select id="expense_type" name="expense_type" class="input">
+                <option value="">בחר סוג הוצאה</option>
+                <option value="single">רכישה חד פעמית</option>
+                <option value="standing">הוצאה קבועה (הוראת קבע)</option>
+                <option value="installments">רכישה בתשלומים</option>
+              </select>
+            </div>
 
-        <!-- תאריך -->
-        <div class="form-group">
-          <label for="date">תאריך</label>
-          <input
-            type="date"
-            id="date"
-            name="date"
-            value="{{ today }}"
-            required>
+            <!-- הוצאה קבועה (צ׳קבוקס יחיד) -->
+            <div class="form-group">
+              <label class="checkbox-label">
+                <input type="checkbox" id="is_fixed" name="is_fixed" value="1">
+                <span>הוצאה קבועה (תשלום חוזר / הוראת קבע)</span>
+              </label>
+            </div>
+
+            <!-- חלונית תשלומים קטנה -->
+            <div id="installments-panel" class="installments-panel" style="display:none;">
+              <div class="installments-header">
+                <span class="installments-title">תשלומים</span>
+                <span class="installments-chip">רכישה בתשלומים</span>
+              </div>
+
+              <label for="installments_count">מספר תשלומים</label>
+              <input
+                type="number"
+                id="installments_count"
+                name="installments_count"
+                min="1"
+                max="60"
+                value="1"
+              >
+              <p class="installments-hint">
+                סכום לחיוב חודשי יחושב מתוך הסכום הכולל.
+              </p>
+            </div>
+
+            <!-- תאריך -->
+            <div class="form-group">
+              <label for="date">תאריך</label>
+              <input
+                type="date"
+                id="date"
+                name="date"
+                value="{{ today }}"
+                required
+              >
+            </div>
+
+            <!-- קטגוריה -->
+            <div class="form-group">
+              <label for="category">קטגוריה</label>
+              <select id="category" name="category" required>
+                <option value="" disabled selected>בחר קטגוריה</option>
+                {% for c in categories %}
+                  <option value="{{ c }}">{{ c }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- סכום -->
+            <div class="form-group">
+              <label for="amount">סכום (₪)</label>
+              <input
+                type="number"
+                id="amount"
+                name="amount"
+                step="0.01"
+                min="0"
+                required
+                placeholder="לדוגמה: 150.00"
+              >
+            </div>
+
+            <!-- אמצעי תשלום -->
+            <div class="form-group">
+              <label for="payment_method">אמצעי תשלום</label>
+              <select id="payment_method" name="payment_method" required>
+                <option value="" disabled selected>בחר אמצעי תשלום</option>
+                {% for p in payment_methods %}
+                  <option value="{{ p }}">{{ p }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- הערות -->
+            <div class="form-group">
+              <label for="note">הערות</label>
+              <textarea
+                id="note"
+                name="note"
+                rows="2"
+                placeholder="הערות (לא חובה)"
+              ></textarea>
+            </div>
+
+            <!-- כפתור שמירה -->
+            <button type="submit" class="btn-main full-width">
+              💾 שמירת הוצאה
+            </button>
+          </form>
         </div>
-
-        <!-- קטגוריה -->
-        <div class="form-group">
-          <label for="category">קטגוריה</label>
-          <select id="category" name="category" required>
-            <option value="" disabled selected>בחר קטגוריה</option>
-            {% for c in categories %}
-              <option value="{{ c }}">{{ c }}</option>
-            {% endfor %}
-          </select>
-        </div>
-
-        <!-- סכום -->
-        <div class="form-group">
-          <label for="amount">סכום (₪)</label>
-          <input
-            type="number"
-            id="amount"
-            name="amount"
-            step="0.01"
-            min="0"
-            required>
-        </div>
-
-        <!-- אמצעי תשלום -->
-        <div class="form-group">
-          <label for="payment_method">אמצעי תשלום</label>
-          <select id="payment_method" name="payment_method" required>
-            <option value="" disabled selected>בחר אמצעי תשלום</option>
-            {% for p in payment_methods %}
-              <option value="{{ p }}">{{ p }}</option>
-            {% endfor %}
-          </select>
-        </div>
-
-        <!-- הערות -->
-        <div class="form-group">
-          <label for="note">הערות</label>
-          <textarea
-            id="note"
-            name="note"
-            rows="2"
-            placeholder="הערות (לא חובה)"></textarea>
-        </div>
-
-        <!-- הוצאה קבועה -->
-        <div class="form-group checkbox-group">
-          <label for="is_fixed">
-            <input type="checkbox" id="is_fixed" name="is_fixed" value="1">
-            הוצאה קבועה (תשלום חוזר / הוראת קבע)
-          </label>
-        </div>
-
-        <!-- כפתור שמירה -->
-        <button type="submit" class="btn-primary full-width">
-          שמירת הוצאה
-        </button>
-      </form>
+      </section>
 
       <div class="bottom-links">
         <a href="{{ url_for('expenses') }}" class="link-back">
@@ -137,34 +155,107 @@
     </main>
   </div>
 
+  <!-- לוגיקה עבור תשלומים + צ׳קבוקס -->
   <script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const typeSelect = document.getElementById("expense_type");
-    const panel = document.getElementById("installments-panel");
+    document.addEventListener("DOMContentLoaded", function () {
+      const typeSelect = document.getElementById("expense_type");
+      const panel = document.getElementById("installments-panel");
+      const installmentsInput = document.getElementById("installments_count");
+      const fixedCheckbox = document.getElementById("is_fixed");
 
-    function updatePanel() {
-      if (!typeSelect || !panel) return;
+      function applyTypeLogic() {
+        if (!typeSelect) return;
+        const v = (typeSelect.value || "").trim();
 
-      const isInstallment = typeSelect.value.trim() === "רכישה בתשלומים";
+        // 1. תצוגת חלונית תשלומים
+        const isInstallments = v === "installments";
+        if (panel && installmentsInput) {
+          panel.style.display = isInstallments ? "block" : "none";
+          installmentsInput.required = isInstallments;
+          if (isInstallments) {
+            if (!installmentsInput.value || parseInt(installmentsInput.value, 10) < 1) {
+              installmentsInput.value = 1;
+            }
+          }
+        }
 
-      // מציג/מסתיר את חלונית התשלומים
-      panel.style.display = isInstallment ? "block" : "none";
+        // 2. הוצאה קבועה / תשלומים - צ׳קבוקס
+        if (!fixedCheckbox) return;
 
-      // מוסיף רווח קטן כדי לא להסתיר את השדות הבאים
-      if (isInstallment) {
-        panel.scrollIntoView({ behavior: "smooth", block: "center" });
+        if (v === "standing") {
+          // הוראת קבע - מסומן וננעל
+          fixedCheckbox.checked = true;
+          fixedCheckbox.disabled = true;
+        } else if (v === "installments") {
+          // תשלומים - יורד אוטומטית, אפשר לשנות
+          fixedCheckbox.checked = false;
+          fixedCheckbox.disabled = false;
+        } else {
+          // חד פעמי / ריק - חופשי
+          fixedCheckbox.disabled = false;
+        }
+      }
+
+      if (typeSelect) {
+        typeSelect.addEventListener("change", applyTypeLogic);
+        typeSelect.addEventListener("input", applyTypeLogic);
+      }
+
+      // מצב התחלתי
+      applyTypeLogic();
+    });
+  </script>
+
+  <!-- עיצוב מובייל למסך הוספת הוצאה -->
+  <style>
+    @media (max-width: 480px) {
+      .add-expense-card {
+        padding: 14px;
+        margin: 0 auto;
+        max-width: 95%;
+      }
+
+      .expense-form {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .expense-form .form-group {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .expense-form label {
+        font-size: 14px;
+        margin-bottom: 5px;
+        color: var(--text-secondary);
+      }
+
+      .expense-form input,
+      .expense-form select,
+      .expense-form textarea {
+        width: 100%;
+        padding: 10px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        font-size: 15px;
+        background: #fff;
+      }
+
+      .expense-form textarea {
+        resize: vertical;
+        min-height: 70px;
+      }
+
+      .btn-main.full-width {
+        width: 100%;
+        padding: 12px;
+        font-size: 16px;
+        border-radius: 8px;
+        margin-top: 8px;
       }
     }
-
-    // מאזין לכל שינוי בבחירה, גם בלחיצה חוזרת
-    typeSelect.addEventListener("change", updatePanel);
-    typeSelect.addEventListener("input", updatePanel);
-
-    // עדכון ראשוני
-    updatePanel();
-  });
-</script>
-
-
+  </style>
 </body>
 </html>
