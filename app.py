@@ -4,11 +4,11 @@ from flask import Flask, render_template, request, redirect, url_for, flash
 from datetime import datetime, date
 from calendar import monthrange
 
-# יצירת האפליקציה
+# ⬅️ קודם יוצרים את ה־APP
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
 
-# ראוט ראשי - הפניה לעמוד הוצאות
+# ⬅️ ואז מגדירים את ה־ROUTE הראשי
 @app.route("/")
 def home_redirect():
     return redirect(url_for("expenses"))
@@ -39,10 +39,6 @@ PAYMENT_METHODS = [
     "לאומי שלום",
     "עו\"ש",
 ]
-
-
-app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
 
 
 # =========================
