@@ -134,96 +134,35 @@
 
         <!-- גרף סוללה + 3 קטגוריות מובילות -->
         <section class="stat-card purple main-stat-card" style="margin-bottom: 24px; padding: 24px;">
-          <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px; align-items: center;">
+          <div style="text-align: center;">
 
-            <!-- צד ימין - גרף סוללה -->
-            <div style="text-align: center;">
-              <div style="font-size: 22px; font-weight: 700; color: #fff; margin-bottom: 12px;">
-                💡 סך כל ההוצאות לחודש: {{ "%.0f"|format(month_total) }} ₪
-              </div>
+            <div style="font-size: 22px; font-weight: 700; color: #fff; margin-bottom: 12px;">
+              💡 סך כל ההוצאות לחודש: {{ "%.0f"|format(total_amount) }} ₪
+            </div>
 
-              <div style="font-size: 15px; color: rgba(255,255,255,0.85); margin-bottom: 8px;">
-                הוצאות חד פעמיות: {{ "%.0f"|format(spent_single) }} ₪ מתוך {{ "%.0f"|format(total_budget) }} ₪
-              </div>
+            <div style="font-size: 15px; color: rgba(255,255,255,0.85); margin-bottom: 8px;">
+              הוצאות חד פעמיות: {{ "%.0f"|format(spent_single) }} ₪ מתוך {{ "%.0f"|format(total_income or 0) }} ₪
+            </div>
 
-              <div style="width: 100%; max-width: 200px; height: 28px; border: 2px solid #fff; border-radius: 8px; margin: 0 auto; overflow: hidden; background: rgba(255,255,255,0.1); position: relative;">
-                <div style="
-                  width: {{ battery_percent }}%;
-                  height: 100%;
-                  {% if battery_percent >= 85 %}
-                    background: linear-gradient(90deg, #ef4444, #f97373);
-                  {% elif battery_percent >= 70 %}
-                    background: linear-gradient(90deg, #f59e0b, #fbbf24);
-                  {% else %}
-                    background: linear-gradient(90deg, #22c55e, #4ade80);
-                  {% endif %}
-                  transition: width 1s ease-in-out;
-                "></div>
+            <div style="width: 100%; max-width: 200px; height: 28px; border: 2px solid #fff; border-radius: 8px; margin: 0 auto; overflow: hidden; background: rgba(255,255,255,0.1); position: relative;">
+              <div style="
+                width: {{ battery_percent }}%;
+                height: 100%;
+                {% if battery_percent >= 85 %}
+                  background: linear-gradient(90deg, #ef4444, #f97373);
+                {% elif battery_percent >= 70 %}
+                  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+                {% else %}
+                  background: linear-gradient(90deg, #22c55e, #4ade80);
+                {% endif %}
+                transition: width 1s ease-in-out;
+              "></div>
 
-                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff;">
-                  {{ "%.0f"|format(battery_percent) }}%
-                </div>
+              <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff;">
+                {{ "%.0f"|format(battery_percent) }}%
               </div>
             </div>
 
-            <!-- צד שמאל - קטגוריות מובילות -->
-            <div>
-              <h3 style="color: #ffffff; font-size: 16px; font-weight: 700; margin-bottom: 16px; text-align: right;">
-                📊 3 הקטגוריות המובילות
-              </h3>
-
-              {% if top_categories and top_categories|length > 0 %}
-                <div style="display: flex; flex-direction: column; gap: 10px;">
-                  {% for row in top_categories %}
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                      <span style="font-size: 20px; min-width: 30px;">
-                        {% if row.category == 'מזון' %}🍕
-                        {% elif row.category == 'בריאות' %}💊
-                        {% elif row.category == 'חינוך' %}📚
-                        {% elif row.category == 'תחבורה' %}🚗
-                        {% elif row.category == 'בילויים' %}🎉
-                        {% elif row.category == 'ביגוד' %}👕
-                        {% elif row.category == 'בית' %}🏠
-                        {% elif row.category == 'רכב' %}🚗
-                        {% elif row.category == 'ילדים' %}👶
-                        {% elif row.category == 'חוגים' %}🎨
-                        {% elif row.category == 'קניות' %}🛒
-                        {% elif row.category == 'שונות' %}💼
-                        {% elif row.category == 'טבק' %}🚬
-                        {% else %}💼
-                        {% endif %}
-                      </span>
-
-                      <div style="flex: 1;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                          <span style="font-size: 13px; font-weight: 600; color: #ffffff;">
-                            {{ row.category }}
-                          </span>
-                          <span style="font-size: 13px; font-weight: 700; color: #ffffff; opacity: 0.95;">
-                            {{ "%.0f"|format(row.amount) }} ₪
-                            ({{ "%.0f"|format(row.percent) }}%)
-                          </span>
-                        </div>
-
-                        <div style="width: 100%; height: 8px; background: rgba(255,255,255,0.25); border-radius: 20px; overflow: hidden;">
-                          <div style="
-                            height: 100%;
-                            width: {{ row.percent|int }}%;
-                            background: linear-gradient(90deg, #ffffff, rgba(255,255,255,0.85));
-                            border-radius: 20px;
-                            transition: width 600ms cubic-bezier(0.4, 0, 0.2, 1);
-                          "></div>
-                        </div>
-                      </div>
-                    </div>
-                  {% endfor %}
-                </div>
-              {% else %}
-                <p style="color: rgba(255,255,255,0.85); text-align: center;">
-                  אין מספיק נתונים להצגת התפלגות
-                </p>
-              {% endif %}
-            </div>
           </div>
         </section>
 
@@ -244,90 +183,79 @@
           </button>
         </form>
 
-        <!-- רשימת הוצאות - כרטיסים -->
-        <section>
-          <ul class="expenses-list">
-            {% for e in expenses %}
-              <li class="expense-item">
-                <div class="expense-card-outer">
-                  <div class="expense-card-inner">
-
-                    <!-- שורה עליונה - צ'קבוקס + סכום + תאריך -->
-                    <div class="expense-card-header">
-                      <div style="display:flex; align-items:center; gap:8px;">
-                        <input
-                          type="checkbox"
-                          name="selected_ids"
-                          value="{{ e.id }}"
-                          class="expense-checkbox"
-                          form="bulk-delete-form"
-                          style="margin:0;"
-                        >
-
-                        <div class="expense-amount-main">
-                          <span class="currency-icon">₪</span>
-                          <span class="amount-value">
-                            {{ "%.0f"|format(e.amount or 0) }}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div class="expense-date-main">
-                        {{ e.date }}
-                      </div>
+        <!-- רשימת הוצאות - תצוגת קבלה עם גלילה פנימית וסיכום -->
+        <section class="receipt-section">
+          <div class="receipt-card">
+            <ul class="receipt-list">
+              {% for e in expenses %}
+                <li class="receipt-row" id="exp-{{ e.id }}">
+                  <div class="receipt-row-main">
+                    <!-- צד שמאל: סכום -->
+                    <div class="receipt-left">
+                      <span class="receipt-amount">{{ '%.0f'|format(e.amount or 0) }}</span>
+                      <span class="receipt-currency">₪</span>
                     </div>
 
-                    <!-- הצגת תשלומים (אם מדובר ברכישה בתשלומים) -->
-                    {% if e.expense_type == "רכישה בתשלומים" or e.total_installments %}
-                      <div class="installment-info">
-                        💳 תשלום {{ e.current_installment }}/{{ e.total_installments }}
-                      </div>
-                    {% endif %}
+                    <!-- צד ימין: פרטי הוצאה -->
+                    <div class="receipt-right">
+                      <div class="receipt-date">{{ e.date }}</div>
 
-                    <!-- שורה שנייה - תגיות + כפתורים -->
-                    <div class="expense-middle-row">
-                      <div class="expense-tags">
-                        <span class="expense-tag tag-primary">
-                          {{ e.category or "ללא קטגוריה" }}
-                        </span>
+                      <div class="receipt-meta">
+                        <span>{{ e.category or 'ללא קטגוריה' }}</span>
                         {% if e.payment_method %}
-                          <span class="expense-tag tag-secondary">
-                            {{ e.payment_method }}
-                          </span>
+                          <span class="receipt-sep">•</span>
+                          <span>{{ e.payment_method }}</span>
+                        {% endif %}
+                        {% if e.expense_type == "רכישה בתשלומים" or e.total_installments %}
+                          <span class="receipt-sep">•</span>
+                          <span class="installment-label">תשלום {{ e.current_installment }}/{{ e.total_installments }}</span>
                         {% endif %}
                       </div>
 
-                      <div class="expense-actions-new">
-                        <form
-                          action="{{ url_for('delete_selected') }}"
-                          method="post"
-                          class="inline-form"
-                          onsubmit="return confirm('למחוק את ההוצאה הזו?');"
-                        >
-                          <input type="hidden" name="selected_ids" value="{{ e.id }}">
-                          <button type="submit" class="btn-expense-delete">
-                            מחיקה 🗑️
-                          </button>
-                        </form>
-
-                        <a href="{{ url_for('edit_expense', expense_id=e.id, month=selected_month) }}"
-                           class="btn-expense-edit">
-                          עריכה ✏️
-                        </a>
-                      </div>
+                      {% if e.notes %}
+                        <div class="receipt-notes">
+                          <span class="receipt-notes-label">תיאור:</span>
+                          {{ e.notes }}
+                        </div>
+                      {% endif %}
                     </div>
-
-                    {% if e.notes %}
-                      <div class="expense-notes note-ltr">
-                        {{ e.notes }}
-                      </div>
-                    {% endif %}
-
                   </div>
-                </div>
-              </li>
-            {% endfor %}
-          </ul>
+
+                  <!-- פעולות + בחירה למחיקה מרובה -->
+                  <div class="expense-actions-new" style="margin-top:6px; justify-content:flex-end; gap:8px;">
+                    <form
+                      action="{{ url_for('delete_selected') }}"
+                      method="post"
+                      class="inline-form"
+                      onsubmit="return confirm('למחוק את ההוצאה הזו?');">
+                      <input type="hidden" name="selected_ids" value="{{ e.id }}">
+                      <button type="submit" class="btn-expense-delete">מחיקה 🗑️</button>
+                    </form>
+
+                    <a href="{{ url_for('edit_expense', expense_id=e.id, month=selected_month) }}"
+                      class="btn-expense-edit">עריכה ✏️</a>
+
+                    <label class="expense-select-col" title="בחירה למחיקה מרובה" style="margin-inline-start:auto;">
+                      <input
+                        type="checkbox"
+                        name="selected_ids"
+                        value="{{ e.id }}"
+                        class="expense-checkbox"
+                        form="bulk-delete-form">
+                    </label>
+                  </div>
+                </li>
+              {% endfor %}
+            </ul>
+
+            <!-- סיכום קבלה בתחתית -->
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-top:1px dashed #e5e7eb; margin-top:8px;">
+              <div style="font-size:13px; color:#64748b;">סה״כ הוצאות בחודש</div>
+              <div class="receipt-total-price">
+                ₪ {{ '%.0f'|format(month_total or 0) }}
+              </div>
+            </div>
+          </div>
         </section>
 
         <!-- סיכומים -->
