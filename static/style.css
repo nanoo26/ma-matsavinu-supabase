@@ -3346,6 +3346,12 @@ input, select, textarea, button {
       gap: 8px;
     }
 
+    .filters-row-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
     .filter-item label {
       display: block;
       font-size: 13px;
@@ -3761,7 +3767,8 @@ input, select, textarea, button {
 
     /* מובייל */
     @media (max-width: 480px) {
-      .filters-row {
+      .filters-row,
+      .filters-row-3 {
         grid-template-columns: 1fr;
       }
 
