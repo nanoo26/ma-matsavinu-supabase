@@ -19,7 +19,7 @@
 
     <main class="content">
 
-      <section class="form-box" style="background:#ffffff; margin:16px; border-radius:12px; box-shadow:0 1px 6px rgba(0,0,0,0.08);">
+      <section class="form-box">
         <form method="post">
           <!-- שדה חבוי לחזרה לעמוד הקודם (דוחות או מה שלא יהיה) -->
           <input type="hidden" name="next" value="{{ request.args.get('next') or request.referrer or '' }}">
@@ -103,8 +103,7 @@
           <!-- חלונית תשלומים קטנה -->
           <div
             id="installments-panel"
-            class="installments-panel"
-            style="margin-top:12px; {% if expense.expense_type == 'installments' %}display:block;{% else %}display:none;{% endif %}"
+            class="installments-panel {% if expense.expense_type == 'installments' %}installments-panel-visible{% else %}installments-panel-hidden{% endif %}"
           >
             <div class="installments-header">
               <span class="installments-title">תשלומים</span>
@@ -153,17 +152,16 @@
             id="note"
             name="note"
             rows="2"
-            style="width:100%; padding:8px; margin-top:4px; border-radius:8px; border:1px solid #cbd5e1; font-size:15px;"
+            class="form-textarea"
           >{{ expense.note or "" }}</textarea>
 
           <!-- כפתורים -->
-          <div style="display:flex; gap:8px; margin-top:20px;">
-            <button type="submit" class="btn-small" style="flex:1; border:none; cursor:pointer;">
+          <div class="form-actions">
+            <button type="submit" class="btn-small">
               💾 שמירת שינוי
             </button>
             <a href="{{ request.args.get('next') or request.referrer or url_for('expenses') }}"
-               class="btn-small"
-               style="flex:1; text-align:center;">
+               class="btn-small">
               ביטול
             </a>
           </div>
