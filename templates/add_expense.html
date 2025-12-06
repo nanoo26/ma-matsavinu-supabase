@@ -60,7 +60,7 @@
             </div>
 
             <!-- חלונית תשלומים קטנה -->
-            <div id="installments-panel" class="installments-panel" style="display:none;">
+            <div id="installments-panel" class="installments-panel installments-panel-hidden">
               <div class="installments-header">
                 <span class="installments-title">תשלומים</span>
                 <span class="installments-chip">רכישה בתשלומים</span>
@@ -205,57 +205,5 @@
       applyTypeLogic();
     });
   </script>
-
-  <!-- עיצוב מובייל למסך הוספת הוצאה -->
-  <style>
-    @media (max-width: 480px) {
-      .add-expense-card {
-        padding: 14px;
-        margin: 0 auto;
-        max-width: 95%;
-      }
-
-      .expense-form {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-      }
-
-      .expense-form .form-group {
-        display: flex;
-        flex-direction: column;
-      }
-
-      .expense-form label {
-        font-size: 14px;
-        margin-bottom: 5px;
-        color: var(--text-secondary);
-      }
-
-      .expense-form input,
-      .expense-form select,
-      .expense-form textarea {
-        width: 100%;
-        padding: 10px;
-        border-radius: 6px;
-        border: 1px solid #ccc;
-        font-size: 15px;
-        background: #fff;
-      }
-
-      .expense-form textarea {
-        resize: vertical;
-        min-height: 70px;
-      }
-
-      .btn-main.full-width {
-        width: 100%;
-        padding: 12px;
-        font-size: 16px;
-        border-radius: 8px;
-        margin-top: 8px;
-      }
-    }
-  </style>
 </body>
 </html>

@@ -26,7 +26,7 @@
         <div class="card-body">
           <form method="get" action="{{ url_for('expenses') }}" class="month-form">
             <!-- שורת חודש עם חיצים -->
-            <div class="month-picker-row" style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+            <div class="month-picker-row">
               <button type="button"
                       class="month-nav-btn"
                       id="month-prev-btn"
@@ -34,7 +34,7 @@
                 ←
               </button>
 
-              <div class="month-input-wrapper" style="flex:1; display:flex; flex-direction:column; gap:4px;">
+              <div class="month-input-wrapper">
                 <label for="global-month-select" class="month-label">חודש:</label>
                 <input
                   type="month"
@@ -43,7 +43,6 @@
                   value="{{ selected_month or current_month }}"
                   required
                   onchange="this.form.submit()"
-                  style="width:100%; padding:10px 12px; border-radius:10px; border:1px solid #ddd; box-sizing:border-box;"
                 >
               </div>
 
@@ -56,15 +55,14 @@
             </div>
 
             <!-- שורת פילטרים (קטגוריה / אמצעי תשלום / סוג הוצאה) -->
-            <div class="filters-row" style="display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:8px; margin-bottom:8px;">
+            <div class="filters-row">
               <!-- קטגוריה -->
               <div class="filter-item">
-                <label for="category_filter" style="font-size:13px; color:#64748b; display:block; margin-bottom:4px;">
+                <label for="category_filter">
                   קטגוריה
                 </label>
                 <select id="category_filter"
-                        name="category_filter"
-                        style="width:100%; padding:8px; border-radius:8px; border:1px solid #cbd5e1; font-size:14px;">
+                        name="category_filter">
                   <option value="">הכל</option>
                   <option value="fixed" {% if category_filter == "fixed" %}selected{% endif %}>
                     רק הוצאות קבועות
@@ -79,12 +77,11 @@
 
               <!-- אמצעי תשלום -->
               <div class="filter-item">
-                <label for="payment_filter" style="font-size:13px; color:#64748b; display:block; margin-bottom:4px;">
+                <label for="payment_filter">
                   אמצעי תשלום
                 </label>
                 <select id="payment_filter"
-                        name="payment_filter"
-                        style="width:100%; padding:8px; border-radius:8px; border:1px solid #cbd5e1; font-size:14px;">
+                        name="payment_filter">
                   <option value="">הכל</option>
                   {% for p in payment_methods %}
                     <option value="{{ p }}" {% if payment_filter == p %}selected{% endif %}>
@@ -96,12 +93,11 @@
 
               <!-- סוג הוצאה -->
               <div class="filter-item">
-                <label for="expense_type" style="font-size:13px; color:#64748b; display:block; margin-bottom:4px;">
+                <label for="expense_type">
                   סוג הוצאה
                 </label>
                 <select id="expense_type"
-                        name="expense_type"
-                        style="width:100%; padding:8px; border-radius:8px; border:1px solid #cbd5e1; font-size:14px;">
+                        name="expense_type">
                   <option value="">הכל</option>
                   <option value="single" {% if expense_type == "single" %}selected{% endif %}>
                     חד פעמית
@@ -116,7 +112,7 @@
               </div>
             </div>
 
-            <div style="text-align:left; margin-top:4px;">
+            <div class="filter-submit-row">
               <button type="submit" class="btn-small">
                 סינון
               </button>
@@ -133,32 +129,21 @@
         {% set month_total = expenses|sum(attribute='amount') %}
 
         <!-- גרף סוללה + 3 קטגוריות מובילות -->
-        <section class="stat-card purple main-stat-card" style="margin-bottom: 24px; padding: 24px;">
-          <div style="text-align: center;">
+        <section class="stat-card purple main-stat-card">
+          <div class="stat-center">
 
-            <div style="font-size: 22px; font-weight: 700; color: #fff; margin-bottom: 12px;">
+            <div class="stat-title-large">
               💡 סך כל ההוצאות לחודש: {{ "%.0f"|format(total_amount) }} ₪
             </div>
 
-            <div style="font-size: 15px; color: rgba(255,255,255,0.85); margin-bottom: 8px;">
+            <div class="stat-subtitle">
               הוצאות חד פעמיות: {{ "%.0f"|format(spent_single) }} ₪ מתוך {{ "%.0f"|format(total_income or 0) }} ₪
             </div>
 
-            <div style="width: 100%; max-width: 200px; height: 28px; border: 2px solid #fff; border-radius: 8px; margin: 0 auto; overflow: hidden; background: rgba(255,255,255,0.1); position: relative;">
-              <div style="
-                width: {{ battery_percent }}%;
-                height: 100%;
-                {% if battery_percent >= 85 %}
-                  background: linear-gradient(90deg, #ef4444, #f97373);
-                {% elif battery_percent >= 70 %}
-                  background: linear-gradient(90deg, #f59e0b, #fbbf24);
-                {% else %}
-                  background: linear-gradient(90deg, #22c55e, #4ade80);
-                {% endif %}
-                transition: width 1s ease-in-out;
-              "></div>
+            <div class="battery-bar-wrapper">
+              <div class="battery-bar-fill {% if battery_percent >= 85 %}critical{% elif battery_percent >= 70 %}warning{% else %}safe{% endif %}" style="width: {{ battery_percent }}%;"></div>
 
-              <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff;">
+              <div class="battery-bar-label">
                 {{ "%.0f"|format(battery_percent) }}%
               </div>
             </div>
@@ -222,7 +207,7 @@
                   </div>
 
                   <!-- פעולות + בחירה למחיקה מרובה -->
-                  <div class="expense-actions-new" style="margin-top:6px; justify-content:flex-end; gap:8px;">
+                  <div class="expense-actions-new">
                     <form
                       action="{{ url_for('delete_selected') }}"
                       method="post"
@@ -235,7 +220,7 @@
                     <a href="{{ url_for('edit_expense', expense_id=e.id, month=selected_month) }}"
                       class="btn-expense-edit">עריכה ✏️</a>
 
-                    <label class="expense-select-col" title="בחירה למחיקה מרובה" style="margin-inline-start:auto;">
+                    <label class="expense-select-col" title="בחירה למחיקה מרובה">
                       <input
                         type="checkbox"
                         name="selected_ids"
@@ -249,8 +234,8 @@
             </ul>
 
             <!-- סיכום קבלה בתחתית -->
-            <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-top:1px dashed #e5e7eb; margin-top:8px;">
-              <div style="font-size:13px; color:#64748b;">סה״כ הוצאות בחודש</div>
+            <div class="receipt-summary">
+              <div class="receipt-summary-label">סה״כ הוצאות בחודש</div>
               <div class="receipt-total-price">
                 ₪ {{ '%.0f'|format(month_total or 0) }}
               </div>
@@ -259,7 +244,7 @@
         </section>
 
         <!-- סיכומים -->
-        <section class="summary-grid" style="margin-bottom: 24px;">
+        <section class="summary-grid summary-grid-spaced">
           <div class="summary-item">
             <span class="summary-label">מספר הוצאות</span>
             <span class="summary-value">{{ expenses|length }}</span>
@@ -277,12 +262,12 @@
         </section>
 
       {% else %}
-        <section class="card" style="text-align: center; padding: 60px 20px; background: linear-gradient(135deg, rgba(37,99,235,0.05), rgba(139,92,246,0.05)); margin-top: 16px;">
-          <div style="font-size: 64px; margin-bottom: 20px; opacity: 0.5;">💸</div>
-          <h3 style="font-size: 24px; font-weight: 700; color: var(--text-primary); margin-bottom: 12px;">
+        <section class="card empty-state-section">
+          <div class="empty-state-icon">💸</div>
+          <h3 class="empty-state-title">
             אין עדיין הוצאות
           </h3>
-          <p class="empty-state" style="padding: 0; margin-bottom: 24px;">
+          <p class="empty-state empty-state-text">
             לחץ על "הוספת הוצאה חדשה" כדי להתחיל לעקוב אחר ההוצאות שלך
           </p>
           <a href="{{ url_for('add_expense') }}" class="btn-primary">➕ הוספת הוצאה חדשה</a>
