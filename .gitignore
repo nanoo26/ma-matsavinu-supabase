@@ -39,6 +39,10 @@ expenses_export.csv
 *.bak
 *backup-20*
 
+# Backups folder (daily automated backups)
+backups/
+backup_log.txt
+
 # Test/Debug scripts
 test_*.py
 check_*.py
