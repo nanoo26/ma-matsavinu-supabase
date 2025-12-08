@@ -27,6 +27,44 @@
         {% endif %}
       {% endwith %}
 
+      <!-- בחירת חודש -->
+      <section class="reports-filters-section">
+        <form method="get" action="{{ url_for('budget') }}" class="reports-filters-form">
+          
+          <!-- חודש עם חיצים -->
+          <div class="reports-month-selector">
+            <button type="button" class="month-arrow-btn" id="budget-month-next" aria-label="חודש הבא">
+              →
+            </button>
+            <input
+              type="month"
+              id="global-month-select"
+              name="month"
+              value="{{ month }}"
+              class="modern-select month-select"
+              required
+            >
+            <button type="button" class="month-arrow-btn" id="budget-month-prev" aria-label="חודש קודם">
+              ←
+            </button>
+          </div>
+
+          <!-- תצוגת טווח תאריכים כטקסט -->
+          <div class="date-range-text">
+            טווח חודש פיננסי נבחר: 
+            {% set year, month_num = month.split('-') %}
+            {% set year = year|int %}
+            {% set month_num = month_num|int %}
+            {% if month_num == 12 %}
+              10/{{ month_num }}/{{ year }} - 09/01/{{ year + 1 }}
+            {% else %}
+              10/{{ "%02d"|format(month_num) }}/{{ year }} - 09/{{ "%02d"|format(month_num + 1) }}/{{ year }}
+            {% endif %}
+          </div>
+
+        </form>
+      </section>
+
       <!-- סיכום כללי -->
       <section class="card">
         <div class="card-header">
@@ -54,45 +92,6 @@
             </div>
           </div>
         </div>
-      </section>
-
-      <!-- בחירת חודש -->
-      <section class="reports-filters-section">
-        <form method="get" action="{{ url_for('budget') }}" class="reports-filters-form">
-          
-          <!-- חודש עם חיצים -->
-          <div class="reports-month-selector">
-            <button type="button" class="month-arrow-btn" id="budget-month-next" aria-label="חודש הבא">
-              →
-            </button>
-            <input
-              type="month"
-              id="global-month-select"
-              name="month"
-              value="{{ month }}"
-              class="modern-select month-select"
-              required
-            >
-            <button type="button" class="month-arrow-btn" id="budget-month-prev" aria-label="חודש קודם">
-              ←
-            </button>
-          </div>
-
-          <div class="date-range-display">
-            <span class="range-icon">📅</span>
-            <span class="range-text">
-              {% set year, month_num = month.split('-') %}
-              {% set year = year|int %}
-              {% set month_num = month_num|int %}
-              {% if month_num == 12 %}
-                10/{{ month_num }}/{{ year }} - 09/01/{{ year + 1 }}
-              {% else %}
-                10/{{ "%02d"|format(month_num) }}/{{ year }} - 09/{{ "%02d"|format(month_num + 1) }}/{{ year }}
-              {% endif %}
-            </span>
-          </div>
-
-        </form>
       </section>
 
       <!-- טופס עריכה מאוחד -->

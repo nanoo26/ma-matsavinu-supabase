@@ -356,7 +356,7 @@ body {
   background: var(--bg-card);
   border-radius: 10px;
   padding: 8px;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
   box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06);
   transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
   border: none;
@@ -1140,7 +1140,7 @@ body {
 .expenses-table-only td {
   padding: 8px 5px;
   text-align: right;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid #e2e8f0;
   font-size: 14px;
   vertical-align: top;
 }
@@ -1155,7 +1155,7 @@ body {
 
 .expenses-table-only th:first-child,
 .expenses-table-only td:first-child {
-  width: 32px;
+  width: 30px;
   text-align: center;
   padding: 6px 2px;
 }
@@ -1183,7 +1183,7 @@ body {
 
 .expenses-table-only th:nth-child(4),
 .expenses-table-only td:nth-child(4) {
-  width: 75px;
+  width: 53px;
   white-space: nowrap;
   font-weight: 600;
   font-size: 14px;
@@ -1192,7 +1192,7 @@ body {
 
 .expenses-table-only th:nth-child(5),
 .expenses-table-only td:nth-child(5) {
-  width: 42px;
+  width: 50px;
   text-align: center;
   font-size: 14px;
   padding: 6px 1px;
@@ -1264,7 +1264,7 @@ body {
 .reports-table-only td {
   padding: 6px 5px;
   text-align: right;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid #e2e8f0;
   font-size: 14px;
   vertical-align: top;
 }
@@ -1626,13 +1626,14 @@ body {
 /* אזור ניווט עליון */
 .main-tabs {
   width: calc(100% - 32px);
-  margin: 16px auto;
-  padding: 6px;
+  max-width: 448px;
+  margin: 20px auto;
+  padding: 10px;
   background: #eef4ff;
   border-radius: 40px;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
+  gap: 10px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.12);
 }
 
@@ -1642,9 +1643,9 @@ body {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 14px 0;
+  padding: 18px 16px;
   width: 100%;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
   background: #f8fbff;
   border-radius: 40px;
@@ -1653,6 +1654,7 @@ body {
   cursor: pointer;
   pointer-events: auto;
   -webkit-tap-highlight-color: transparent;
+  transition: all 0.2s ease;
 }
 
 /* כפתור פעיל */
@@ -1660,6 +1662,7 @@ body {
   background: linear-gradient(90deg, #2563eb, #06b6d4);
   color: #ffffff !important;
   box-shadow: 0 3px 10px rgba(0,0,0,0.18);
+  transform: scale(1.02);
 }
 
 /* תיקון שכבת טאבים שלא לוחיצה במובייל */
@@ -2088,17 +2091,18 @@ input, select, textarea, button {
 
 /* ========== דף דוחות - פילטרים מודרניים ========== */
 .reports-filters-section {
-  background: white;
-  padding: 20px;
-  border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  margin-bottom: 20px;
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  box-shadow: none;
+  margin-bottom: 16px;
+  border: none;
 }
 
 .reports-filters-form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 10px;
 }
 
 /* בורר חודש עם חיצים */
@@ -2110,30 +2114,33 @@ input, select, textarea, button {
 }
 
 .month-arrow-btn {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  border: 2px solid #e5e7eb;
-  background: white;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 2px solid #0891b2;
+  background: linear-gradient(135deg, #0891b2, #06b6d4);
   font-size: 20px;
-  color: #6b7280;
+  font-weight: 700;
+  color: white;
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(8, 145, 178, 0.3);
 }
 
 .month-arrow-btn:hover {
-  background: linear-gradient(135deg, #0891b2, #06b6d4);
-  color: white;
-  border-color: #0891b2;
-  transform: scale(1.05);
+  background: linear-gradient(135deg, #0e7490, #0891b2);
+  border-color: #0e7490;
+  transform: scale(1.08);
+  box-shadow: 0 4px 12px rgba(8, 145, 178, 0.4);
 }
 
 .month-arrow-btn:active {
   transform: scale(0.95);
+  background: #f3f4f6;
 }
 
 /* סלקט מודרני */
@@ -2192,6 +2199,16 @@ input[type="month"].modern-select {
   border: 1.5px solid #67e8f9;
   border-radius: 10px;
   font-weight: 500;
+}
+
+/* טקסט תאריך פשוט בלי רקע */
+.date-range-text {
+  text-align: center;
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
+  padding: 4px 0;
+  margin: 0;
 }
 
 .range-icon {
@@ -2961,68 +2978,98 @@ input[type="month"].modern-select {
    ================================================ */
 
 .reports-summary-vertical {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
   margin-bottom: 20px;
 }
 
 .stat-card-vertical {
   background: white;
-  border-radius: 12px;
-  padding: 12px;
+  border-radius: 16px;
+  padding: 16px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   display: flex;
-  align-items: stretch;
-  gap: 12px;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .stat-card-vertical:hover {
-  transform: translateX(-2px);
-  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
 }
 
 .stat-bar-wrapper {
-  width: 8px;
-  background: rgba(148, 163, 184, 0.15);
-  border-radius: 8px;
+  width: 80px;
+  height: 80px;
   position: relative;
   display: flex;
-  flex-direction: column-reverse;
-  overflow: hidden;
-}
-
-.stat-bar {
-  width: 100%;
-  border-radius: 8px;
-  transition: height 0.6s ease;
-  background: linear-gradient(to top, var(--primary-purple), var(--secondary-cyan));
-}
-
-.stat-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
+  align-items: center;
   justify-content: center;
 }
 
+.stat-bar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: conic-gradient(
+    var(--bar-color, #a855f7) 0deg,
+    var(--bar-color, #a855f7) calc(var(--progress, 0) * 3.6deg),
+    #e2e8f0 calc(var(--progress, 0) * 3.6deg),
+    #e2e8f0 360deg
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  position: relative;
+  transition: all 0.6s ease;
+}
+
+.stat-bar::before {
+  content: '';
+  position: absolute;
+  width: 64px;
+  height: 64px;
+  background: white;
+  border-radius: 50%;
+  z-index: 0;
+}
+
+.stat-bar::after {
+  content: attr(data-percent);
+  position: relative;
+  z-index: 1;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--bar-color, #a855f7);
+}
+
+.stat-content {
+  text-align: center;
+  width: 100%;
+}
+
 .stat-label {
-  font-size: 13px;
+  font-size: 12px;
   color: #64748b;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
   font-weight: 500;
 }
 
 .stat-value {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
   color: var(--text-primary);
   margin-bottom: 2px;
 }
 
 .stat-value.big {
-  font-size: 24px;
+  font-size: 20px;
   color: var(--accent-emerald);
 }
 
@@ -3031,50 +3078,50 @@ input[type="month"].modern-select {
 }
 
 .stat-percent {
-  font-size: 12px;
+  font-size: 11px;
   color: #94a3b8;
   margin-top: 2px;
   display: block;
 }
 
 .stat-details {
-  font-size: 11px;
+  font-size: 10px;
   color: #94a3b8;
   margin-top: 4px;
   line-height: 1.4;
 }
 
-/* צבעי בר לפי סוג */
-.summary-income .stat-bar {
-  background: linear-gradient(to top, var(--primary-blue), #60a5fa);
+/* צבעי טבעות לפי סוג */
+.summary-income {
+  --bar-color: #3b82f6;
 }
 
-.summary-commitments .stat-bar {
-  background: linear-gradient(to top, var(--primary-purple), #c084fc);
+.summary-commitments {
+  --bar-color: #a855f7;
 }
 
-.summary-luxury .stat-bar {
-  background: linear-gradient(to top, var(--accent-emerald), #34d399);
+.summary-luxury {
+  --bar-color: #10b981;
 }
 
-.summary-luxury.negative .stat-bar {
-  background: linear-gradient(to top, #ef4444, #f87171);
+.summary-luxury.negative {
+  --bar-color: #ef4444;
 }
 
 .summary-luxury.negative .stat-value.big {
   color: #ef4444;
 }
 
-.summary-spent .stat-bar {
-  background: linear-gradient(to top, #f59e0b, #fbbf24);
+.summary-spent {
+  --bar-color: #f59e0b;
 }
 
-.summary-remaining .stat-bar {
-  background: linear-gradient(to top, var(--accent-emerald), #6ee7b7);
+.summary-remaining {
+  --bar-color: #10b981;
 }
 
-.summary-daily .stat-bar {
-  background: linear-gradient(to top, var(--secondary-cyan), #7dd3fc);
+.summary-daily {
+  --bar-color: #06b6d4;
 }
 
 
@@ -3113,7 +3160,9 @@ input[type="month"].modern-select {
 }
 
 .filter-btn-search {
-  padding: 8px 14px;
+  width: 40px;
+  height: 40px;
+  padding: 0;
   background: linear-gradient(135deg, var(--primary-purple), var(--secondary-cyan));
   color: white;
   border: none;
@@ -3123,6 +3172,9 @@ input[type="month"].modern-select {
   transition: all 0.2s;
   box-shadow: 0 2px 8px rgba(168, 85, 247, 0.3);
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .filter-btn-search:hover {
@@ -3213,5 +3265,26 @@ input[type="month"].modern-select {
   .chart-container {
     height: 240px;
   }
+}
+
+/* כותרות מיוחדות לעמוד דוחות */
+.chart-title,
+.card-title {
+  text-align: center;
+  background: linear-gradient(135deg, #a855f7, #3b82f6);
+  color: white;
+  padding: 14px 20px;
+  border-radius: 12px;
+  margin: 0 0 20px 0;
+  font-size: 18px;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);
+}
+
+.chart-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 

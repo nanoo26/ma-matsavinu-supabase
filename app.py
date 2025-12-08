@@ -981,11 +981,13 @@ def add_expense():
 
 @app.route("/edit/<int:expense_id>", methods=["GET", "POST"])
 def edit_expense(expense_id):
+    # שמירת ה-URL לחזרה
+    return_to = request.args.get("return_to") or request.referrer or url_for("expenses")
+    
     exp = get_expense_by_id(expense_id)
     if not exp:
         flash("הוצאה לא נמצאה", "error")
-        # אם לא מצאנו - חוזרים לעמוד הקודם או להוצאות
-        return redirect(request.referrer or url_for("expenses"))
+        return redirect(return_to)
 
     if request.method == "POST":
         try:
@@ -1031,8 +1033,8 @@ def edit_expense(expense_id):
             # הודעת הצלחה
             flash("ההוצאה עודכנה בהצלחה", "success")
             
-            # חזרה לעמוד הקודם
-            return redirect(request.referrer or url_for("expenses"))
+            # חזרה לעמוד שממנו הגענו
+            return redirect(return_to)
 
         except Exception as ex:
             print("❌ שגיאה בעדכון הוצאה:", ex)
@@ -1044,6 +1046,7 @@ def edit_expense(expense_id):
         categories=CATEGORIES,
         payment_methods=PAYMENT_METHODS,
         active_tab="expenses",
+        return_to=return_to,  # מעביר את הנתיב גם לטמפלייט
     )
 
 

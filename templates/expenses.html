@@ -27,6 +27,71 @@
         {% endif %}
       {% endwith %}
 
+      <!-- טופס בחירת חודש וסינונים -->
+      <section class="reports-filters-section">
+        <form method="get" action="{{ url_for('expenses') }}" class="reports-filters-form">
+          
+          <!-- חודש עם חיצים -->
+          <div class="reports-month-selector">
+            <button type="button" class="month-arrow-btn" id="month-next-btn" aria-label="חודש הבא">
+              →
+            </button>
+            <input
+              type="month"
+              id="global-month-select"
+              name="month"
+              value="{{ selected_month or current_month }}"
+              class="modern-select month-select"
+              required
+            >
+            <button type="button" class="month-arrow-btn" id="month-prev-btn" aria-label="חודש קודם">
+              ←
+            </button>
+          </div>
+
+          <!-- פילטרים בשורה אחת -->
+          <div class="reports-filters-single-row">
+            <select id="category_filter" name="category_filter" class="filter-select">
+              <option value="">קטגוריה</option>
+              <option value="fixed" {% if category_filter == "fixed" %}selected{% endif %}>קבועות</option>
+              {% for c in categories %}
+                <option value="{{ c }}" {% if category_filter == c %}selected{% endif %}>{{ c }}</option>
+              {% endfor %}
+            </select>
+
+            <select id="payment_filter" name="payment_filter" class="filter-select">
+              <option value="">אמצעי תשלום</option>
+              {% for p in payment_methods %}
+                <option value="{{ p }}" {% if payment_filter == p %}selected{% endif %}>{{ p }}</option>
+              {% endfor %}
+            </select>
+
+            <select id="expense_type" name="expense_type" class="filter-select">
+              <option value="">סוג הוצאה</option>
+              <option value="single" {% if expense_type == "single" %}selected{% endif %}>חד פעמית</option>
+              <option value="standing" {% if expense_type == "standing" %}selected{% endif %}>קבועה</option>
+              <option value="installments" {% if expense_type == "installments" %}selected{% endif %}>תשלומים</option>
+            </select>
+
+            <button type="submit" class="filter-btn-search">🔍</button>
+          </div>
+
+          <!-- תצוגת טווח תאריכים כטקסט -->
+          <div class="date-range-text">
+            טווח חודש פיננסי נבחר: 
+            {% set year, month_num = (selected_month or current_month).split('-') %}
+            {% set year = year|int %}
+            {% set month_num = month_num|int %}
+            {% if month_num == 12 %}
+              10/12/{{ year }} - 09/01/{{ year + 1 }}
+            {% else %}
+              10/{{ "%02d"|format(month_num) }}/{{ year }} - 09/{{ "%02d"|format(month_num + 1) }}/{{ year }}
+            {% endif %}
+          </div>
+
+        </form>
+      </section>
+
       <!-- כרטיס סיכום קצר מעל הטבלה -->
       <section class="card">
         <div class="card-header">
@@ -54,65 +119,6 @@
             </div>
           </div>
         </div>
-      </section>
-
-      <!-- טופס בחירת חודש וסינונים -->
-      <section class="reports-filters-section">
-        <form method="get" action="{{ url_for('expenses') }}" class="reports-filters-form">
-          
-          <!-- חודש עם חיצים -->
-          <div class="reports-month-selector">
-            <button type="button" class="month-arrow-btn" id="month-next-btn" aria-label="חודש הבא">
-              →
-            </button>
-            <input
-              type="month"
-              id="global-month-select"
-              name="month"
-              value="{{ selected_month or current_month }}"
-              class="modern-select month-select"
-              required
-            >
-            <button type="button" class="month-arrow-btn" id="month-prev-btn" aria-label="חודש קודם">
-              ←
-            </button>
-          </div>
-
-          <div class="date-range-display">
-            <span class="range-icon">📅</span>
-            <span class="range-text">טווח חודש פיננסי נבחר</span>
-          </div>
-
-          <!-- שאר הפילטרים -->
-          <div class="reports-filters-grid">
-            <select id="category_filter" name="category_filter" class="modern-select">
-              <option value="">כל הקטגוריות</option>
-              <option value="fixed" {% if category_filter == "fixed" %}selected{% endif %}>קבועות</option>
-              {% for c in categories %}
-                <option value="{{ c }}" {% if category_filter == c %}selected{% endif %}>{{ c }}</option>
-              {% endfor %}
-            </select>
-
-            <select id="payment_filter" name="payment_filter" class="modern-select">
-              <option value="">כל אמצעי התשלום</option>
-              {% for p in payment_methods %}
-                <option value="{{ p }}" {% if payment_filter == p %}selected{% endif %}>{{ p }}</option>
-              {% endfor %}
-            </select>
-
-            <select id="expense_type" name="expense_type" class="modern-select">
-              <option value="">כל הסוגים</option>
-              <option value="single" {% if expense_type == "single" %}selected{% endif %}>חד פעמית</option>
-              <option value="standing" {% if expense_type == "standing" %}selected{% endif %}>קבועה</option>
-              <option value="installments" {% if expense_type == "installments" %}selected{% endif %}>תשלומים</option>
-            </select>
-          </div>
-
-          <button type="submit" class="modern-filter-btn">
-            🔍 סינון
-          </button>
-
-        </form>
       </section>
 
       <!-- רשימת כל ההוצאות בחודש -->
@@ -160,7 +166,7 @@
                         data-notes="{{ e.comment|default('', true) }}"
                         data-category="{{ e.category }}"
                         data-amount="{{ '%.0f'|format(e.amount or 0) }}"
-                        data-edit-url="{{ url_for('edit_expense', expense_id=e.id, next=request.url + '#exp-' + e.id|string) }}"
+                        data-edit-url="{{ url_for('edit_expense', expense_id=e.id, return_to=request.path) }}"
                         onclick="openExpenseModal(this)">
                         ⋮
                       </button>

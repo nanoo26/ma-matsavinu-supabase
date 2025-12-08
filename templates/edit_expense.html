@@ -104,9 +104,9 @@
 
           <!-- כפתורי פעולה -->
           <div class="form-actions">
-            <button type="button" class="btn-cancel" onclick="window.history.back()">
+            <a href="{{ return_to or url_for('expenses') }}" class="btn-cancel">
               ✕ ביטול
-            </button>
+            </a>
             <button type="submit" class="btn-primary btn-save">
               💾 שמור
             </button>
@@ -183,15 +183,15 @@
       <div class="modal-body">
         <div class="calculator-display" id="calc-display">{{ expense.amount or '0' }}</div>
         <div class="calculator-grid">
-          <button type="button" class="calc-btn" onclick="calcInput('7')">7</button>
-          <button type="button" class="calc-btn" onclick="calcInput('8')">8</button>
           <button type="button" class="calc-btn" onclick="calcInput('9')">9</button>
-          <button type="button" class="calc-btn" onclick="calcInput('4')">4</button>
-          <button type="button" class="calc-btn" onclick="calcInput('5')">5</button>
+          <button type="button" class="calc-btn" onclick="calcInput('8')">8</button>
+          <button type="button" class="calc-btn" onclick="calcInput('7')">7</button>
           <button type="button" class="calc-btn" onclick="calcInput('6')">6</button>
-          <button type="button" class="calc-btn" onclick="calcInput('1')">1</button>
-          <button type="button" class="calc-btn" onclick="calcInput('2')">2</button>
+          <button type="button" class="calc-btn" onclick="calcInput('5')">5</button>
+          <button type="button" class="calc-btn" onclick="calcInput('4')">4</button>
           <button type="button" class="calc-btn" onclick="calcInput('3')">3</button>
+          <button type="button" class="calc-btn" onclick="calcInput('2')">2</button>
+          <button type="button" class="calc-btn" onclick="calcInput('1')">1</button>
           <button type="button" class="calc-btn" onclick="calcInput('0')">0</button>
           <button type="button" class="calc-btn" onclick="calcInput('.')">.</button>
           <button type="button" class="calc-btn calc-del" onclick="calcDelete()">⌫</button>

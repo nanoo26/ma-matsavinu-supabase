@@ -40,21 +40,17 @@
             <button type="button" class="month-arrow-btn" id="reports-month-next" aria-label="חודש הבא">
               →
             </button>
-            <select id="month" name="month" class="modern-select month-select">
-              {% for m in months %}
-                <option value="{{ m }}" {% if m == selected_month %}selected{% endif %}>
-                  {{ m }}
-                </option>
-              {% endfor %}
-            </select>
+            <input
+              type="month"
+              id="month"
+              name="month"
+              value="{{ selected_month }}"
+              class="modern-select month-select"
+              required
+            >
             <button type="button" class="month-arrow-btn" id="reports-month-prev" aria-label="חודש קודם">
               ←
             </button>
-          </div>
-
-          <div class="date-range-display">
-            <span class="range-icon">📅</span>
-            <span class="range-text">{{ display_range }}</span>
           </div>
 
           <!-- פילטרים בשורה אחת -->
@@ -84,6 +80,11 @@
             <button type="submit" class="filter-btn-search">🔍</button>
           </div>
 
+          <!-- תצוגת טווח תאריכים כטקסט -->
+          <div class="date-range-text">
+            {{ display_range }}
+          </div>
+
         </form>
       </section>
 
@@ -92,7 +93,7 @@
         <!-- הכנסות -->
         <div class="stat-card-vertical summary-income">
           <div class="stat-bar-wrapper">
-            <div class="stat-bar" style="height: 100%"></div>
+            <div class="stat-bar" style="--progress: 100" data-percent="100%"></div>
           </div>
           <div class="stat-content">
             <div class="stat-label">הכנסות החודש</div>
@@ -104,7 +105,8 @@
         <div class="stat-card-vertical summary-commitments">
           <div class="stat-bar-wrapper">
             {% set commitments_percent = (summary.total_commitments / summary.total_income * 100) if summary.total_income > 0 else 0 %}
-            <div class="stat-bar" style="height: {{ commitments_percent if commitments_percent <= 100 else 100 }}%"></div>
+            {% set commitments_capped = commitments_percent if commitments_percent <= 100 else 100 %}
+            <div class="stat-bar" style="--progress: {{ commitments_capped }}" data-percent="{{ '%.0f'|format(commitments_percent) }}%"></div>
           </div>
           <div class="stat-content">
             <div class="stat-label">התחייבויות קבועות</div>
@@ -120,7 +122,8 @@
         <div class="stat-card-vertical summary-luxury {% if (summary.available_for_luxuries or 0) < 0 %}negative{% endif %}">
           <div class="stat-bar-wrapper">
             {% set luxury_percent = (summary.available_for_luxuries / summary.total_income * 100) if summary.total_income > 0 else 0 %}
-            <div class="stat-bar" style="height: {{ luxury_percent if luxury_percent <= 100 else 100 }}%"></div>
+            {% set luxury_capped = luxury_percent if luxury_percent <= 100 else 100 %}
+            <div class="stat-bar" style="--progress: {{ luxury_capped if luxury_capped > 0 else 0 }}" data-percent="{{ '%.0f'|format(luxury_percent if luxury_percent > 0 else 0) }}%"></div>
           </div>
           <div class="stat-content">
             <div class="stat-label">נשאר למותרות</div>
@@ -132,7 +135,8 @@
         <div class="stat-card-vertical summary-spent">
           <div class="stat-bar-wrapper">
             {% set usage = summary.usage_percent or 0 %}
-            <div class="stat-bar" style="height: {{ usage if usage <= 100 else 100 }}%"></div>
+            {% set usage_capped = usage if usage <= 100 else 100 %}
+            <div class="stat-bar" style="--progress: {{ usage_capped }}" data-percent="{{ '%.0f'|format(usage) }}%"></div>
           </div>
           <div class="stat-content">
             <div class="stat-label">כבר הוצאת החודש</div>
@@ -145,7 +149,8 @@
         <div class="stat-card-vertical summary-remaining">
           <div class="stat-bar-wrapper">
             {% set remaining_percent = (summary.can_still_spend / summary.available_for_luxuries * 100) if summary.available_for_luxuries > 0 else 0 %}
-            <div class="stat-bar" style="height: {{ remaining_percent if remaining_percent <= 100 else 100 }}%"></div>
+            {% set remaining_capped = remaining_percent if remaining_percent <= 100 else 100 %}
+            <div class="stat-bar" style="--progress: {{ remaining_capped }}" data-percent="{{ '%.0f'|format(remaining_percent) }}%"></div>
           </div>
           <div class="stat-content">
             <div class="stat-label">עוד יכול להוציא</div>
@@ -157,7 +162,8 @@
         <div class="stat-card-vertical summary-daily">
           <div class="stat-bar-wrapper">
             {% set days_percent = (summary.days_remaining / 30 * 100) %}
-            <div class="stat-bar" style="height: {{ days_percent if days_percent <= 100 else 100 }}%"></div>
+            {% set days_capped = days_percent if days_percent <= 100 else 100 %}
+            <div class="stat-bar" style="--progress: {{ days_capped }}" data-percent="{{ summary.days_remaining }}"></div>
           </div>
           <div class="stat-content">
             <div class="stat-label">ממוצע יומי</div>
@@ -319,13 +325,12 @@
                       data-edit-url="{{ url_for(
                         'edit_expense',
                         expense_id=e.id,
-                        next=url_for(
+                        return_to=url_for(
                           'reports',
                           month=selected_month,
                           category_filter=category_filter,
                           payment_filter=payment_filter,
-                          expense_type=expense_type,
-                          _anchor='exp-' ~ e.id
+                          expense_type=expense_type
                         )
                       ) }}"
                       onclick="openExpenseModal(this)">
@@ -692,21 +697,21 @@
 
     if (prevBtn && monthSelect) {
       prevBtn.addEventListener('click', function() {
-        var currentIndex = monthSelect.selectedIndex;
-        if (currentIndex > 0) {
-          monthSelect.selectedIndex = currentIndex - 1;
-          monthSelect.form.submit();
-        }
+        var currentDate = new Date(monthSelect.value + '-01');
+        currentDate.setMonth(currentDate.getMonth() - 1);
+        var newMonth = currentDate.getFullYear() + '-' + String(currentDate.getMonth() + 1).padStart(2, '0');
+        monthSelect.value = newMonth;
+        monthSelect.form.submit();
       });
     }
 
     if (nextBtn && monthSelect) {
       nextBtn.addEventListener('click', function() {
-        var currentIndex = monthSelect.selectedIndex;
-        if (currentIndex < monthSelect.options.length - 1) {
-          monthSelect.selectedIndex = currentIndex + 1;
-          monthSelect.form.submit();
-        }
+        var currentDate = new Date(monthSelect.value + '-01');
+        currentDate.setMonth(currentDate.getMonth() + 1);
+        var newMonth = currentDate.getFullYear() + '-' + String(currentDate.getMonth() + 1).padStart(2, '0');
+        monthSelect.value = newMonth;
+        monthSelect.form.submit();
       });
     }
 
