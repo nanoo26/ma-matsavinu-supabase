@@ -53,7 +53,9 @@
           <div class="reports-filters-single-row">
             <select id="category_filter" name="category_filter" class="filter-select">
               <option value="">קטגוריה</option>
-              <option value="fixed" {% if category_filter == "fixed" %}selected{% endif %}>קבועות</option>
+              <option value="fixed_and_installments" {% if category_filter == "fixed_and_installments" %}selected{% endif %}>קבועות ותשלומים</option>
+              <option value="fixed_only" {% if category_filter == "fixed_only" %}selected{% endif %}>קבועות בלבד</option>
+              <option value="installments_only" {% if category_filter == "installments_only" %}selected{% endif %}>תשלומים בלבד</option>
               {% for c in categories %}
                 <option value="{{ c }}" {% if category_filter == c %}selected{% endif %}>{{ c }}</option>
               {% endfor %}

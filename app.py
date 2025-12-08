@@ -243,9 +243,19 @@ def apply_common_filters(expenses, category_filter, payment_filter, expense_type
     """פילטרים משותפים ל-/expenses ול-/reports."""
     filtered = list(expenses)
 
-    # קטגוריה (כולל 'fixed')
+    # קטגוריה (כולל 'fixed_and_installments', 'fixed_only', 'installments_only')
     if category_filter:
-        if category_filter == "fixed":
+        if category_filter == "fixed_and_installments":
+            # קבועות ותשלומים - כל מה שמסומן כ-is_fixed
+            filtered = [e for e in filtered if e.get("is_fixed")]
+        elif category_filter == "fixed_only":
+            # קבועות בלבד - is_fixed=True אבל לא תשלומים
+            filtered = [e for e in filtered if e.get("is_fixed") and normalize_expense_type_code(e.get("expense_type")) != "installments"]
+        elif category_filter == "installments_only":
+            # תשלומים בלבד - expense_type=installments
+            filtered = [e for e in filtered if normalize_expense_type_code(e.get("expense_type")) == "installments"]
+        elif category_filter == "fixed":
+            # תמיכה לאחור - מפנה ל-fixed_and_installments
             filtered = [e for e in filtered if e.get("is_fixed")]
         else:
             norm_cat = normalize_text_for_filter(category_filter)
