@@ -2,351 +2,394 @@
 <html lang="he" dir="rtl">
 <head>
   <meta charset="utf-8">
-  <title>מה מצבינו - מעקב הוצאות</title>
+  <title>מה מצבינו - הוצאות</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=2">
 </head>
 <body>
   <div class="app-shell">
-
-    <!-- כותרת עליונה -->
     <header class="app-header">
       <h1 class="app-title">מה מצבינו</h1>
       <p class="app-subtitle">מעקב הוצאות משפחתי</p>
-
       {% include "tabs.html" %}
-
-      <!-- כרטיס בחירת חודש + פילטרים -->
-      <section class="card month-select-card">
-        <div class="card-header">
-          <h2 class="card-title">📅 בחירת חודש והצגת הוצאות</h2>
-          <p class="card-subtitle">בחר חודש וסנן לפי קטגוריה, אמצעי תשלום וסוג הוצאה</p>
-        </div>
-
-        <div class="card-body">
-          <form method="get" action="{{ url_for('expenses') }}" class="month-form">
-            <!-- שורת חודש עם חיצים -->
-            <div class="month-picker-row" style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
-              <button type="button"
-                      class="month-nav-btn"
-                      id="month-prev-btn"
-                      aria-label="חודש קודם">
-                ←
-              </button>
-
-              <div class="month-input-wrapper" style="flex:1; display:flex; flex-direction:column; gap:4px;">
-                <label for="global-month-select" class="month-label">חודש:</label>
-                <input
-                  type="month"
-                  id="global-month-select"
-                  name="month"
-                  value="{{ selected_month or current_month }}"
-                  required
-                  onchange="this.form.submit()"
-                  style="width:100%; padding:10px 12px; border-radius:10px; border:1px solid #ddd; box-sizing:border-box;"
-                >
-              </div>
-
-              <button type="button"
-                      class="month-nav-btn"
-                      id="month-next-btn"
-                      aria-label="חודש הבא">
-                →
-              </button>
-            </div>
-
-            <!-- שורת פילטרים (קטגוריה / אמצעי תשלום / סוג הוצאה) -->
-            <div class="filters-row" style="display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:8px; margin-bottom:8px;">
-              <!-- קטגוריה -->
-              <div class="filter-item">
-                <label for="category_filter" style="font-size:13px; color:#64748b; display:block; margin-bottom:4px;">
-                  קטגוריה
-                </label>
-                <select id="category_filter"
-                        name="category_filter"
-                        style="width:100%; padding:8px; border-radius:8px; border:1px solid #cbd5e1; font-size:14px;">
-                  <option value="">הכל</option>
-                  <option value="fixed" {% if category_filter == "fixed" %}selected{% endif %}>
-                    רק הוצאות קבועות
-                  </option>
-                  {% for c in categories %}
-                    <option value="{{ c }}" {% if category_filter == c %}selected{% endif %}>
-                      {{ c }}
-                    </option>
-                  {% endfor %}
-                </select>
-              </div>
-
-              <!-- אמצעי תשלום -->
-              <div class="filter-item">
-                <label for="payment_filter" style="font-size:13px; color:#64748b; display:block; margin-bottom:4px;">
-                  אמצעי תשלום
-                </label>
-                <select id="payment_filter"
-                        name="payment_filter"
-                        style="width:100%; padding:8px; border-radius:8px; border:1px solid #cbd5e1; font-size:14px;">
-                  <option value="">הכל</option>
-                  {% for p in payment_methods %}
-                    <option value="{{ p }}" {% if payment_filter == p %}selected{% endif %}>
-                      {{ p }}
-                    </option>
-                  {% endfor %}
-                </select>
-              </div>
-
-              <!-- סוג הוצאה -->
-              <div class="filter-item">
-                <label for="expense_type" style="font-size:13px; color:#64748b; display:block; margin-bottom:4px;">
-                  סוג הוצאה
-                </label>
-                <select id="expense_type"
-                        name="expense_type"
-                        style="width:100%; padding:8px; border-radius:8px; border:1px solid #cbd5e1; font-size:14px;">
-                  <option value="">הכל</option>
-                  <option value="single" {% if expense_type == "single" %}selected{% endif %}>
-                    חד פעמית
-                  </option>
-                  <option value="standing" {% if expense_type == "standing" %}selected{% endif %}>
-                    קבועה / הוראת קבע
-                  </option>
-                  <option value="installments" {% if expense_type == "installments" %}selected{% endif %}>
-                    בתשלומים
-                  </option>
-                </select>
-              </div>
-            </div>
-
-            <div style="text-align:left; margin-top:4px;">
-              <button type="submit" class="btn-small">
-                סינון
-              </button>
-            </div>
-          </form>
-        </div>
-      </section>
     </header>
 
     <main class="content">
 
-      {% if expenses and expenses|length > 0 %}
-
-        {% set month_total = expenses|sum(attribute='amount') %}
-
-        <!-- גרף סוללה + 3 קטגוריות מובילות -->
-        <section class="stat-card purple main-stat-card" style="margin-bottom: 24px; padding: 24px;">
-          <div style="text-align: center;">
-
-            <div style="font-size: 22px; font-weight: 700; color: #fff; margin-bottom: 12px;">
-              💡 סך כל ההוצאות לחודש: {{ "%.0f"|format(total_amount) }} ₪
+      <!-- הודעות מערכת -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="flash-message flash-{{ category }}">
+              {{ message }}
             </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
 
-            <div style="font-size: 15px; color: rgba(255,255,255,0.85); margin-bottom: 8px;">
-              הוצאות חד פעמיות: {{ "%.0f"|format(spent_single) }} ₪ מתוך {{ "%.0f"|format(total_income or 0) }} ₪
-            </div>
-
-            <div style="width: 100%; max-width: 200px; height: 28px; border: 2px solid #fff; border-radius: 8px; margin: 0 auto; overflow: hidden; background: rgba(255,255,255,0.1); position: relative;">
-              <div style="
-                width: {{ battery_percent }}%;
-                height: 100%;
-                {% if battery_percent >= 85 %}
-                  background: linear-gradient(90deg, #ef4444, #f97373);
-                {% elif battery_percent >= 70 %}
-                  background: linear-gradient(90deg, #f59e0b, #fbbf24);
-                {% else %}
-                  background: linear-gradient(90deg, #22c55e, #4ade80);
-                {% endif %}
-                transition: width 1s ease-in-out;
-              "></div>
-
-              <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff;">
-                {{ "%.0f"|format(battery_percent) }}%
+      <!-- כרטיס סיכום קצר מעל הטבלה -->
+      <section class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">סיכום לחודש הנבחר</div>
+            <div class="card-subtitle">{{ selected_month }}</div>
+          </div>
+          <div class="card-value-main">
+            {{ "%.0f"|format(total_amount or 0) }} ₪
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="stats-row">
+            <div class="stat-item">
+              <div class="stat-label">סה"כ הכנסות</div>
+              <div class="stat-value">
+                {{ "%.0f"|format(total_income or 0) }} ₪
               </div>
             </div>
-
+            <div class="stat-item">
+              <div class="stat-label">יתרה משוערת</div>
+              <div class="stat-value">
+                {{ "%.0f"|format((total_income or 0) - (total_amount or 0)) }} ₪
+              </div>
+            </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        <!-- בר עליון למחיקה מרובה -->
-        <form id="bulk-delete-form"
-              action="{{ url_for('delete_selected') }}"
-              method="post"
-              class="multi-actions-bar">
-          <label class="select-all-label">
-            <input type="checkbox" id="select-all-expenses">
-            בחירת כל ההוצאות
-          </label>
+      <!-- טופס בחירת חודש וסינונים -->
+      <section class="reports-filters-section">
+        <form method="get" action="{{ url_for('expenses') }}" class="reports-filters-form">
+          
+          <!-- חודש עם חיצים -->
+          <div class="reports-month-selector">
+            <button type="button" class="month-arrow-btn" id="month-next-btn" aria-label="חודש הבא">
+              →
+            </button>
+            <input
+              type="month"
+              id="global-month-select"
+              name="month"
+              value="{{ selected_month or current_month }}"
+              class="modern-select month-select"
+              required
+            >
+            <button type="button" class="month-arrow-btn" id="month-prev-btn" aria-label="חודש קודם">
+              ←
+            </button>
+          </div>
 
-          <button type="submit"
-                  class="btn-danger-small"
-                  onclick="return confirm('למחוק את כל ההוצאות שנבחרו?');">
-            🗑 מחיקת נבחרים
+          <div class="date-range-display">
+            <span class="range-icon">📅</span>
+            <span class="range-text">טווח חודש פיננסי נבחר</span>
+          </div>
+
+          <!-- שאר הפילטרים -->
+          <div class="reports-filters-grid">
+            <select id="category_filter" name="category_filter" class="modern-select">
+              <option value="">כל הקטגוריות</option>
+              <option value="fixed" {% if category_filter == "fixed" %}selected{% endif %}>קבועות</option>
+              {% for c in categories %}
+                <option value="{{ c }}" {% if category_filter == c %}selected{% endif %}>{{ c }}</option>
+              {% endfor %}
+            </select>
+
+            <select id="payment_filter" name="payment_filter" class="modern-select">
+              <option value="">כל אמצעי התשלום</option>
+              {% for p in payment_methods %}
+                <option value="{{ p }}" {% if payment_filter == p %}selected{% endif %}>{{ p }}</option>
+              {% endfor %}
+            </select>
+
+            <select id="expense_type" name="expense_type" class="modern-select">
+              <option value="">כל הסוגים</option>
+              <option value="single" {% if expense_type == "single" %}selected{% endif %}>חד פעמית</option>
+              <option value="standing" {% if expense_type == "standing" %}selected{% endif %}>קבועה</option>
+              <option value="installments" {% if expense_type == "installments" %}selected{% endif %}>תשלומים</option>
+            </select>
+          </div>
+
+          <button type="submit" class="modern-filter-btn">
+            🔍 סינון
           </button>
+
         </form>
+      </section>
 
-        <!-- רשימת הוצאות - תצוגת קבלה עם גלילה פנימית וסיכום -->
-        <section class="receipt-section">
-          <div class="receipt-card">
-            <ul class="receipt-list">
-              {% for e in expenses %}
-                <li class="receipt-row" id="exp-{{ e.id }}">
-                  <div class="receipt-row-main">
-                    <!-- צד שמאל: סכום -->
-                    <div class="receipt-left">
-                      <span class="receipt-amount">{{ '%.0f'|format(e.amount or 0) }}</span>
-                      <span class="receipt-currency">₪</span>
-                    </div>
-
-                    <!-- צד ימין: פרטי הוצאה -->
-                    <div class="receipt-right">
-                      <div class="receipt-date">{{ e.date }}</div>
-
-                      <div class="receipt-meta">
-                        <span>{{ e.category or 'ללא קטגוריה' }}</span>
-                        {% if e.payment_method %}
-                          <span class="receipt-sep">•</span>
-                          <span>{{ e.payment_method }}</span>
-                        {% endif %}
-                        {% if e.expense_type == "רכישה בתשלומים" or e.total_installments %}
-                          <span class="receipt-sep">•</span>
-                          <span class="installment-label">תשלום {{ e.current_installment }}/{{ e.total_installments }}</span>
+      <!-- רשימת כל ההוצאות בחודש -->
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">
+            כל ההוצאות בחודש {{ selected_month }}
+          </h2>
+        </div>
+        <div class="card-body">
+          <form method="post" action="{{ url_for('delete_selected') }}" id="delete-form">
+            <table class="expenses-table-only">
+              <thead>
+                <tr>
+                  <th><input type="checkbox" id="select-all"></th>
+                  <th>תאריך</th>
+                  <th>תאור</th>
+                  <th>סכום</th>
+                  <th>פעולות</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for e in expenses %}
+                  <tr id="exp-{{ e.id }}" class="{% if e.is_fixed %}row-fixed{% endif %}">
+                    <td><input type="checkbox" name="selected_ids" value="{{ e.id }}" class="expense-checkbox"></td>
+                    <td>{{ e.display_date or e.date }}</td>
+                    <td class="col-notes">
+                      <strong>{{ e.comment or "ללא תיאור" }}</strong>
+                      <div class="expense-meta-row">
+                        <span class="expense-category">{{ e.category or "לא מסווג" }}</span>
+                        {% if e.expense_type == "installments" and e.current_installment and e.total_installments %}
+                          <span class="installment-badge">💳 {{ e.current_installment }}/{{ e.total_installments }}</span>
+                        {% elif e.is_fixed %}
+                          <span class="fixed-badge">📆 קבועה</span>
                         {% endif %}
                       </div>
-
-                      {% if e.notes %}
-                        <div class="receipt-notes">
-                          <span class="receipt-notes-label">תיאור:</span>
-                          {{ e.notes }}
-                        </div>
-                      {% endif %}
-                    </div>
-                  </div>
-
-                  <!-- פעולות + בחירה למחיקה מרובה -->
-                  <div class="expense-actions-new" style="margin-top:6px; justify-content:flex-end; gap:8px;">
-                    <form
-                      action="{{ url_for('delete_selected') }}"
-                      method="post"
-                      class="inline-form"
-                      onsubmit="return confirm('למחוק את ההוצאה הזו?');">
-                      <input type="hidden" name="selected_ids" value="{{ e.id }}">
-                      <button type="submit" class="btn-expense-delete">מחיקה 🗑️</button>
-                    </form>
-
-                    <a href="{{ url_for('edit_expense', expense_id=e.id, month=selected_month) }}"
-                      class="btn-expense-edit">עריכה ✏️</a>
-
-                    <label class="expense-select-col" title="בחירה למחיקה מרובה" style="margin-inline-start:auto;">
-                      <input
-                        type="checkbox"
-                        name="selected_ids"
-                        value="{{ e.id }}"
-                        class="expense-checkbox"
-                        form="bulk-delete-form">
-                    </label>
-                  </div>
-                </li>
-              {% endfor %}
-            </ul>
-
-            <!-- סיכום קבלה בתחתית -->
-            <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-top:1px dashed #e5e7eb; margin-top:8px;">
-              <div style="font-size:13px; color:#64748b;">סה״כ הוצאות בחודש</div>
-              <div class="receipt-total-price">
-                ₪ {{ '%.0f'|format(month_total or 0) }}
-              </div>
+                    </td>
+                    <td>{{ "%.0f"|format(e.amount or 0) }} ₪</td>
+                    <td class="actions-cell">
+                      <button
+                        type="button"
+                        class="table-action-btn"
+                        data-id="{{ e.id }}"
+                        data-date="{{ e.display_date or e.date }}"
+                        data-notes="{{ e.comment|default('', true) }}"
+                        data-category="{{ e.category }}"
+                        data-amount="{{ '%.0f'|format(e.amount or 0) }}"
+                        data-edit-url="{{ url_for('edit_expense', expense_id=e.id, next=request.url + '#exp-' + e.id|string) }}"
+                        onclick="openExpenseModal(this)">
+                        ⋮
+                      </button>
+                    </td>
+                  </tr>
+                {% endfor %}
+                {% if not expenses %}
+                  <tr>
+                    <td colspan="5" style="text-align:center; color:#94a3b8; font-size:14px;">
+                      אין הוצאות לחודש הפיננסי הזה.
+                    </td>
+                  </tr>
+                {% endif %}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <th colspan="3">סה״כ</th>
+                  <th colspan="2">{{ "%.0f"|format(total_amount or 0) }} ₪</th>
+                </tr>
+              </tfoot>
+            </table>
+            <div style="margin-top: 12px;">
+              <button type="submit" onclick="return confirm('האם אתה בטוח שברצונך למחוק את כל ההוצאות שבחרת?') && confirm('בטוח בטוח? פעולה זו לא ניתנת לביטול!');" style="padding: 8px 16px; background: #dc2626; color: white; border: none; border-radius: 8px; cursor: pointer; font-family: 'Heebo', sans-serif; font-size: 14px;">מחק נבחרים</button>
             </div>
-          </div>
-        </section>
+          </form>
+        </div>
+      </section>
 
-        <!-- סיכומים -->
-        <section class="summary-grid" style="margin-bottom: 24px;">
-          <div class="summary-item">
-            <span class="summary-label">מספר הוצאות</span>
-            <span class="summary-value">{{ expenses|length }}</span>
-          </div>
-          <div class="summary-item">
-            <span class="summary-label">ממוצע להוצאה</span>
-            <span class="summary-value">
-              {{ "%.0f"|format(total_amount / expenses|length) }} ₪
-            </span>
-          </div>
-          <div class="summary-item">
-            <span class="summary-label">הוצאה הכי גבוהה</span>
-            <span class="summary-value">{{ "%.0f"|format(max_expense_amount) }} ₪</span>
-          </div>
-        </section>
+      <section class="card">
+        <a href="{{ url_for('add_expense') }}" class="btn btn-primary" style="width:100%; justify-content:center;">
+          ➕ הוספת הוצאה חדשה
+        </a>
+      </section>
 
-      {% else %}
-        <section class="card" style="text-align: center; padding: 60px 20px; background: linear-gradient(135deg, rgba(37,99,235,0.05), rgba(139,92,246,0.05)); margin-top: 16px;">
-          <div style="font-size: 64px; margin-bottom: 20px; opacity: 0.5;">💸</div>
-          <h3 style="font-size: 24px; font-weight: 700; color: var(--text-primary); margin-bottom: 12px;">
-            אין עדיין הוצאות
-          </h3>
-          <p class="empty-state" style="padding: 0; margin-bottom: 24px;">
-            לחץ על "הוספת הוצאה חדשה" כדי להתחיל לעקוב אחר ההוצאות שלך
-          </p>
-          <a href="{{ url_for('add_expense') }}" class="btn-primary">➕ הוספת הוצאה חדשה</a>
-        </section>
-      {% endif %}
     </main>
 
-    <a href="{{ url_for('add_expense') }}" class="fab-add" title="">
-      <span class="material-icons-round">➕</span>
-      <span class="fab-tooltip">הוספת הוצאה</span>
+    <a href="{{ url_for('add_expense') }}" class="fab-add" title="הוספת הוצאה">
+      +
     </a>
+
+    <!-- חלונית גרירה עם סיכום -->
+    <div class="drawer" id="summary-drawer">
+      <div class="drawer-handle"></div>
+      <div class="drawer-title">
+        סיכום מה מצבינו לחודש {{ selected_month }}
+      </div>
+      <div class="drawer-grid">
+        <div class="drawer-item">
+          <div class="drawer-item-label">סה"כ הכנסות</div>
+          <div class="drawer-item-value">
+            {{ "%.0f"|format(total_income or 0) }} ₪
+          </div>
+        </div>
+        <div class="drawer-item">
+          <div class="drawer-item-label">סה"כ הוצאות</div>
+          <div class="drawer-item-value">
+            {{ "%.0f"|format(total_amount or 0) }} ₪
+          </div>
+        </div>
+        <div class="drawer-item">
+          <div class="drawer-item-label">הוצאות חד פעמיות</div>
+          <div class="drawer-item-value">
+            {{ "%.0f"|format(spent_single or 0) }} ₪
+          </div>
+        </div>
+        <div class="drawer-item">
+          <div class="drawer-item-label">קבועות + תשלומים</div>
+          <div class="drawer-item-value">
+            {{ "%.0f"|format((total_amount or 0) - (spent_single or 0)) }} ₪
+          </div>
+        </div>
+        <div class="drawer-item">
+          <div class="drawer-item-label">יתרה משוערת</div>
+          <div class="drawer-item-value">
+            {{ "%.0f"|format((total_income or 0) - (total_amount or 0)) }} ₪
+          </div>
+        </div>
+        <div class="drawer-item">
+          <div class="drawer-item-label">ניצול מההכנסות</div>
+          <div class="drawer-item-value">
+            {{ "%.1f"|format(battery_percent or 0) }}%
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- מודל עריכה/מחיקה להוצאה בודדת -->
+  <div id="expense-modal" class="expense-modal hidden">
+    <div class="expense-modal-backdrop" onclick="closeExpenseModal()"></div>
+    <div class="expense-modal-content">
+      <button type="button" class="expense-modal-close" onclick="closeExpenseModal()">✕</button>
+
+      <h3 class="expense-modal-title">פרטי הוצאה</h3>
+
+      <div class="expense-modal-body">
+        <div class="expense-detail-item">
+          <span class="detail-label">תאריך:</span>
+          <span class="detail-value" id="modal-expense-date"></span>
+        </div>
+        <div class="expense-detail-item">
+          <span class="detail-label">קטגוריה:</span>
+          <span class="detail-value" id="modal-expense-category"></span>
+        </div>
+        <div class="expense-detail-item">
+          <span class="detail-label">סכום:</span>
+          <span class="detail-value detail-amount" id="modal-expense-amount"></span>
+        </div>
+        <div class="expense-detail-item">
+          <span class="detail-label">תיאור:</span>
+          <span class="detail-value" id="modal-expense-notes"></span>
+        </div>
+      </div>
+
+      <div class="expense-modal-actions">
+        <a id="expense-modal-edit-link" href="#" class="modal-edit-btn">
+          ✏️ עריכה
+        </a>
+        <button type="button" class="modal-delete-btn" onclick="deleteExpenseFromModal()">
+          🗑️ מחיקה
+        </button>
+      </div>
+      
+      <form id="expense-modal-delete-form" method="post" action="{{ url_for('delete_selected') }}" style="display: none;">
+        <input type="hidden" name="selected_ids" id="expense-modal-delete-id">
+      </form>
+    </div>
   </div>
 
   <script>
-    (function() {
-      // בחירת כל ההוצאות
-      var selectAll = document.getElementById('select-all-expenses');
-      if (selectAll) {
-        selectAll.addEventListener('change', function() {
-          var checkboxes = document.querySelectorAll('.expense-checkbox');
-          checkboxes.forEach(function(cb) {
-            cb.checked = selectAll.checked;
-          });
-        });
-      }
-
-      // ניווט חודש קודם / הבא
+    (function () {
       var monthInput = document.getElementById('global-month-select');
       var prevBtn = document.getElementById('month-prev-btn');
       var nextBtn = document.getElementById('month-next-btn');
 
       function changeMonth(delta) {
         if (!monthInput || !monthInput.value) return;
-
-        var parts = monthInput.value.split('-'); // "YYYY-MM"
-        if (parts.length !== 2) return;
-
-        var year = parseInt(parts[0], 10);
-        var month = parseInt(parts[1], 10) - 1; // 0 based
-
-        if (isNaN(year) || isNaN(month)) return;
-
-        var d = new Date(year, month, 1);
-        d.setMonth(d.getMonth() + delta);
-
-        var newYear = d.getFullYear();
-        var newMonth = (d.getMonth() + 1).toString().padStart(2, '0');
-
-        monthInput.value = newYear + '-' + newMonth;
+        var parts = monthInput.value.split('-');
+        if (parts.length < 2) return;
+        var y = parseInt(parts[0], 10);
+        var m = parseInt(parts[1], 10);
+        if (isNaN(y) || isNaN(m)) return;
+        m += delta;
+        if (m <= 0) {
+          m += 12;
+          y -= 1;
+        }
+        if (m > 12) {
+          m -= 12;
+          y += 1;
+        }
+        var yStr = String(y).padStart(4, '0');
+        var mStr = String(m).padStart(2, '0');
+        monthInput.value = yStr + '-' + mStr;
         monthInput.form.submit();
       }
 
       if (prevBtn && monthInput) {
-        prevBtn.addEventListener('click', function() {
+        prevBtn.addEventListener('click', function () {
           changeMonth(-1);
         });
       }
-
       if (nextBtn && monthInput) {
-        nextBtn.addEventListener('click', function() {
+        nextBtn.addEventListener('click', function () {
           changeMonth(1);
         });
       }
+
+      // Drawer open on handle click
+      var drawer = document.getElementById('summary-drawer');
+      if (drawer) {
+        var handle = drawer.querySelector('.drawer-handle');
+        if (handle) {
+          handle.addEventListener('click', function () {
+            drawer.classList.toggle('open');
+          });
+        }
+      }
+
+      // Select all checkboxes
+      var selectAll = document.getElementById('select-all');
+      if (selectAll) {
+        selectAll.addEventListener('change', function() {
+          var checkboxes = document.querySelectorAll('.expense-checkbox');
+          checkboxes.forEach(function(checkbox) {
+            checkbox.checked = selectAll.checked;
+          });
+        });
+      }
+
+      // Auto-hide flash messages after 1 second
+      var flashMessages = document.querySelectorAll('.flash-message');
+      flashMessages.forEach(function(msg) {
+        setTimeout(function() {
+          msg.remove();
+        }, 1000);
+      });
     })();
+
+    // Modal functions for expense actions
+    function openExpenseModal(btn) {
+      var id = btn.getAttribute("data-id");
+      var date = btn.getAttribute("data-date") || "";
+      var notes = btn.getAttribute("data-notes") || "";
+      var category = btn.getAttribute("data-category") || "";
+      var amount = btn.getAttribute("data-amount") || "";
+      var editUrl = btn.getAttribute("data-edit-url") || "#";
+
+      document.getElementById("modal-expense-date").textContent = date;
+      document.getElementById("modal-expense-category").textContent = category;
+      document.getElementById("modal-expense-amount").textContent = amount + " ₪";
+      document.getElementById("modal-expense-notes").textContent = notes;
+
+      document.getElementById("expense-modal-edit-link").setAttribute("href", editUrl);
+      document.getElementById("expense-modal-delete-id").value = id;
+
+      document.getElementById("expense-modal").classList.remove("hidden");
+    }
+
+    function closeExpenseModal() {
+      document.getElementById("expense-modal").classList.add("hidden");
+    }
+
+    function deleteExpenseFromModal() {
+      if (confirm('האם אתה בטוח שברצונך למחוק הוצאה זו?')) {
+        document.getElementById('expense-modal-delete-form').submit();
+      }
+    }
   </script>
 </body>
 </html>

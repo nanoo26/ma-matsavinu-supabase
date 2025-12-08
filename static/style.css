@@ -1,3 +1,65 @@
+/* ============================================
+   MA MATZAVINU DESIGN SYSTEM - STYLE GUIDE
+   ============================================
+
+   1. Design Tokens & Globals
+      - :root variables (colors, shadows, backgrounds)
+      - body, reset, app-shell
+
+   2. App Header & Layout
+      - .app-shell, .app-header, .app-title, .app-subtitle
+
+   3. Navigation
+      - .main-tabs, .main-tab
+      - .nav-menu, .top-tabs, .segmented-nav, .segmented-tab
+
+   4. Buttons
+      - .btn-primary, .btn-main, .btn-submit
+      - .btn-ghost, .btn-danger, .btn-danger-small
+      - .btn-expense-edit, .btn-expense-delete
+      - .modern-filter-btn
+      - .fab-add (floating action button)
+
+   5. Flash Messages
+      - .flash-message, .flash-success, .flash-error, .flash-info
+
+   6. Cards & Summary
+      - .card, .form-card
+      - .summary-card, .summary-grid, .summary-item
+      - .stat-card, .stat-card.green / .purple / .cyan
+
+   7. Expenses List & Tables
+      - .expenses-table-only, .reports-table-only, .simple-table
+      - .expenses-table-custom, .category-table, .cat-percent-chip
+
+   8. Forms
+      - .form-box, .form-card, .form-group, labels, inputs, textareas
+      - #installments-panel (תשלומים)
+
+   9. Graphs & Visuals
+      - .battery-meter (גרף סוללה)
+      - .progress-indicator (מד התקדמות)
+
+   10. Budget Editor
+      - .budget-row, .budget-input-wrap, .budget-edit-table
+
+   11. Multi-select & Installments
+      - .select-all-label, .expense-checkbox
+      - .installment-info, .installments-panel, .installments-header
+
+   13. Utilities & Animations
+      - .empty-state, .alert-error
+      - Animations: fadeIn, rotate, pulse, batteryFlow
+      - Scrollbar styling
+
+   כשאתה רוצה שינוי עיצוב:
+   - כרטיסים ורשימת הוצאות -> סעיפים 6 + 7
+   - טפסים והוספת הוצאה -> סעיף 8
+   - גרפים וסוללה -> סעיף 9
+   - ניווט עליון -> סעיף 3
+   - כפתור הוספה צף -> סעיף 4 (fab-add)
+   ============================================ */
+
 /* ===============================
    קו עיצובי: אפליקציית כספים מודרנית
    צבעים: כחול, ירוק, סגול
@@ -150,6 +212,64 @@ body {
   box-shadow: var(--shadow-glow);
 }
 
+/* ========== הודעות Flash ========== */
+.flash-message {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 90%;
+  width: auto;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: center;
+  z-index: 10000;
+  box-shadow: var(--shadow-lg);
+  animation: flashSlideIn 0.2s ease, flashSlideOut 0.2s ease 0.8s;
+  animation-fill-mode: forwards;
+  pointer-events: none;
+}
+
+.flash-success {
+  background: linear-gradient(135deg, #4CAF50, #66BB6A);
+  color: white;
+}
+
+.flash-error {
+  background: linear-gradient(135deg, #f44336, #ef5350);
+  color: white;
+}
+
+.flash-info {
+  background: linear-gradient(135deg, var(--primary-blue), var(--secondary-cyan));
+  color: white;
+}
+
+@keyframes flashSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+@keyframes flashSlideOut {
+  from {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px);
+  }
+}
+/* ========== סוף הודעות Flash ========== */
+
 .nav-item.active::before, .top-tab-active::before {
   opacity: 1;
 }
@@ -175,22 +295,23 @@ body {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 14px 28px;
-  background: linear-gradient(135deg, var(--primary-green), var(--accent-emerald));
+  padding: 16px 28px;
+  background: linear-gradient(135deg, #0891b2, #06b6d4);
   color: #ffffff;
   border: none;
-  border-radius: 12px;
+  border-radius: 14px;
   font-size: 16px;
   font-weight: 700;
   text-decoration: none;
   cursor: pointer;
   transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 14px rgba(16,185,129,0.3);
+  box-shadow: 0 4px 14px rgba(8,145,178,0.35);
 }
 
 .btn-primary:hover, .btn-main:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(16,185,129,0.4);
+  box-shadow: 0 8px 20px rgba(8,145,178,0.45);
+  background: linear-gradient(135deg, #0e7490, #0891b2);
 }
 
 .btn-primary:active, .btn-main:active {
@@ -202,7 +323,7 @@ body {
 }
 
 /* תג סיכום */
-.summary-pill, .summary-card {
+.summary-card {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -221,7 +342,7 @@ body {
   gap: 10px;
 }
 
-.summary-pill strong, .summary-row strong {
+.summary-row strong {
   font-size: 20px;
   font-weight: 800;
   background: linear-gradient(135deg, var(--primary-blue), var(--primary-purple));
@@ -231,17 +352,17 @@ body {
 }
 
 /* כרטיסים כלליים */
-.expense-card, .card, .form-card {
+.card, .form-card {
   background: var(--bg-card);
-  border-radius: 16px;
-  padding: 20px;
-  margin-bottom: 16px;
-  box-shadow: var(--shadow-sm);
+  border-radius: 10px;
+  padding: 8px;
+  margin-bottom: 12px;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06);
   transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
-  border: 1px solid #e2e8f0;
+  border: none;
 }
 
-.expense-card:hover, .card:hover {
+.card:hover {
   transform: translateY(-3px);
   box-shadow: var(--shadow-lg);
   border-color: var(--primary-blue);
@@ -251,6 +372,96 @@ body {
   margin-bottom: 16px;
 }
 
+/* Budget Page - Credit Card Style Summary */
+.card:has(.card-value-main) {
+  background: linear-gradient(135deg, #4c1d95 0%, #5b21b6 50%, #0891b2 100%);
+  color: #ffffff;
+  border: none;
+  box-shadow: 0 8px 24px rgba(76, 29, 149, 0.35);
+  position: relative;
+  overflow: hidden;
+}
+
+.card:has(.card-value-main)::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.card:has(.card-value-main) .card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  position: relative;
+  z-index: 1;
+}
+
+.card:has(.card-value-main) .card-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 4px;
+  letter-spacing: 0.5px;
+}
+
+.card:has(.card-value-main) .card-subtitle {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 400;
+}
+
+.card-value-main {
+  font-size: 28px;
+  font-weight: 800;
+  color: #ffffff;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  letter-spacing: -0.5px;
+}
+
+.card:has(.card-value-main) .stats-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.card:has(.card-value-main) .stat-item {
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  transition: all 200ms ease;
+}
+
+.card:has(.card-value-main) .stat-item:hover {
+  background: rgba(255, 255, 255, 0.18);
+  transform: translateY(-2px);
+}
+
+.card:has(.card-value-main) .stat-label {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.75);
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+.card:has(.card-value-main) .stat-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.3px;
+}
+
+/* Regular card styling */
 .card-title {
   font-size: 20px;
   font-weight: 700;
@@ -267,80 +478,7 @@ body {
   padding: 0;
 }
 
-/* שורות בתוך כרטיסים ישנים */
-.expense-main-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-  flex-wrap: wrap;
-  gap: 8px;
-}
 
-.expense-date {
-  font-size: 14px;
-  color: var(--text-secondary);
-  font-weight: 500;
-}
-
-.expense-amount {
-  font-size: 22px;
-  font-weight: 800;
-  background: linear-gradient(135deg, var(--primary-green), var(--accent-emerald));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* צ'יפים ישנים */
-.expense-meta-row {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 10px;
-  flex-wrap: wrap;
-}
-
-.expense-chip {
-  display: inline-flex;
-  align-items: center;
-  padding: 6px 14px;
-  background: linear-gradient(135deg, rgba(37,99,235,0.1), rgba(59,130,246,0.1));
-  color: var(--primary-blue);
-  border-radius: 20px;
-  font-size: 13px;
-  font-weight: 600;
-  border: 1px solid rgba(37,99,235,0.2);
-}
-
-.expense-chip.secondary {
-  background: linear-gradient(135deg, rgba(139,92,246,0.1), rgba(124,58,237,0.1));
-  color: var(--primary-purple);
-  border-color: rgba(139,92,246,0.2);
-}
-
-/* הערות ישנות */
-.expense-notes {
-  font-size: 14px;
-  color: var(--text-secondary);
-  margin-bottom: 12px;
-  padding: 10px;
-  background: var(--bg-light);
-  border-radius: 8px;
-  border-right: 3px solid var(--secondary-cyan);
-}
-
-/* פעולות ישנות */
-.expense-actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 12px;
-  flex-wrap: wrap;
-}
-
-.inline-form {
-  display: inline-flex;
-  margin: 0;
-}
 
 .btn-ghost {
   display: inline-flex;
@@ -386,7 +524,7 @@ body {
 }
 
 /* טפסים */
-.form-box, .form-card {
+.form-card {
   background: var(--bg-card);
   border-radius: 16px;
   padding: 18px;
@@ -395,13 +533,13 @@ body {
 }
 
 .form-group {
-  margin-bottom: 18px;
+  margin-bottom: 20px;
 }
 
 .form-group label {
   display: block;
   margin-bottom: 8px;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--text-primary);
 }
@@ -410,21 +548,76 @@ body {
 .form-group select,
 .form-group textarea {
   width: 100%;
-  padding: 12px 16px;
-  border: 2px solid #e2e8f0;
-  border-radius: 10px;
+  padding: 14px 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
   font-size: 15px;
   font-family: 'Heebo', sans-serif;
   transition: all 200ms ease;
-  background: var(--bg-card);
+  background: white;
+  color: #1f2937;
 }
 
 .form-group input:focus,
 .form-group select:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: var(--primary-blue);
-  box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+  border-color: #0891b2;
+  box-shadow: 0 0 0 4px rgba(8, 145, 178, 0.1);
+  background: #f0fdfa;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* Checkbox group */
+.checkbox-group {
+  margin: 16px 0;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+  padding: 14px;
+  background: #f8fafc;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  transition: all 200ms ease;
+}
+
+.checkbox-label:hover {
+  background: #f0f9ff;
+  border-color: #0891b2;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: #0891b2;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.checkbox-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.checkbox-text strong {
+  font-size: 15px;
+  color: #1f2937;
+}
+
+.checkbox-text small {
+  font-size: 13px;
+  color: #6b7280;
+  font-weight: 400;
 }
 
 /* שדות טופס inline */
@@ -555,173 +748,9 @@ body {
 .summary-item:nth-child(2)::after { content: '📊'; }
 .summary-item:nth-child(3)::after { content: '💎'; }
 
-/* גרף עמודות */
-.chart-container {
-  margin: 20px 0;
-  padding: 20px;
-  background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(255,255,255,1));
-  border-radius: 16px;
-  box-shadow: var(--shadow-md);
-}
 
-.chart-title {
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 20px;
-  text-align: center;
-}
 
-.chart-bars {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
 
-.chart-bar-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.chart-label {
-  min-width: 120px;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-primary);
-  text-align: right;
-}
-
-.chart-bar-wrapper {
-  flex: 1;
-  height: 36px;
-  background: var(--bg-light);
-  border-radius: 10px;
-  overflow: hidden;
-  position: relative;
-  box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
-}
-
-.chart-bar {
-  height: 100%;
-  background: linear-gradient(90deg, var(--primary-blue), var(--secondary-cyan));
-  border-radius: 10px;
-  transition: width 800ms cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  padding: 0 12px;
-  color: #ffffff;
-  font-weight: 700;
-  font-size: 13px;
-  box-shadow: 0 2px 8px rgba(37,99,235,0.3);
-}
-
-.chart-bar::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 50%;
-  background: linear-gradient(180deg, rgba(255,255,255,0.2) 0%, transparent 100%);
-}
-
-.chart-bar.positive {
-  background: linear-gradient(90deg, var(--primary-green), var(--accent-emerald));
-  box-shadow: 0 2px 8px rgba(16,185,129,0.3);
-}
-
-.chart-bar.negative {
-  background: linear-gradient(90deg, #ef4444, #dc2626);
-  box-shadow: 0 2px 8px rgba(239,68,68,0.3);
-}
-
-.chart-bar.warning {
-  background: linear-gradient(90deg, #f59e0b, #d97706);
-  box-shadow: 0 2px 8px rgba(245,158,11,0.3);
-}
-
-.chart-value {
-  min-width: 80px;
-  text-align: left;
-  font-size: 14px;
-  font-weight: 700;
-  background: linear-gradient(135deg, var(--primary-blue), var(--primary-purple));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: rgba(255, 255, 255, 0);
-  background-clip: text;
-}
-
-/* גרף פאי / דונאט */
-.donut-chart {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 20px;
-  padding: 24px;
-  background: var(--bg-card);
-  border-radius: 16px;
-  box-shadow: var(--shadow-md);
-}
-
-.donut-visual {
-  width: 200px;
-  height: 200px;
-  border-radius: 50%;
-  background: conic-gradient(
-    var(--primary-blue) 0deg 120deg,
-    var(--primary-green) 120deg 240deg,
-    var(--primary-purple) 240deg 360deg
-  );
-  position: relative;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-}
-
-.donut-visual::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 120px;
-  height: 120px;
-  background: var(--bg-card);
-  border-radius: 50%;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-}
-
-.donut-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  justify-content: center;
-}
-
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  background: var(--bg-light);
-  border-radius: 20px;
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.legend-color {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-}
-
-.legend-color.blue { background: var(--primary-blue); }
-.legend-color.green { background: var(--primary-green); }
-.legend-color.purple { background: var(--primary-purple); }
-.legend-color.cyan { background: var(--secondary-cyan); }
 
 /* מד התקדמות */
 .progress-indicator {
@@ -846,94 +875,166 @@ body {
   background: linear-gradient(135deg, var(--secondary-cyan), #0891b2);
 }
 
-/* אלמנט נתונים עם אייקון */
-.data-pill {
-  display: inline-flex;
+
+
+/* =========================
+   Budget Page - Card Style Design
+   ========================= */
+
+.budget-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.budget-edit-table {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.budget-row {
+  display: flex;
   align-items: center;
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 12px 10px;
   gap: 8px;
-  padding: 8px 16px;
-  background: linear-gradient(135deg, rgba(37,99,235,0.1), rgba(59,130,246,0.1));
-  border: 2px solid rgba(37,99,235,0.2);
-  border-radius: 20px;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--primary-blue);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
   transition: all 200ms ease;
 }
 
-.data-pill:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(37,99,235,0.2);
-  border-color: var(--primary-blue);
+.budget-row:hover:not(.budget-row-header):not(.budget-row-total) {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
 }
 
-.data-pill .icon {
-  font-size: 18px;
-}
-
-.data-pill.success {
-  background: linear-gradient(135deg, rgba(16,185,129,0.1), rgba(5,150,105,0.1));
-  border-color: rgba(16,185,129,0.2);
-  color: var(--primary-green);
-}
-
-.data-pill.warning {
-  background: linear-gradient(135deg, rgba(245,158,11,0.1), rgba(217,119,6,0.1));
-  border-color: rgba(245,158,11,0.2);
-  color: #d97706;
-}
-
-/* תקציב */
-.budget-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--bg-light);
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.budget-row:last-child {
-  border-bottom: none;
-}
-
-.budget-row label {
+.budget-row-header {
+  background: linear-gradient(135deg, #0891b2, #06b6d4);
+  color: #ffffff;
+  font-weight: 700;
   font-size: 14px;
+  box-shadow: 0 3px 8px rgba(8, 145, 178, 0.25);
+}
+
+.budget-row-header .budget-cell {
+  color: #ffffff;
+}
+
+.budget-row-total {
+  background: linear-gradient(to right, #cffafe, #ddd6fe);
+  border: 2px solid #0891b2;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(8, 145, 178, 0.15);
+}
+
+.budget-cell {
+  display: flex;
+  align-items: center;
+  font-size: 15px;
+  color: #1e293b;
+}
+
+/* Layout for budget categories table (3 columns) */
+.budget-edit-table .budget-category {
+  flex: 1;
+  min-width: 0;
+  font-weight: 500;
+  justify-content: flex-start;
+  padding-right: 4px;
+}
+
+.budget-edit-table .budget-prev {
+  width: 85px;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.budget-edit-table .budget-current {
+  width: 110px;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 0 4px;
+}
+
+/* Previous amount display */
+.prev-amount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  background: linear-gradient(135deg, #cffafe, #ddd6fe);
+  border-radius: 8px;
+  font-size: 14px;
+  color: #0e7490;
   font-weight: 600;
-  color: var(--text-primary);
-  flex: 1;
-  min-width: 100px;
+  border: 2px solid #67e8f9;
+  min-width: 55px;
+  box-shadow: inset 0 1px 2px rgba(14, 116, 144, 0.1);
 }
 
-.budget-input-wrap {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: 1;
-  min-width: 150px;
-}
-
-.budget-input-wrap span {
-  font-size: 14px;
-  color: var(--text-secondary);
+/* Input styling */
+.budget-input {
+  width: 100%;
+  padding: 9px 10px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 15px;
+  font-family: 'Heebo', sans-serif;
+  text-align: center;
+  background: #ffffff;
+  transition: all 200ms ease;
+  color: #1e293b;
   font-weight: 500;
 }
 
-.budget-input-wrap input {
-  flex: 1;
-  padding: 6px 8px;
-  border: 2px solid #e2e8f0;
-  border-radius: 10px;
-  font-size: 14px;
-  font-family: 'Heebo', sans-serif;
-  transition: all 200ms ease;
+.budget-input:focus {
+  outline: none;
+  border-color: #0891b2;
+  background: #f0fdfa;
+  box-shadow: 0 0 0 3px rgba(8, 145, 178, 0.1);
 }
 
-.budget-input-wrap input:focus {
-  outline: none;
-  border-color: var(--primary-blue);
-  box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+.budget-input::placeholder {
+  color: #cbd5e1;
+}
+
+/* Total value styling */
+.total-value {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+  color: #0891b2;
+  padding: 6px 12px;
+  background: white;
+  border-radius: 8px;
+  border: 2px solid #67e8f9;
+  box-shadow: 0 1px 3px rgba(8, 145, 178, 0.15);
+}
+
+/* Layout for income table (2 columns) */
+.budget-edit-table .budget-source {
+  flex: 1;
+  min-width: 0;
+  font-weight: 500;
+  justify-content: flex-start;
+  padding-right: 4px;
+}
+
+.budget-edit-table .budget-amount {
+  width: 130px;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 0 4px;
+}
+
+/* Responsive behavior */
+.budget-row {
+  min-height: 48px;
 }
 
 /* טבלאות */
@@ -947,37 +1048,432 @@ body {
   width: 100%;
   border-collapse: collapse;
   font-size: 14px;
+  table-layout: fixed;
 }
 
 .simple-table thead {
-  background: linear-gradient(135deg, var(--primary-blue), var(--primary-purple));
+  background: linear-gradient(135deg, #0891b2, #06b6d4);
   color: #ffffff;
 }
 
 .simple-table th {
-  padding: 14px;
+  padding: 8px 6px;
   text-align: right;
-  font-weight: 700;
+  font-weight: 600;
   font-size: 14px;
 }
 
-.simple-table td {
-  padding: 12px 14px;
+/* עמודות ברוחב קבוע - רק לעמוד הוצאות */
+.expenses-table-custom th:first-child,
+.expenses-table-custom td:first-child {
+  width: 25px;
+  text-align: center;
+  padding: 8px 4px;
+}
+
+.expenses-table-custom th:nth-child(2),
+.expenses-table-custom td:nth-child(2) {
+  width: 95px;
+  font-size: 13px;
+}
+
+.expenses-table-custom th:nth-child(3),
+.expenses-table-custom td:nth-child(3) {
+  width: 235px;
+}
+
+.expenses-table-custom th:nth-child(4),
+.expenses-table-custom td:nth-child(4) {
+  width: 65px;
+  white-space: nowrap;
+}
+
+.expenses-table-custom th:nth-child(5),
+.expenses-table-custom td:nth-child(5) {
+  width: 50px;
+  text-align: left;
+  padding-left: 8px;
+  font-size: 13px;
+  line-height: 1.3;
+}
+
+/* עמודות ברוחב קבוע */
+.simple-table th:first-child,
+.simple-table td:first-child {
+  text-align: center;
+  padding: 8px 4px;
+}
+
+.simple-table th:nth-child(2),
+.simple-table td:nth-child(2) {
+  font-size: 13px;
+}
+
+/* עמודת תאור - תופס את השאר */
+.simple-table th:nth-child(3),
+.simple-table td:nth-child(3) {
+  width: auto;
+}
+
+/* הגדרות ספציפיות לטבלת הוצאות בלבד */
+.expenses-table-only {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  table-layout: fixed;
+}
+
+.expenses-table-only thead {
+  background: linear-gradient(135deg, #0891b2, #06b6d4);
+  color: #ffffff;
+}
+
+.expenses-table-only th {
+  padding: 8px 5px;
   text-align: right;
-  border-bottom: 1px solid var(--bg-light);
+  font-weight: 600;
+  font-size: 14px;
+  white-space: nowrap;
+  border: none;
+}
+
+.expenses-table-only td {
+  padding: 8px 5px;
+  text-align: right;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 14px;
+  vertical-align: top;
+}
+
+.expenses-table-only tbody tr {
+  transition: background 150ms ease;
+}
+
+.expenses-table-only tbody tr:hover {
+  background: #f0fdfa;
+}
+
+.expenses-table-only th:first-child,
+.expenses-table-only td:first-child {
+  width: 32px;
+  text-align: center;
+  padding: 6px 2px;
+}
+
+.expenses-table-only th:first-child input[type="checkbox"],
+.expenses-table-only td:first-child input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+  margin: 0;
+}
+
+.expenses-table-only th:nth-child(2),
+.expenses-table-only td:nth-child(2) {
+  width: 70px;
+  white-space: nowrap;
+  font-size: 14px;
+  padding: 6px 4px;
+}
+
+.expenses-table-only th:nth-child(3),
+.expenses-table-only td:nth-child(3) {
+  width: auto;
+}
+
+.expenses-table-only th:nth-child(4),
+.expenses-table-only td:nth-child(4) {
+  width: 75px;
+  white-space: nowrap;
+  font-weight: 600;
+  font-size: 14px;
+  padding: 6px 4px;
+}
+
+.expenses-table-only th:nth-child(5),
+.expenses-table-only td:nth-child(5) {
+  width: 42px;
+  text-align: center;
+  font-size: 14px;
+  padding: 6px 1px;
+}
+
+.expenses-table-only .col-notes {
+  white-space: normal;
+  word-wrap: break-word;
+  line-height: 1.3;
+  font-size: 14px;
+  text-align: right;
+  direction: rtl;
+}
+
+.expenses-table-only .col-notes strong {
+  font-size: 14px;
+  font-weight: 600;
+  display: block;
+  margin-bottom: 3px;
+  color: #1e293b;
+  text-align: right;
+}
+
+.expense-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+  flex-wrap: wrap;
+}
+
+.expense-category {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.expenses-table-only tbody tr.row-fixed {
+  background: rgba(16,185,129,0.12);
+  border-right: 4px solid #10b981;
+}
+
+.expenses-table-only tbody tr.row-fixed:hover {
+  background: rgba(16,185,129,0.18);
+}
+
+/* הגדרות ספציפיות לטבלת דוחות בלבד */
+.reports-table-only {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  table-layout: fixed;
+}
+
+.reports-table-only thead {
+  background: linear-gradient(135deg, #0891b2, #06b6d4);
+  color: #ffffff;
+}
+
+.reports-table-only th {
+  padding: 8px 5px;
+  text-align: right;
+  font-weight: 600;
+  font-size: 14px;
+  white-space: nowrap;
+  border: none;
+}
+
+.reports-table-only td {
+  padding: 6px 5px;
+  text-align: right;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 14px;
+  vertical-align: top;
+}
+
+.reports-table-only tbody tr {
+  transition: background 150ms ease;
+}
+
+.reports-table-only tbody tr:hover {
+  background: #f0fdfa;
+}
+
+.reports-table-only th:nth-child(1),
+.reports-table-only td:nth-child(1) {
+  width: 70px;
+  white-space: nowrap;
+  font-size: 14px;
+  padding: 6px 4px;
+}
+
+.reports-table-only th:nth-child(2),
+.reports-table-only td:nth-child(2) {
+  width: auto;
+}
+
+.reports-table-only th:nth-child(3),
+.reports-table-only td:nth-child(3) {
+  width: 75px;
+  white-space: nowrap;
+  font-weight: 600;
+  font-size: 14px;
+  padding: 6px 4px;
+}
+
+.reports-table-only th:nth-child(4),
+.reports-table-only td:nth-child(4) {
+  width: 90px;
+  text-align: center;
+  font-size: 14px;
+  padding: 3px 1px;
+}
+
+.reports-table-only .col-notes {
+  white-space: normal;
+  word-wrap: break-word;
+  line-height: 1.3;
+  font-size: 14px;
+  text-align: right;
+  direction: rtl;
+}
+
+.reports-table-only .col-notes strong {
+  font-size: 14px;
+  font-weight: 600;
+  display: block;
+  margin-bottom: 3px;
+  color: #1e293b;
+  text-align: right;
+}
+
+.reports-table-only tbody tr.row-fixed {
+  background: rgba(16,185,129,0.12);
+  border-right: 4px solid #10b981;
+}
+
+.reports-table-only tbody tr.row-fixed:hover {
+  background: rgba(16,185,129,0.18);
+}
+
+/* שורות תשלומים - כתום עדין */
+.expenses-table-only tbody tr.row-installments {
+  background: rgba(251,146,60,0.08);
+  border-right: 3px solid #fb923c;
+}
+
+.expenses-table-only tbody tr.row-installments:hover {
+  background: rgba(251,146,60,0.14);
+}
+
+.reports-table-only tbody tr.row-installments {
+  background: rgba(251,146,60,0.08);
+  border-right: 3px solid #fb923c;
+}
+
+.reports-table-only tbody tr.row-installments:hover {
+  background: rgba(251,146,60,0.14);
+}
+
+.simple-table td {
+  padding: 8px 6px;
+  text-align: right;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 14px;
+}
+
+.col-notes {
+  overflow: visible !important;
+  white-space: normal !important;
+  line-height: 1.4;
+  text-align: right;
+  direction: rtl;
 }
 
 .simple-table tbody tr {
-  transition: all 200ms ease;
+  transition: background 150ms ease;
 }
 
 .simple-table tbody tr:hover {
-  background: linear-gradient(90deg, transparent, rgba(37,99,235,0.05), transparent);
-  transform: scale(1.01);
+  background: #f0fdfa;
 }
 
 .simple-table tbody tr:last-child td {
   border-bottom: none;
+}
+
+/* Badges וסימונים בטבלאות */
+.installment-badge,
+.fixed-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.installment-badge {
+  background: #fff7ed;
+  color: #ea580c;
+  border: 1px solid #fb923c;
+}
+
+.fixed-badge {
+  background: #d1fae5;
+  color: #059669;
+  border: 1px solid #6ee7b7;
+}
+
+/* תא פעולות */
+.actions-cell {
+  text-align: center;
+}
+
+.actions-cell a {
+  display: block;
+  color: #0891b2;
+  text-decoration: none;
+  font-size: 12px;
+  padding: 2px 0;
+  transition: color 150ms ease;
+}
+
+.actions-cell a:hover {
+  color: #0e7490;
+  text-decoration: underline;
+}
+
+/* כפתור פעולות בטבלת דוחות */
+.table-action-btn {
+  background: transparent;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px 8px;
+  color: #64748b;
+  transition: all 150ms ease;
+  border-radius: 6px;
+}
+
+.table-action-btn:hover {
+  background: #f1f5f9;
+  color: #0891b2;
+}
+
+.table-action-btn:active {
+  transform: scale(0.95);
+}
+
+/* שורת סיכום תחתונה בטבלאות */
+.expenses-table-only tfoot,
+.reports-table-only tfoot,
+.simple-table tfoot {
+  background: linear-gradient(135deg, #f0fdfa, #ecfeff);
+  border-top: 2px solid #0891b2;
+}
+
+.expenses-table-only tfoot th,
+.reports-table-only tfoot th,
+.simple-table tfoot th {
+  padding: 10px 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #0e7490;
+}
+
+/* צבעים למספרים חיוביים ושליליים */
+.simple-table .pos,
+.simple-table .neg {
+  font-weight: 600;
+}
+
+.simple-table .pos {
+  color: #059669;
+}
+
+.simple-table .neg {
+  color: #dc2626;
 }
 
 /* לינקים */
@@ -1023,210 +1519,6 @@ body {
 }
 
 /* רספונסיבי */
-@media (max-width: 480px) {
-  .app-shell {
-    padding: 12px;
-  }
-  
-  .app-header {
-    padding: 20px 16px;
-    border-radius: 16px;
-  }
-  
-  .app-title {
-    font-size: 24px;
-  }
-  
-  .app-subtitle {
-    font-size: 13px;
-  }
-  
-  .nav-menu, .top-tabs {
-    gap: 8px;
-    padding: 8px;
-    border-radius: 12px;
-  }
-  
-  .nav-item, .top-tab {
-    font-size: 13px;
-    padding: 10px 12px;
-    min-width: 80px;
-    flex: 1 1 calc(50% - 8px);
-  }
-  
-  .top-bar {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
-  }
-  
-  .summary-pill, .summary-card {
-    padding: 12px 16px;
-    justify-content: center;
-  }
-  
-  .expense-card, .card, .form-card {
-    padding: 16px;
-    border-radius: 12px;
-  }
-  
-  .expense-amount {
-    font-size: 20px;
-  }
-  
-  .expense-actions {
-    flex-direction: column;
-    gap: 8px;
-  }
-  
-  .btn-ghost, .btn-danger {
-    width: 100%;
-    justify-content: center;
-  }
-  
-  .form-box, .form-card {
-    padding: 16px;
-  }
-  
-  .summary-grid {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-  
-  .summary-value {
-    font-size: 24px;
-  }
-  
-  .chart-bar-row {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 8px;
-  }
-  
-  .chart-label {
-    min-width: auto;
-    text-align: right;
-  }
-  
-  .chart-value {
-    text-align: right;
-  }
-  
-  .donut-visual {
-    width: 150px;
-    height: 150px;
-  }
-  
-  .donut-visual::after {
-    width: 90px;
-    height: 90px;
-  }
-  
-  .stat-card-value {
-    font-size: 24px;
-  }
-  
-  .budget-row {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 8px;
-    padding: 12px 0;
-  }
-  
-  .budget-input-wrap {
-    width: 100%;
-  }
-  
-  .simple-table {
-    font-size: 12px;
-  }
-  
-  .simple-table th,
-  .simple-table td {
-    padding: 10px 8px;
-  }
-  
-  .card-title {
-    font-size: 18px;
-  }
-  
-  .inline-form {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
-  }
-  
-  .inline-form select {
-    width: 100%;
-  }
-}
-
-@media (max-width: 480px) {
-  .app-shell {
-    padding: 8px;
-  }
-  
-  .app-header {
-    padding: 16px;
-  }
-  
-  .app-title {
-    font-size: 20px;
-  }
-  
-  .nav-menu, .top-tabs {
-    flex-direction: column;
-    gap: 8px;
-  }
-  
-  .nav-item, .top-tab {
-    width: 100%;
-  }
-  
-  .expense-card, .card, .form-card {
-    padding: 12px;
-  }
-  
-  .btn-primary, .btn-main {
-    padding: 12px 20px;
-    font-size: 14px;
-  }
-  
-  .summary-value {
-    font-size: 20px;
-  }
-  
-  .chart-container {
-    padding: 16px;
-  }
-  
-  .donut-visual {
-    width: 120px;
-    height: 120px;
-  }
-  
-  .donut-visual::after {
-    width: 70px;
-    height: 70px;
-  }
-  
-  .stat-card-value {
-    font-size: 20px;
-  }
-  
-  .stat-card-icon {
-    font-size: 36px;
-  }
-  
-  .simple-table {
-    font-size: 11px;
-  }
-  
-  .simple-table th,
-  .simple-table td {
-    padding: 8px 6px;
-  }
-}
 
 /* אנימציות */
 @keyframes fadeIn {
@@ -1329,52 +1621,7 @@ body {
   color: inherit;
 }
 
-/* =========================
-   ניווט עליון - שלושת הטאבים
-   ========================= */
-.segmented-nav {
-  margin-top: 12px;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  background: #eff6ff;
-  padding: 6px;
-  border-radius: 999px;
-  box-shadow: 0 3px 12px rgba(15,23,42,0.18);
-}
 
-.segmented-tab {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 8px 4px;
-  border-radius: 999px;
-  background: #f9fafb;
-  color: #1e293b;
-  font-size: 14px;
-  font-weight: 500;
-  text-decoration: none;
-  white-space: nowrap;
-  transition: background 0.2s ease, color 0.2s ease, transform 0.08s ease;
-}
-
-.segmented-tab span {
-  line-height: 1;
-}
-
-.segmented-tab.is-active {
-  background: linear-gradient(135deg, #2563eb, #06b6d4);
-  color: #ffffff;
-}
-
-.segmented-tab.is-active span {
-  color: inherit;
-}
-
-.segmented-tab:active {
-  transform: scale(0.97);
-}
 
 /* אזור ניווט עליון */
 .main-tabs {
@@ -1438,172 +1685,61 @@ header * {
   pointer-events: auto;
 }
 
-/* התאמה למובייל - גרפים */
-@media (max-width: 768px) {
-  div[style*="grid-template-columns: 1fr 1fr"] {
-    grid-template-columns: 1fr !important;
-  }
-  
-  .chart-container, .donut-chart {
-    padding: 16px;
-  }
-  
-  .chart-title {
-    font-size: 16px;
-  }
-}
 
-/* התאמה למובייל - גרפים בעמוד הוצאות */
-@media (max-width: 768px) {
-  div[style*="grid-template-columns: 1fr 1fr"] {
-    grid-template-columns: 1fr !important;
-  }
-  
-  .chart-container, .donut-chart {
-    padding: 16px;
-  }
-  
-  .chart-title {
-    font-size: 16px;
-    margin-bottom: 16px;
-  }
-  
-  .chart-bar-row {
-    gap: 8px;
-  }
-  
-  .chart-label {
-    font-size: 13px;
-    min-width: 80px;
-  }
-}
 
-@media (max-width: 480px) {
-  .chart-container, .donut-chart {
-    padding: 12px;
-  }
-  
-  .chart-title {
-    font-size: 15px;
-  }
-  
-  .chart-bar-row {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 6px;
-  }
-  
-  .chart-label {
-    min-width: auto;
-  }
-}
-
-/* =========================
-   התאמות מסך צר עד 480px
-   ========================= */
-@media (max-width: 480px) {
-  .app-shell {
-    max-width: 480px;
-    padding: 8px;
-  }
-
-  .app-header {
-    padding: 14px 12px;
-    border-radius: 16px;
-  }
-
-  .main-stat-card {
-    padding: 16px;
-    margin-bottom: 16px;
-  }
-
-  .stat-layout-grid {
-    display: block !important;
-  }
-
-  .stat-layout-grid-left {
-    margin-bottom: 16px;
-  }
-
-  .stat-card-icon {
-    font-size: 40px;
-    margin-bottom: 8px;
-  }
-
-  .stat-card-value {
-    font-size: 24px;
-    margin-bottom: 4px;
-  }
-
-  .stat-card-label {
-    font-size: 13px;
-  }
-
-  .main-stat-card .chart-row {
-    margin-bottom: 8px;
-  }
-
-  .expense-card {
-    padding: 12px;
-    margin-bottom: 10px;
-  }
-
-  .expense-amount {
-    font-size: 18px;
-  }
-
-  .summary-grid {
-    gap: 10px;
-    margin-top: 12px;
-    margin-bottom: 16px;
-  }
-
-  .summary-item {
-    padding: 12px;
-  }
-}
-
-/* Floating Add Button + bounce animation */
-@keyframes fabBounceIn {
-  0% { transform: translateY(40px) scale(0.7); opacity: 0; }
-  60% { transform: translateY(-5px) scale(1.1); opacity: 1; }
-  100% { transform: translateY(0) scale(1); }
-}
-
+/* Floating Add Button - 3D Design */
 .fab-add {
   position: fixed;
   bottom: 28px;
   left: 50%;
   transform: translateX(-50%);
-  width: 64px;
-  height: 64px;
+  width: 68px;
+  height: 68px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--primary-green), var(--accent-emerald));
+  background: linear-gradient(145deg, #10b981, #059669);
   color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
   text-decoration: none;
-  font-size: 32px;
-  animation: fabBounceIn 0.45s ease-out;
+  font-size: 36px;
+  font-weight: 700;
   z-index: 999;
-  transition: all 0.25s ease;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  
+  /* 3D effect */
+  box-shadow: 
+    0 8px 16px rgba(16, 185, 129, 0.4),
+    0 4px 8px rgba(0, 0, 0, 0.2),
+    inset 0 -3px 8px rgba(0, 0, 0, 0.2),
+    inset 0 2px 4px rgba(255, 255, 255, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.2);
 }
 
 .fab-add:hover {
-  transform: translateX(-50%) scale(1.08);
-  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.45);
+  transform: translateX(-50%) translateY(-3px);
+  box-shadow: 
+    0 12px 24px rgba(16, 185, 129, 0.5),
+    0 6px 12px rgba(0, 0, 0, 0.25),
+    inset 0 -3px 8px rgba(0, 0, 0, 0.2),
+    inset 0 2px 4px rgba(255, 255, 255, 0.4);
 }
 
 .fab-add:active {
-  transform: translateX(-50%) scale(0.95);
+  transform: translateX(-50%) translateY(1px);
+  box-shadow: 
+    0 4px 8px rgba(16, 185, 129, 0.3),
+    0 2px 4px rgba(0, 0, 0, 0.15),
+    inset 0 2px 6px rgba(0, 0, 0, 0.3),
+    inset 0 -1px 2px rgba(255, 255, 255, 0.2);
 }
 
 .fab-add .material-icons-round {
-  font-size: 34px;
-  font-weight: 600;
+  font-size: 38px;
+  font-weight: 700;
   pointer-events: none;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 /* Tooltip מעל כפתור הוספה */
@@ -1709,214 +1845,54 @@ header * {
   text-shadow: 0 1px 3px rgba(0,0,0,0.25);
 }
 
-/* ===== כרטיסי הוצאות - סקיצה חדשה ===== */
 
-/* LIST - כרטיסי הוצאה בסגנון "שורה" קומפקטית */
-.expense-list {
-  list-style: none;
-  padding: 0 12px;
-  margin: 0;
-}
-
-/* כל שורה ברשימת הוצאות */
-.expense-item {
-  background: #ffffff;
-  padding: 8px 10px;
-  margin-bottom: 6px;
-  border-radius: 10px;
-  box-shadow: 0 1px 4px rgba(15,23,42,0.08);
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-/* שורת הכותרת של ההוצאה - תאריך + סכום */
-.expense-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 14px;
-}
-
-/* צד ימין - תאריך */
-.exp-date {
-  font-weight: 600;
-  color: #1e3a8a;
-  font-size: 13px;
-}
-
-/* צד שמאל - סכום */
-.exp-amount {
-  font-weight: 800;
-  color: #0f766e;
-  font-size: 16px;
-}
-
-/* שורה שנייה - קטגוריה, אמצעי תשלום וכו' (אם קיימים) */
-.exp-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 8px;
-  margin-top: 2px;
-  font-size: 12px;
-  color: #475569;
-}
-
-/* תיאור / הערה */
-.exp-note {
-  font-size: 12px;
-  margin-top: 2px;
-  color: #374151;
-}
-
-/* כפתורי עריכה/מחיקה - צמודים לשורה, בלי הרבה גובה נוסף */
-.exp-actions {
-  margin-top: 4px;
-  display: flex;
-  gap: 6px;
-}
-
-
-.btn-expense-delete {
-  border: none;
-  outline: none;
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: #ef4444;
-  color: #fff;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  min-width: 64px;
-}
-
-.btn-expense-edit {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 6px 10px;
-  border-radius: 999px;
-  border: 1px solid #1d4ed8;
-  background: #ffffff;
-  color: #1d4ed8;
-  font-size: 13px;
-  font-weight: 600;
-  text-decoration: none;
-}
-
-/* תגיות */
-.expense-tags {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  justify-content: flex-end;
-  flex-wrap: wrap;
-}
-
-.expense-tag {
-  padding: 6px 12px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.tag-primary {
-  background: #e0ecff;
-  color: #1d4ed8;
-}
-
-.tag-secondary {
-  background: #f3e8ff;
-  color: #7c3aed;
-}
-
-/* הערה בתחתית */
-.expense-note-row {
-  margin-top: 4px;
-}
-
-.note-bubble {
-  background: #f4f7fb;
-  border-radius: 12px;
-  padding: 8px 10px;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 6px;
-  font-size: 13px;
-  color: #4b5563;
-}
-
-.note-text {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 100%;
-}
-
-.note-icon {
-  font-size: 14px;
-}
-
-@media (max-width: 480px) {
-  .expense-card-inner {
-    padding: 12px;
-  }
-
-  .expense-amount-main {
-    font-size: 18px;
-  }
-
-  .btn-expense-delete,
-  .btn-expense-edit {
-    font-size: 12px;
-    padding: 5px 9px;
-  }
-
-  .expense-tag {
-    font-size: 11px;
-    padding: 5px 10px;
-  }
-}
-
-/* טקסט הערות משמאל לימין */
-.note-ltr {
-  direction: ltr;
-  text-align: right;
-  unicode-bidi: plaintext;
-}
 
 .installments-panel {
-  margin-top: 12px;
-  padding: 10px 12px;
+  margin-top: 16px;
+  padding: 16px;
   border-radius: 14px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.12);
-  position: relative;
+  background: linear-gradient(135deg, #ecfeff, #f0f9ff);
+  border: 2px solid #67e8f9;
+  box-shadow: 0 4px 12px rgba(103, 232, 249, 0.15);
+  animation: slideDown 300ms ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .installments-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.installments-icon {
+  font-size: 20px;
 }
 
 .installments-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: #0f172a;
+  font-size: 15px;
+  font-weight: 700;
+  color: #0e7490;
 }
 
 .installments-chip {
   font-size: 11px;
-  padding: 2px 8px;
+  padding: 3px 10px;
   border-radius: 999px;
-  background: #e0f2fe;
-  color: #0369a1;
+  background: #cffafe;
+  color: #0e7490;
   font-weight: 600;
+  border: 1px solid #67e8f9;
 }
 
 .installments-hint {
@@ -1925,49 +1901,7 @@ header * {
   margin-top: 6px;
 }
 
-.multi-actions-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  margin: 8px 16px 4px;
-  background: #e5e7eb;
-  border-radius: 10px;
-  font-size: 13px;
-}
 
-.select-all-label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.btn-danger-small {
-  padding: 6px 10px;
-  border-radius: 999px;
-  border: none;
-  font-size: 13px;
-  background: #dc2626;
-  color: #fff;
-  cursor: pointer;
-}
-
-.btn-danger-small:active {
-  transform: scale(0.97);
-}
-
-.expense-select-col {
-  display: flex;
-  align-items: flex-start;
-  padding-top: 4px;
-  margin-inline-start: 4px;
-}
-
-.expense-checkbox {
-  width: 18px;
-  height: 18px;
-}
 
 /* ===== טבלת קטגוריות בדוחות ===== */
 
@@ -2024,270 +1958,15 @@ header * {
   min-width: 120px;
 }
 
-@media (max-width: 480px) {
-  .category-table th:nth-child(2),
-  .category-table th:nth-child(3),
-  .category-table th:nth-child(4),
-  .category-table td:nth-child(2),
-  .category-table td:nth-child(3),
-  .category-table td:nth-child(4) {
-    font-size: 11px;
-  }
-}
-
 .installment-label {
   font-size: 11px;
   color: #6b7280;
   margin-top: 2px;
 }
 
-/* =========================
-   טבלת הוצאות חודש - קבלה של סופר
-   ========================= */
 
-.receipt-section {
-  margin-top: 16px;
-}
-
-.receipt-title {
-  font-size: 18px;
-  font-weight: 700;
-  color: #0f172a;
-  margin-bottom: 4px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.receipt-subtitle {
-  font-size: 13px;
-  color: var(--text-secondary);
-  margin-bottom: 8px;
-}
-
-/* כרטיס קבלה צר בתוך הדוח */
-.receipt-card {
-  max-width: 480px;
-  margin: 0 auto;
-  background: #ffffff;
-  border-radius: 18px;
-  padding: 12px 14px 8px;
-  box-shadow: 0 6px 18px rgba(15,23,42,0.16);
-  border: 1px solid #e2e8f0;
-  position: relative;
-}
-
-/* קווי חיתוך כמו בקבלה */
-.receipt-card::before,
-.receipt-card::after {
-  content: "";
-  position: absolute;
-  left: 16px;
-  right: 16px;
-  height: 6px;
-  border-top: 1px dashed #cbd5f5;
-}
-
-.receipt-card::before {
-  top: 0;
-}
-
-.receipt-card::after {
-  bottom: 0;
-}
-
-/* גוף הקבלה */
-.receipt-list {
-  list-style: none;
-  padding: 0;
-  margin: 4px 0 0;
-  max-height: 360px;
-  overflow-y: auto;
-}
-
-/* שורה ב"קבלה" */
-.receipt-row {
-  padding: 6px 0;
-  border-bottom: 1px dashed #e5e7eb;
-}
-
-.receipt-row:last-child {
-  border-bottom: none;
-}
-
-.receipt-row-main {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 10px;
-}
-
-/* סכום - צד שמאל */
-.receipt-left {
-  min-width: 70px;
-  text-align: left;
-}
-
-.receipt-amount {
-  font-size: 16px;
-  font-weight: 700;
-  color: #111827;
-}
-
-.receipt-currency {
-  font-size: 12px;
-  color: #6b7280;
-  margin-inline-start: 2px;
-}
-
-/* מידע - צד ימין */
-.receipt-right {
-  flex: 1;
-}
-
-.receipt-date {
-  font-size: 13px;
-  font-weight: 600;
-  color: #111827;
-}
-
-.receipt-meta {
-  margin-top: 2px;
-  font-size: 12px;
-  color: #6b7280;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-
-.receipt-sep {
-  opacity: 0.6;
-}
-
-.receipt-notes {
-  margin-top: 2px;
-  font-size: 12px;
-  color: #4b5563;
-  direction: rtl;
-  text-align: right;
-}
-
-.receipt-notes-label {
-  font-weight: 600;
-}
-
-.receipt-total-price {
-  font-size: 1.4rem;      /* גודל */
-  font-weight: 700;       /* עובי */
-  color: #10b981;         /* צבע טקסט */
-  direction: rtl;         /* כיוון, אם צריך */
-}
-
-/* התאמה למובייל - שלא תהיה גלילה אופקית */
-@media (max-width: 480px) {
-  .receipt-card {
-    max-width: 380px;
-    padding-inline: 20px;
-  }
-
-  .receipt-row-main {
-    gap: 8px;
-  }
-
-  .receipt-amount {
-    font-size: 15px;
-  }
-
-  .receipt-date {
-    font-size: 12px;
-  }
-
-  .receipt-meta {
-    font-size: 11px;
-  }
-
-  .receipt-notes {
-    font-size: 11px;
-  }
-}
-
-.installment-info {
-  margin-top: 5px;
-  color: #6a5acd;
-  font-weight: bold;
-  font-size: 0.9em;
-}
 
 /* עיצוב חלונית תשלומים */
-#installments-panel {
-  display: none;
-  background: #f8f9ff;
-  border: 2px solid rgba(99, 102, 241, 0.25);
-  border-radius: 12px;
-  padding: 16px;
-  margin-top: 12px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
-  transition: all 0.3s ease;
-}
-
-#installments-panel label {
-  font-weight: 600;
-  color: #333;
-  display: block;
-  margin-bottom: 6px;
-}
-
-#installments-panel input[type="number"] {
-  width: 100%;
-  max-width: 120px;
-  padding: 6px 8px;
-  font-size: 15px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  text-align: center;
-}
-
-/* העיצוב של המסגרת החיצונית לכרטיס */
-.expense-card-outer {
-  background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
-  padding: 14px;
-  margin-bottom: 16px;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.expense-card-outer:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
-}
-
-/* טקסט תשלום X מתוך Y */
-.installment-info {
-  margin-top: 6px;
-  color: #6a5acd;
-  font-weight: 600;
-  font-size: 0.9em;
-}
-
-/* 🪄 עיצוב כרטיס עריכת/הוספת הוצאה */
-form {
-  background: linear-gradient(180deg, #ffffff, #f8f9ff);
-  border: 2px solid rgba(138, 99, 245, 0.2);
-  border-radius: 16px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
-  padding: 24px;
-  max-width: 460px;
-  margin: 0 auto 40px;
-  transition: all 0.3s ease-in-out;
-}
-
-form:hover {
-  box-shadow: 0 6px 18px rgba(99, 102, 241, 0.2);
-  transform: translateY(-2px);
-}
-
-/* כותרת חלונית תשלומים */
 #installments-panel {
   display: none;
   background: #f3f0ff;
@@ -2321,6 +2000,25 @@ form:hover {
 #installments-panel input[type="number"]:focus {
   outline: none;
   border: 1px solid #8a63f5;
+}
+
+
+
+/* 🪄 עיצוב כרטיס עריכת/הוספת הוצאה */
+form {
+  background: linear-gradient(180deg, #ffffff, #f8f9ff);
+  border: 2px solid rgba(138, 99, 245, 0.2);
+  border-radius: 16px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+  padding: 24px;
+  max-width: 460px;
+  margin: 0 auto 40px;
+  transition: all 0.3s ease-in-out;
+}
+
+form:hover {
+  box-shadow: 0 6px 18px rgba(99, 102, 241, 0.2);
+  transform: translateY(-2px);
 }
 
 /* 🟣 כפתור שמירת שינויים */
@@ -2387,588 +2085,1133 @@ textarea {
 input, select, textarea, button {
   transition: all 0.3s ease;
 }
-/* =========================
-   התאמות מסך בינוני עד 480px
-   ========================= */
-@media (max-width: 480px) {
-  .summary-grid {
-    grid-template-columns: 1fr !important;
-    gap: 16px;
-  }
-  
-  .summary-item {
-    padding: 16px;
-  }
-  
-  .summary-label {
-    font-size: 14px;
-  }
-  
-  .summary-row {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
 
-  /* 🎯 עיצוב קומפקטי לרשימת ההוצאות */
-.expense-item {
-  margin-bottom: 10px;
-}
-
-.expense-card-outer {
-  background: #fff;
-  border-radius: 12px;
+/* ========== דף דוחות - פילטרים מודרניים ========== */
+.reports-filters-section {
+  background: white;
+  padding: 20px;
+  border-radius: 16px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  padding: 10px 12px;
-  transition: all 0.2s ease;
-}
-
-.expense-card-outer:hover {
-  transform: scale(1.01);
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
-}
-
-/* כותרת הכרטיס - תאריך וסכום */
-.expense-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 6px;
-}
-
-.expense-amount-main {
-  font-size: 1rem;
-  font-weight: 700;
-  color: #22c55e;
-  display: flex;
-  align-items: center;
-  gap: 2px;
-}
-
-.expense-date-main {
-  font-size: 0.85rem;
-  color: #666;
-}
-
-/* מידע על תשלומים */
-.installment-info {
-  font-size: 0.8rem;
-  color: #5b3fe0;
-  text-align: right;
-  margin-top: -4px;
-  margin-bottom: 6px;
-}
-
-/* שורה אמצעית */
-.expense-middle-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 4px;
-}
-
-/* תגיות קטנות יותר */
-.expense-tag {
-  font-size: 0.75rem;
-  padding: 2px 8px;
-  border-radius: 8px;
-  display: inline-block;
-}
-
-.tag-primary {
-  background-color: #eef2ff;
-  color: #4338ca;
-}
-
-.tag-secondary {
-  background-color: #f3f4f6;
-  color: #6b7280;
-}
-
-/* כפתורי עריכה ומחיקה קומפקטיים */
-.btn-expense-edit,
-.btn-expense-delete {
-  font-size: 0.75rem;
-  padding: 4px 8px;
-  border-radius: 6px;
-  border: none;
-  cursor: pointer;
-}
-
-.btn-expense-edit {
-  background-color: #eef2ff;
-  color: #4338ca;
-}
-
-.btn-expense-delete {
-  background-color: #fef2f2;
-  color: #dc2626;
-}
-
-.btn-expense-edit:hover {
-  background-color: #e0e7ff;
-}
-
-.btn-expense-delete:hover {
-  background-color: #fee2e2;
-}
-
-/* הערות קטנות יותר */
-.expense-notes {
-  font-size: 0.8rem;
-  color: #555;
-  margin-top: 6px;
-  background: #f9fafb;
-  border-radius: 6px;
-  padding: 4px 6px;
-}
-
-/* 📱 התאמה למובייל */
-@media (max-width: 600px) {
-  .expense-card-outer {
-    padding: 8px 10px;
-    border-radius: 10px;
-  }
-
-  .expense-amount-main {
-    font-size: 0.95rem;
-  }
-
-  .expense-date-main {
-    font-size: 0.8rem;
-  }
-
-  .expense-tag {
-    font-size: 0.7rem;
-    padding: 2px 6px;
-  }
-
-  .expense-middle-row {
-    flex-direction: row;
-    gap: 6px;
-  }
-
-  .btn-expense-edit,
-  .btn-expense-delete {
-    padding: 3px 6px;
-    font-size: 0.7rem;
-  }
-}
-
-/* 🌟 עיצוב אחיד, קומפקטי ונעים — בכל המכשירים */
-.expense-item {
-  margin-bottom: 10px;
-}
-
-.expense-card-outer {
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  padding: 10px 12px;
-  transition: all 0.2s ease;
-}
-
-.expense-card-outer:hover {
-  transform: scale(1.01);
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
-}
-
-/* שורה עליונה - תאריך וסכום */
-.expense-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 6px;
-}
-
-.expense-amount-main {
-  font-size: 1rem;
-  font-weight: 700;
-  color: #22c55e;
-  display: flex;
-  align-items: center;
-  gap: 2px;
-}
-
-.expense-date-main {
-  font-size: 0.85rem;
-  color: #666;
-}
-
-/* 💳 תשלומים */
-.installment-info {
-  font-size: 0.85rem;
-  color: #5b3fe0;
-  text-align: right;
-  margin-bottom: 4px;
-}
-
-/* שורה אמצעית */
-.expense-middle-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 4px;
-}
-
-/* תגיות קטנות ונעימות */
-.expense-tag {
-  font-size: 0.75rem;
-  padding: 2px 8px;
-  border-radius: 8px;
-  display: inline-block;
-}
-
-.tag-primary {
-  background-color: #eef2ff;
-  color: #4338ca;
-}
-
-.tag-secondary {
-  background-color: #f3f4f6;
-  color: #6b7280;
-}
-
-/* 🟣 כפתורים קומפקטיים */
-.btn-expense-edit,
-.btn-expense-delete {
-  font-size: 0.75rem;
-  padding: 4px 8px;
-  border-radius: 6px;
-  border: none;
-  cursor: pointer;
-  font-weight: 600;
-  transition: all 0.2s;
-}
-
-.btn-expense-edit {
-  background-color: #eef2ff;
-  color: #4338ca;
-}
-
-.btn-expense-delete {
-  background-color: #fef2f2;
-  color: #dc2626;
-}
-
-.btn-expense-edit:hover {
-  background-color: #e0e7ff;
-}
-
-.btn-expense-delete:hover {
-  background-color: #fee2e2;
-}
-
-/* הערות */
-.expense-notes {
-  font-size: 0.8rem;
-  color: #555;
-  margin-top: 6px;
-  background: #f9fafb;
-  border-radius: 6px;
-  padding: 4px 6px;
-}
-
-/* ⚙️ חידוד נראות כללית */
-.expense-card-inner {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.expense-actions-new {
-  display: flex;
-  gap: 6px;
-}
-
-.expense-tags {
-  display: flex;
-  gap: 4px;
-}
-
-/* 🌈 מגע של אפליקציה */
-.expense-card-outer {
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  background: linear-gradient(180deg, #ffffff, #fafbff);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.expense-card-outer:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 3px 10px rgba(138, 99, 245, 0.15);
-}
-
-.filter-bar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: #f8fafc;
-  padding: 10px 14px;
-  border-radius: 12px;
   margin-bottom: 20px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
 
-.filter-bar label {
-  font-weight: 600;
-  color: #334155;
-  font-size: 14px;
-}
-
-.filter-bar select {
-  padding: 6px 10px;
-  border: 1px solid #cbd5e1;
-  border-radius: 8px;
-  font-size: 14px;
-}
-
-.filter-bar .btn-primary.small {
-  padding: 6px 12px;
-  font-size: 13px;
-}
-
-/* עיצוב מובייל למסך דוחות - פילטרים למעלה */
-@media (max-width: 480px) {
-  .filter-card {
-    padding: 12px;
-  }
-
-  .filter-form {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .filter-form .form-group {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .filter-form label {
-    font-size: 14px;
-    margin-bottom: 4px;
-    color: var(--text-secondary);
-  }
-
-  .filter-form select {
-    width: 100%;
-    padding: 10px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
-    font-size: 15px;
-    background: #fff;
-  }
-
-  .btn-main {
-    width: 100%;
-    padding: 12px;
-    font-size: 16px;
-    border-radius: 8px;
-    margin-top: 8px;
-  }
-}
-
-.month-select-card {
-  margin-top: 8px;
-}
-
-.month-form {
-  display: block;
-}
-
-.month-picker-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.month-input-wrapper {
-  flex: 1;
+.reports-filters-form {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 16px;
 }
 
-.month-label {
-  font-size: 13px;
-  color: var(--text-secondary, #666);
+/* בורר חודש עם חיצים */
+.reports-month-selector {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
 }
 
-.month-form input[type="month"] {
-  width: 100%;
-  padding: 10px 12px;
-  font-size: 16px;
-  border-radius: 10px;
-  border: 1px solid #ddd;
-  background-color: #fff;
-}
-
-.month-nav-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 999px;
-  border: 1px solid #ddd;
-  background: #f5f5f5;
-  font-size: 18px;
-  line-height: 1;
+.month-arrow-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px solid #e5e7eb;
+  background: white;
+  font-size: 20px;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
+  flex-shrink: 0;
 }
 
-.month-nav-btn:active {
+.month-arrow-btn:hover {
+  background: linear-gradient(135deg, #0891b2, #06b6d4);
+  color: white;
+  border-color: #0891b2;
+  transform: scale(1.05);
+}
+
+.month-arrow-btn:active {
   transform: scale(0.95);
 }
 
-/* =========================
-   רשימת הוצאות - תצוגת שורות קומפקטית
-   ========================= */
-
-.expenses-list {
-  list-style: none;
-  margin: 12px 0 0;
-  padding: 0;
-  border-radius: 16px;
-  overflow: hidden;
-  background: #ffffff;
-  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+/* סלקט מודרני */
+.modern-select {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 15px;
+  font-weight: 500;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  background: white;
+  color: #1f2937;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M10.293 3.293L6 7.586 1.707 3.293A1 1 0 00.293 4.707l5 5a1 1 0 001.414 0l5-5a1 1 0 10-1.414-1.414z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: left 12px center;
+  padding-left: 36px;
 }
 
-.expense-item {
-  border-bottom: 1px solid #e2e8f0;
-  padding: 8px 12px;
+.modern-select:focus {
+  outline: none;
+  border-color: #0891b2;
+  box-shadow: 0 0 0 4px rgba(8, 145, 178, 0.1);
 }
 
-.expense-item:last-child {
-  border-bottom: none;
+.modern-select.month-select {
+  flex: 1;
+  min-width: 160px;
+  text-align: center;
+  padding-left: 16px;
+  padding-right: 16px;
+  background-position: center;
+  background-image: none;
 }
 
-.expense-card-outer {
-  background: transparent;
+/* Support for input[type="month"] */
+input[type="month"].modern-select {
+  appearance: auto;
+  -webkit-appearance: auto;
+  -moz-appearance: auto;
 }
 
-.expense-card-inner {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-/* שורה עליונה - סכום + תאריך + צ'קבוקס */
-.expense-card-header {
+/* תצוגת טווח תאריכים */
+.date-range-display {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  font-size: 14px;
-}
-
-.expense-amount-main {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 2px;
-  font-weight: 700;
-  color: #0f172a;
-}
-
-.expense-amount-main .currency-icon {
+  justify-content: center;
+  gap: 8px;
+  text-align: center;
   font-size: 13px;
+  color: #374151;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #cffafe, #e0f2fe);
+  border: 1.5px solid #67e8f9;
+  border-radius: 10px;
+  font-weight: 500;
 }
 
-.expense-amount-main .amount-value {
+.range-icon {
   font-size: 16px;
 }
 
-.expense-date-main {
-  font-size: 13px;
-  color: #64748b;
+.range-text {
+  color: #0e7490;
+  font-weight: 600;
 }
 
-/* אינדיקציה לתשלומים */
-.installment-info {
+/* גריד של פילטרים */
+.reports-filters-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+/* כפתור סינון מודרני */
+.modern-filter-btn {
+  width: 100%;
+  padding: 14px 24px;
+  font-size: 16px;
+  font-weight: 600;
+  color: white;
+  background: linear-gradient(135deg, #0891b2, #06b6d4);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(8, 145, 178, 0.3);
+}
+
+.modern-filter-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(8, 145, 178, 0.4);
+  background: linear-gradient(135deg, #0e7490, #0891b2);
+}
+
+.modern-filter-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(8, 145, 178, 0.3);
+}
+
+/* ========== סוף דף דוחות ========== */
+
+/* ========================================
+   טופס קומפקטי - הוספת הוצאה
+   ======================================== */
+
+.compact-form-card {
+  padding: 16px !important;
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.half-width {
+  margin-bottom: 0 !important;
+}
+
+.compact-field {
+  margin-bottom: 14px;
+}
+
+.compact-field label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 6px;
+}
+
+.compact-field input[type="date"],
+.compact-field .compact-input,
+.compact-field .compact-select,
+.compact-field .compact-textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 15px;
+  font-family: 'Heebo', sans-serif;
+  background: white;
+  color: #1f2937;
+  transition: all 200ms ease;
+}
+
+.compact-field input:focus,
+.compact-field select:focus,
+.compact-field textarea:focus {
+  outline: none;
+  border-color: #0891b2;
+  box-shadow: 0 0 0 3px rgba(8, 145, 178, 0.1);
+}
+
+.compact-textarea {
+  resize: none;
+}
+
+/* Selected Display - מראה כמו כפתור לחיצה */
+.selected-display {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  background: white;
+  cursor: pointer;
+  transition: all 200ms ease;
+  font-size: 15px;
+}
+
+.selected-display:hover {
+  border-color: #0891b2;
+  background: #f0fdfa;
+}
+
+.selected-display:active {
+  transform: scale(0.98);
+}
+
+.selected-display .arrow {
   font-size: 12px;
-  color: #4c1d95;
-  background: #ede9fe;
-  border-radius: 999px;
-  padding: 2px 10px;
-  width: fit-content;
+  color: #9ca3af;
 }
 
-/* שורה שנייה - תגיות ופעולות */
-.expense-middle-row {
+/* Type Buttons - כפתורי בחירה */
+.type-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.type-btn {
+  padding: 10px 8px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  background: white;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 200ms ease;
+}
+
+.type-btn:hover {
+  border-color: #0891b2;
+  color: #0891b2;
+}
+
+.type-btn.active {
+  background: linear-gradient(135deg, #0891b2, #06b6d4);
+  border-color: #0891b2;
+  color: white;
+  box-shadow: 0 2px 8px rgba(8, 145, 178, 0.3);
+}
+
+/* Checkbox Compact */
+.checkbox-compact label {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 8px;
-  margin-top: 4px;
+  cursor: pointer;
+  padding: 10px;
+  background: #f9fafb;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #6b7280;
 }
 
-.expense-tags {
+.checkbox-compact input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #0891b2;
+}
+
+.checkbox-compact input[type="checkbox"]:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Checkbox Inline - צ'קבוקס קטן בשורה */
+.checkbox-inline {
   display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
+  align-items: flex-end;
+  padding-bottom: 12px;
 }
 
-.expense-tag {
-  padding: 2px 8px;
-  border-radius: 999px;
-  font-size: 11px;
-  line-height: 1.4;
-  white-space: nowrap;
-}
-
-.tag-primary {
-  background: #e0f2fe;
-  color: #0f172a;
-}
-
-.tag-secondary {
-  background: #f5f3ff;
-  color: #4c1d95;
-}
-
-/* כפתורי עריכה / מחיקה */
-.expense-actions-new {
+.checkbox-inline label {
   display: flex;
   align-items: center;
   gap: 6px;
-}
-
-.expense-actions-new .inline-form {
-  margin: 0;
-}
-
-.btn-expense-delete,
-.btn-expense-edit {
-  border-radius: 999px;
-  padding: 4px 10px;
-  font-size: 12px;
-  border: 1px solid transparent;
-  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
   cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #f9fafb;
+  transition: all 200ms ease;
+  width: 100%;
+  justify-content: center;
+}
+
+.checkbox-inline input[type="checkbox"] {
+  display: none;
+}
+
+.checkbox-inline #fixed-indicator {
   display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #d1d5db;
+  border-radius: 4px;
+  background: white;
+  font-size: 14px;
+  color: transparent;
+  transition: all 200ms ease;
+}
+
+.checkbox-inline input[type="checkbox"]:checked ~ #fixed-indicator {
+  background: #0891b2;
+  border-color: #0891b2;
+  color: white;
+}
+
+.checkbox-inline input[type="checkbox"]:disabled ~ #fixed-indicator {
+  background: #f3f4f6;
+  border-color: #e5e7eb;
+  opacity: 0.5;
+}
+
+.checkbox-inline .checkbox-label-text {
+  font-size: 13px;
+}
+
+/* Form Actions - כפתורי פעולה */
+.form-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.btn-save {
+  width: 100%;
+  padding: 14px;
+  font-size: 16px;
+}
+
+.btn-cancel {
+  width: 100%;
+  padding: 14px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #6b7280;
+  background: #f3f4f6;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 200ms ease;
+  font-family: 'Heebo', sans-serif;
+}
+
+.btn-cancel:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  color: #dc2626;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(220, 38, 38, 0.2);
+}
+
+.btn-cancel:active {
+  transform: translateY(0);
+}
+
+.compact-submit {
+  width: 100%;
+  margin-top: 8px;
+  padding: 14px;
+  font-size: 16px;
+}
+
+/* ========================================
+   Modal - חלונות קופצים
+   ======================================== */
+
+.modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 9999;
+  animation: fadeIn 200ms ease;
+}
+
+.modal.active {
+  display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.btn-expense-delete {
+.modal-content {
+  background: white;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 420px;
+  max-height: 90vh;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+  animation: slideUp 300ms ease;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 2px solid #f3f4f6;
+  background: linear-gradient(135deg, #f0fdfa, #ecfeff);
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #0e7490;
+}
+
+.modal-close {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: #e5e7eb;
+  border-radius: 50%;
+  font-size: 20px;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 200ms ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-close:hover {
+  background: #0891b2;
+  color: white;
+  transform: rotate(90deg);
+}
+
+.modal-body {
+  padding: 16px;
+  max-height: calc(90vh - 70px);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Modal Options - רשימת קטגוריות */
+.modal-option {
+  padding: 14px 16px;
+  margin-bottom: 8px;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  background: white;
+  font-size: 15px;
+  font-weight: 500;
+  color: #1f2937;
+  cursor: pointer;
+  transition: all 200ms ease;
+}
+
+.modal-option:hover {
+  background: linear-gradient(135deg, #ecfeff, #f0fdfa);
+  border-color: #0891b2;
+  color: #0e7490;
+  transform: translateX(-2px);
+}
+
+.modal-option:active {
+  transform: scale(0.98);
+}
+
+/* Category Grid - לחצני קטגוריות */
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.category-btn {
+  padding: 14px 8px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+  cursor: pointer;
+  transition: all 200ms ease;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.category-btn:hover {
+  background: linear-gradient(135deg, #ecfeff, #cffafe);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(8, 145, 178, 0.2);
+}
+
+.category-btn:active {
+  transform: translateY(-1px);
+}
+
+.category-icon {
+  font-size: 32px;
+  margin-bottom: 4px;
+}
+
+.category-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: #1f2937;
+  line-height: 1.2;
+}
+
+.category-btn:hover .category-name {
+  color: #0e7490;
+}
+
+/* Payment Cards - כרטיסי אמצעי תשלום */
+.payment-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.payment-card {
+  padding: 24px 16px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+  cursor: pointer;
+  transition: all 200ms ease;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.payment-card:hover {
+  background: linear-gradient(135deg, #ecfeff, #cffafe);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(8, 145, 178, 0.25);
+}
+
+.payment-card:active {
+  transform: translateY(-2px);
+}
+
+.payment-card-icon {
+  font-size: 56px;
+  margin-bottom: 10px;
+}
+
+.payment-card-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1f2937;
+  line-height: 1.3;
+}
+
+.payment-card:hover .payment-card-name {
+  color: #0e7490;
+}
+
+/* ========================================
+   Calculator - מחשבון
+   ======================================== */
+
+.calculator-display {
+  background: linear-gradient(135deg, #0e7490, #0891b2);
+  color: white;
+  padding: 20px;
+  border-radius: 12px;
+  font-size: 32px;
+  font-weight: 700;
+  text-align: left;
+  margin-bottom: 16px;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.2);
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.calculator-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.calc-btn {
+  padding: 18px;
+  border: none;
+  border-radius: 10px;
+  background: #f3f4f6;
+  font-size: 20px;
+  font-weight: 600;
+  color: #1f2937;
+  cursor: pointer;
+  transition: all 150ms ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.calc-btn:hover {
+  background: #e5e7eb;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.calc-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.calc-del {
   background: #fee2e2;
-  border-color: #fecaca;
-  color: #b91c1c;
+  color: #dc2626;
 }
 
-.btn-expense-edit {
-  background: #eef2ff;
-  border-color: #e0e7ff;
-  color: #3730a3;
+.calc-del:hover {
+  background: #fecaca;
 }
 
-/* הערות */
-.expense-notes {
-  margin-top: 4px;
-  font-size: 12px;
-  color: #475569;
-  padding: 6px 8px;
-  border-radius: 8px;
+.calc-confirm {
+  width: 100%;
+  padding: 16px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #0891b2, #06b6d4);
+  color: white;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 200ms ease;
+  box-shadow: 0 4px 12px rgba(8, 145, 178, 0.3);
+}
+
+.calc-confirm:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(8, 145, 178, 0.4);
+}
+
+.calc-confirm:active {
+  transform: translateY(0);
+}
+
+/* ========================================
+   Expense Modal - מודל פרטי הוצאה
+   ======================================== */
+
+.expense-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.expense-modal.hidden {
+  display: none;
+}
+
+.expense-modal-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  animation: fadeIn 200ms ease;
+}
+
+.expense-modal-content {
+  position: relative;
+  background: white;
+  border-radius: 18px;
+  padding: 24px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideUp 250ms ease;
+  z-index: 1;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.expense-modal-close {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  background: transparent;
+  border: none;
+  font-size: 24px;
+  color: #9ca3af;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 150ms ease;
+}
+
+.expense-modal-close:hover {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.expense-modal-title {
+  font-size: 19px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.expense-modal-body {
+  margin-bottom: 20px;
   background: #f8fafc;
+  padding: 16px;
+  border-radius: 12px;
 }
+
+.expense-detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.expense-detail-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.expense-detail-item:first-child {
+  padding-top: 0;
+}
+
+.detail-label {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.detail-value {
+  font-size: 15px;
+  color: #1e293b;
+  font-weight: 600;
+  text-align: left;
+}
+
+.detail-amount {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0891b2;
+}
+
+/* כפתורי פעולה במודל */
+.expense-modal-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  width: 100%;
+}
+
+.modal-edit-btn,
+.modal-delete-btn {
+  padding: 16px;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 200ms ease;
+  text-decoration: none;
+}
+
+.modal-edit-btn {
+  background: linear-gradient(135deg, #0891b2, #06b6d4);
+  color: white;
+  box-shadow: 0 4px 12px rgba(8, 145, 178, 0.3);
+}
+
+.modal-edit-btn:hover {
+  background: linear-gradient(135deg, #06b6d4, #0e7490);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(8, 145, 178, 0.4);
+}
+
+.modal-delete-btn {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  color: white;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+}
+
+.modal-delete-btn:hover {
+  background: linear-gradient(135deg, #b91c1c, #991b1b);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(220, 38, 38, 0.4);
+}
+
+.modal-edit-btn:active,
+.modal-delete-btn:active {
+  transform: translateY(0);
+}
+
+/* ========== סוף טופס קומפקטי ========== */
+
+
+/* ================================================
+   כרטיסי סיכום דוחות - טור אנכי עם בר
+   ================================================ */
+
+.reports-summary-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.stat-card-vertical {
+  background: white;
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.stat-card-vertical:hover {
+  transform: translateX(-2px);
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.12);
+}
+
+.stat-bar-wrapper {
+  width: 8px;
+  background: rgba(148, 163, 184, 0.15);
+  border-radius: 8px;
+  position: relative;
+  display: flex;
+  flex-direction: column-reverse;
+  overflow: hidden;
+}
+
+.stat-bar {
+  width: 100%;
+  border-radius: 8px;
+  transition: height 0.6s ease;
+  background: linear-gradient(to top, var(--primary-purple), var(--secondary-cyan));
+}
+
+.stat-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.stat-label {
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.stat-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.stat-value.big {
+  font-size: 24px;
+  color: var(--accent-emerald);
+}
+
+.stat-value.success {
+  color: var(--accent-emerald);
+}
+
+.stat-percent {
+  font-size: 12px;
+  color: #94a3b8;
+  margin-top: 2px;
+  display: block;
+}
+
+.stat-details {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+/* צבעי בר לפי סוג */
+.summary-income .stat-bar {
+  background: linear-gradient(to top, var(--primary-blue), #60a5fa);
+}
+
+.summary-commitments .stat-bar {
+  background: linear-gradient(to top, var(--primary-purple), #c084fc);
+}
+
+.summary-luxury .stat-bar {
+  background: linear-gradient(to top, var(--accent-emerald), #34d399);
+}
+
+.summary-luxury.negative .stat-bar {
+  background: linear-gradient(to top, #ef4444, #f87171);
+}
+
+.summary-luxury.negative .stat-value.big {
+  color: #ef4444;
+}
+
+.summary-spent .stat-bar {
+  background: linear-gradient(to top, #f59e0b, #fbbf24);
+}
+
+.summary-remaining .stat-bar {
+  background: linear-gradient(to top, var(--accent-emerald), #6ee7b7);
+}
+
+.summary-daily .stat-bar {
+  background: linear-gradient(to top, var(--secondary-cyan), #7dd3fc);
+}
+
+
+/* ================================================
+   סינונים בשורה אחת - קומפקטי
+   ================================================ */
+
+.reports-filters-single-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.filter-select {
+  flex: 1;
+  min-width: 90px;
+  padding: 8px 10px;
+  border: 2px solid rgba(148, 163, 184, 0.2);
+  border-radius: 10px;
+  background: white;
+  font-size: 13px;
+  font-family: 'Heebo', sans-serif;
+  color: var(--text-primary);
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.filter-select:hover {
+  border-color: var(--primary-purple);
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: var(--primary-purple);
+  box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.1);
+}
+
+.filter-btn-search {
+  padding: 8px 14px;
+  background: linear-gradient(135deg, var(--primary-purple), var(--secondary-cyan));
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(168, 85, 247, 0.3);
+  flex-shrink: 0;
+}
+
+.filter-btn-search:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(168, 85, 247, 0.4);
+}
+
+/* שורת סכ"ם בטבלאות */
+.table-total-row {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.08), rgba(14, 165, 233, 0.08));
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.table-total-row th {
+  padding: 12px 8px;
+  color: var(--primary-purple);
+}
+
+.modern-filter-btn-inline:active {
+  transform: translateY(0);
+}
+
+
+/* ================================================
+   גרפים Chart.js
+   ================================================ */
+
+.charts-section {
+  margin: 20px 0;
+}
+
+.charts-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+.chart-card {
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.chart-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chart-container {
+  position: relative;
+  height: 280px;
+  width: 100%;
+}
+
+.chart-container canvas {
+  max-height: 100%;
+}
+
+
+/* ================================================
+   התאמות ריספונסיביות
+   ================================================ */
+
+@media (max-width: 480px) {
+  .main-summary-card {
+    padding: 16px;
+  }
+
+  .flow-value {
+    font-size: 20px;
+  }
+
+  .flow-value.big {
+    font-size: 26px;
+  }
+
+  .stat-value {
+    font-size: 16px;
+  }
+
+  .chart-container {
+    height: 240px;
+  }
+}
+

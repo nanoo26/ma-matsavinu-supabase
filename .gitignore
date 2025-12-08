@@ -1,43 +1,67 @@
 # Python
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+*.so
+.Python
 
-# Virtual env
+# Virtual Environment
 venv/
 .venv/
-.env/
+env/
+ENV/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
 
 # Databases
 *.db
+*.sqlite
+*.sqlite3
+expenses.db
 
-# PyCharm
+# IDE
 .idea/
-OLD/OLD report_budget.html
-OLD/OLD edit_budget.py
-OLD/OLD budget_manage.html
-OLD/OLD app.py
-OLD/גיבוי לפני הוספת דוחות/app.py
-OLD/גיבוי לפני הוספת דוחות/static/style.css
-OLD/גיבוי לפני הוספת דוחות/templates/add_expense.html
-OLD/גיבוי לפני הוספת דוחות/templates/budget.html
-OLD/גיבוי לפני הוספת דוחות/templates/edit_expense.html
-OLD/גיבוי לפני הוספת דוחות/templates/expenses.html
-OLD/גיבוי לפני הוספת דוחות/templates/index.html
-OLD/גיבוי לפני הוספת דוחות/templates/reports.html
-OLD/גיבוי - לפני הוספת תשלומים 27.11.25/app.py
-OLD/גיבוי - לפני הוספת תשלומים 27.11.25/static/style.css
-OLD/גיבוי - לפני הוספת תשלומים 27.11.25/templates/add_expense.html
-OLD/גיבוי - לפני הוספת תשלומים 27.11.25/templates/budget.html
-OLD/גיבוי - לפני הוספת תשלומים 27.11.25/templates/edit_expense.html
-OLD/גיבוי - לפני הוספת תשלומים 27.11.25/templates/expenses.html
-OLD/גיבוי - לפני הוספת תשלומים 27.11.25/templates/index.html
-OLD/גיבוי - לפני הוספת תשלומים 27.11.25/templates/reports.html
-OLD/גיבוי - לפני הוספת תשלומים 27.11.25/templates/tabs.html
-OLD/גיבוי לפני הוספת דוחות 25.11.25/app.py
-OLD/גיבוי לפני הוספת דוחות 25.11.25/static/style.css
-OLD/גיבוי לפני הוספת דוחות 25.11.25/templates/add_expense.html
-OLD/גיבוי לפני הוספת דוחות 25.11.25/templates/budget.html
-OLD/גיבוי לפני הוספת דוחות 25.11.25/templates/edit_expense.html
-OLD/גיבוי לפני הוספת דוחות 25.11.25/templates/expenses.html
-OLD/גיבוי לפני הוספת דוחות 25.11.25/templates/index.html
-OLD/גיבוי לפני הוספת דוחות 25.11.25/templates/reports.html
+.vscode/
+*.swp
+*.swo
+*~
+
+# CSV exports (personal data)
+*.csv
+expenses_export.csv
+
+# Backup files
+*.backup
+*.backup-*
+*.bak
+*backup-20*
+
+# Test/Debug scripts
+test_*.py
+check_*.py
+debug_*.py
+fix_*.py
+init_*.py
+import_*.py
+
+# Old/Archive folders
+OLD/
+archive/
+backup/
+*גיבוי*/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/

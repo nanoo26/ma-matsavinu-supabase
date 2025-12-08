@@ -4,217 +4,312 @@
   <meta charset="utf-8">
   <title>מה מצבינו - עריכת הוצאה</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=2">
 </head>
 <body>
   <div class="app-shell">
-
-    <!-- כותרת עליונה -->
     <header class="app-header">
       <h1 class="app-title">מה מצבינו</h1>
       <p class="app-subtitle">עריכת הוצאה</p>
-
       {% include "tabs.html" %}
     </header>
 
     <main class="content">
 
-      <section class="form-box" style="background:#ffffff; margin:16px; border-radius:12px; box-shadow:0 1px 6px rgba(0,0,0,0.08);">
-        <form method="post">
-          <!-- שדה חבוי לחזרה לעמוד הקודם (דוחות או מה שלא יהיה) -->
-          <input type="hidden" name="next" value="{{ request.args.get('next') or request.referrer or '' }}">
+      <!-- הודעות מערכת -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="flash-message flash-{{ category }}">
+              {{ message }}
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
 
-          <!-- תאריך -->
-          <label for="date">תאריך</label>
-          <input
-            type="date"
-            id="date"
-            name="date"
-            required
-            value="{{ expense.date_for_input }}"
-          >
+      <section class="card compact-form-card">
+        <form method="post" action="{{ url_for('edit_expense', expense_id=expense.id) }}" id="expense-form">
 
-          <!-- קטגוריה -->
-          <label for="category">קטגוריה</label>
-          <select id="category" name="category" required>
-            <option value="">בחר קטגוריה</option>
-            {% for cat in categories %}
-              <option value="{{ cat }}" {% if expense.category == cat %}selected{% endif %}>
-                {{ cat }}
-              </option>
-            {% endfor %}
-          </select>
-
-          <!-- סכום -->
-          <label for="amount">סכום</label>
-          <input
-            type="number"
-            id="amount"
-            name="amount"
-            step="1"
-            min="0"
-            required
-            value="{{ expense.amount }}"
-          >
-
-          <!-- אמצעי תשלום -->
-          <label for="payment_method">אמצעי תשלום</label>
-          <select id="payment_method" name="payment_method" required>
-            <option value="">בחר אמצעי תשלום</option>
-            {% for pm in payment_methods %}
-              <option value="{{ pm }}" {% if expense.payment_method == pm %}selected{% endif %}>
-                {{ pm }}
-              </option>
-            {% endfor %}
-          </select>
-
-          <!-- סוג הוצאה -->
-          <div class="form-group">
-            <label for="expense_type">סוג הוצאה</label>
-            <select id="expense_type" name="expense_type" class="input">
-              <option value="">בחר סוג הוצאה</option>
-
-              <option value="single"
-                {% if expense.expense_type == 'single' %}
-                  selected
-                {% endif %}
-              >
-                רכישה חד פעמית
-              </option>
-
-              <option value="standing"
-                {% if expense.expense_type == 'standing' %}
-                  selected
-                {% endif %}
-              >
-                הוצאה קבועה (הוראת קבע)
-              </option>
-
-              <option value="installments"
-                {% if expense.expense_type == 'installments' %}
-                  selected
-                {% endif %}
-              >
-                רכישה בתשלומים
-              </option>
-            </select>
-          </div>
-
-          <!-- חלונית תשלומים קטנה -->
-          <div
-            id="installments-panel"
-            class="installments-panel"
-            style="margin-top:12px; {% if expense.expense_type == 'installments' %}display:block;{% else %}display:none;{% endif %}"
-          >
-            <div class="installments-header">
-              <span class="installments-title">תשלומים</span>
-              <span class="installments-chip">
-                {% if expense.installments_count and expense.installments_count > 1 %}
-                  {{ expense.installments_count }} תשלומים
-                {% else %}
-                  הגדרת תשלומים
-                {% endif %}
-              </span>
+          <!-- תאריך וקטגוריה - באותה שורה -->
+          <div class="field-row">
+            <div class="compact-field half-width">
+              <label>📅 תאריך</label>
+              <input type="date" name="date" id="date" value="{{ expense.date_for_input }}" required>
             </div>
 
-            <label for="installments_count">מספר תשלומים</label>
-            <input
-              type="number"
-              id="installments_count"
-              name="installments_count"
-              min="1"
-              max="60"
-              value="{{ expense.installments_count or 1 }}"
-            >
-            <p class="installments-hint">
-              ניתן לעדכן את מספר התשלומים במקרה של טעות בהגדרה.
-            </p>
+            <div class="compact-field half-width">
+              <label>📊 קטגוריה</label>
+              <div class="selected-display" id="category-display" onclick="openCategoryModal()">
+                <span id="category-text">{{ expense.category or 'בחר' }}</span>
+                <span class="arrow">▼</span>
+              </div>
+              <input type="hidden" name="category" id="category" value="{{ expense.category or '' }}" required>
+            </div>
           </div>
 
-          <!-- הוצאה קבועה (V) -->
-          <div class="form-group">
-            <label class="checkbox-label">
-              <input
-                type="checkbox"
-                id="is_fixed"
-                name="is_fixed"
-                value="1"
-                {% if expense.is_fixed or expense.expense_type == 'standing' %}
-                  checked
-                {% endif %}
-              >
-              <span>הוצאה קבועה (תשלום חוזר / הוראת קבע)</span>
-            </label>
+          <!-- סכום - עם מקלדת מספרים -->
+          <div class="compact-field">
+            <label>💰 סכום</label>
+            <div class="selected-display" id="amount-display" onclick="openAmountModal()">
+              <span id="amount-text">{{ "%.2f"|format(expense.amount) }} ₪</span>
+              <span class="arrow">🔢</span>
+            </div>
+            <input type="hidden" name="amount" id="amount" value="{{ expense.amount }}" required>
           </div>
 
-          <!-- הערות -->
-          <label for="note">הערות</label>
-          <textarea
-            id="note"
-            name="note"
-            rows="2"
-            style="width:100%; padding:8px; margin-top:4px; border-radius:8px; border:1px solid #cbd5e1; font-size:15px;"
-          >{{ expense.note or "" }}</textarea>
+          <!-- אמצעי תשלום עם צ'קבוקס קבוע -->
+          <div class="field-row">
+            <div class="compact-field half-width">
+              <label>💳 אמצעי תשלום</label>
+              <div class="selected-display" id="payment-display" onclick="openPaymentModal()">
+                <span id="payment-text">{{ expense.payment_method or 'בחר' }}</span>
+                <span class="arrow">▼</span>
+              </div>
+              <input type="hidden" name="payment_method" id="payment_method" value="{{ expense.payment_method or '' }}" required>
+            </div>
 
-          <!-- כפתורים -->
-          <div style="display:flex; gap:8px; margin-top:20px;">
-            <button type="submit" class="btn-small" style="flex:1; border:none; cursor:pointer;">
-              💾 שמירת שינוי
+            <div class="compact-field half-width checkbox-inline">
+              <label>
+                <input type="checkbox" name="is_fixed" id="is_fixed" value="1" {% if expense.is_fixed %}checked{% endif %} {% if expense.expense_type == 'standing' or expense.expense_type == 'installments' %}disabled{% endif %}>
+                <span id="fixed-indicator">✓</span>
+                <span class="checkbox-label-text">קבוע</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- סוג הוצאה - כפתורים -->
+          <div class="compact-field">
+            <label>🏷️ סוג הוצאה</label>
+            <div class="type-buttons">
+              <button type="button" class="type-btn {% if expense.expense_type == 'single' or not expense.expense_type %}active{% endif %}" data-type="single">חד פעמית</button>
+              <button type="button" class="type-btn {% if expense.expense_type == 'standing' %}active{% endif %}" data-type="standing">קבועה</button>
+              <button type="button" class="type-btn {% if expense.expense_type == 'installments' %}active{% endif %}" data-type="installments">תשלומים</button>
+            </div>
+            <input type="hidden" name="expense_type" id="expense_type" value="{{ expense.expense_type or 'single' }}">
+          </div>
+
+          <!-- מספר תשלומים - מוסתר בברירת מחדל -->
+          <div class="compact-field" id="installments-field" style="{% if expense.expense_type != 'installments' %}display: none;{% endif %}">
+            <label>💳 מספר תשלומים</label>
+            <input type="number" name="installments_count" id="installments_count" 
+                   class="compact-input" min="2" max="36" value="{{ expense.installments_count or 2 }}" placeholder="12">
+          </div>
+
+          <!-- הערות - 2 שורות -->
+          <div class="compact-field">
+            <label>📝 הערות</label>
+            <textarea name="comment" id="comment" class="compact-textarea" 
+                      rows="2" placeholder="הערות או תיאור (אופציונלי)">{{ expense.comment or '' }}</textarea>
+          </div>
+
+          <!-- כפתורי פעולה -->
+          <div class="form-actions">
+            <button type="button" class="btn-cancel" onclick="window.history.back()">
+              ✕ ביטול
             </button>
-            <a href="{{ request.args.get('next') or request.referrer or url_for('expenses') }}"
-               class="btn-small"
-               style="flex:1; text-align:center;">
-              ביטול
-            </a>
+            <button type="submit" class="btn-primary btn-save">
+              💾 שמור
+            </button>
           </div>
+
         </form>
       </section>
+
     </main>
   </div>
 
+  <!-- מודל בחירת קטגוריה -->
+  <div class="modal" id="category-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>בחר קטגוריה</h3>
+        <button type="button" class="modal-close" onclick="closeCategoryModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="category-grid">
+          {% set category_icons = {
+            'מזון': '🍕',
+            'בריאות': '💊',
+            'חינוך': '📚',
+            'תחבורה': '🚗',
+            'בילויים': '🎉',
+            'ביגוד': '👕',
+            'בית': '🏠',
+            'רכב': '🚙',
+            'ילדים': '👶',
+            'חוגים': '⚽',
+            'קניות': '🛒',
+            'טבק': '🚬',
+            'שונות': '📦'
+          } %}
+          {% for c in categories %}
+            <div class="category-btn" onclick="selectCategory('{{ c }}')">
+              <div class="category-icon">{{ category_icons[c] or '📌' }}</div>
+              <div class="category-name">{{ c }}</div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- מודל בחירת אמצעי תשלום -->
+  <div class="modal" id="payment-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>בחר אמצעי תשלום</h3>
+        <button type="button" class="modal-close" onclick="closePaymentModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="payment-cards">
+          {% for p in payment_methods %}
+            <div class="payment-card" onclick="selectPayment('{{ p }}')">
+              <div class="payment-card-icon">💳</div>
+              <div class="payment-card-name">{{ p }}</div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- מודל מקלדת סכום -->
+  <div class="modal" id="amount-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>הזן סכום</h3>
+        <button type="button" class="modal-close" onclick="closeAmountModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="calculator-display" id="calc-display">{{ expense.amount or '0' }}</div>
+        <div class="calculator-grid">
+          <button type="button" class="calc-btn" onclick="calcInput('7')">7</button>
+          <button type="button" class="calc-btn" onclick="calcInput('8')">8</button>
+          <button type="button" class="calc-btn" onclick="calcInput('9')">9</button>
+          <button type="button" class="calc-btn" onclick="calcInput('4')">4</button>
+          <button type="button" class="calc-btn" onclick="calcInput('5')">5</button>
+          <button type="button" class="calc-btn" onclick="calcInput('6')">6</button>
+          <button type="button" class="calc-btn" onclick="calcInput('1')">1</button>
+          <button type="button" class="calc-btn" onclick="calcInput('2')">2</button>
+          <button type="button" class="calc-btn" onclick="calcInput('3')">3</button>
+          <button type="button" class="calc-btn" onclick="calcInput('0')">0</button>
+          <button type="button" class="calc-btn" onclick="calcInput('.')">.</button>
+          <button type="button" class="calc-btn calc-del" onclick="calcDelete()">⌫</button>
+        </div>
+        <button type="button" class="calc-confirm" onclick="confirmAmount()">אישור</button>
+      </div>
+    </div>
+  </div>
+
   <script>
-    (function () {
-      const typeSelect = document.getElementById("expense_type");
-      const panel = document.getElementById("installments-panel");
-      const installmentsInput = document.getElementById("installments_count");
-      const fixedCheckbox = document.getElementById("is_fixed");
+    // Auto-hide flash messages
+    var flashMessages = document.querySelectorAll('.flash-message');
+    flashMessages.forEach(function(msg) {
+      setTimeout(function() { msg.remove(); }, 1000);
+    });
 
-      function applyTypeLogic() {
-        if (!typeSelect) return;
-        const v = (typeSelect.value || "").trim();
+    // Type buttons logic
+    const typeBtns = document.querySelectorAll('.type-btn');
+    const expenseTypeInput = document.getElementById('expense_type');
+    const isFixedCheckbox = document.getElementById('is_fixed');
+    const installmentsField = document.getElementById('installments-field');
 
-        // תצוגת חלונית תשלומים
-        const isInstallments = v === "installments";
-        if (panel && installmentsInput) {
-          panel.style.display = isInstallments ? "block" : "none";
-          installmentsInput.required = isInstallments;
-          if (isInstallments && (!installmentsInput.value || parseInt(installmentsInput.value, 10) < 1)) {
-            installmentsInput.value = 1;
-          }
+    typeBtns.forEach(btn => {
+      btn.addEventListener('click', function() {
+        typeBtns.forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        const type = this.dataset.type;
+        expenseTypeInput.value = type;
+
+        // Logic for checkbox and installments
+        if (type === 'single') {
+          isFixedCheckbox.disabled = true;
+          isFixedCheckbox.checked = false;
+          installmentsField.style.display = 'none';
+        } else if (type === 'standing') {
+          isFixedCheckbox.disabled = false;
+          isFixedCheckbox.checked = true;
+          installmentsField.style.display = 'none';
+        } else if (type === 'installments') {
+          isFixedCheckbox.disabled = false;
+          isFixedCheckbox.checked = true;
+          installmentsField.style.display = 'block';
         }
+      });
+    });
 
-        // צ׳קבוקס הוצאה קבועה
-        if (!fixedCheckbox) return;
+    // Category Modal
+    function openCategoryModal() {
+      document.getElementById('category-modal').classList.add('active');
+    }
 
-        if (v === "standing") {
-          fixedCheckbox.checked = true;
-          fixedCheckbox.disabled = true;
-        } else if (v === "installments") {
-          fixedCheckbox.checked = false;
-          fixedCheckbox.disabled = false;
-        } else {
-          fixedCheckbox.disabled = false;
-        }
+    function closeCategoryModal() {
+      document.getElementById('category-modal').classList.remove('active');
+    }
+
+    function selectCategory(cat) {
+      document.getElementById('category').value = cat;
+      document.getElementById('category-text').textContent = cat;
+      closeCategoryModal();
+    }
+
+    // Payment Modal
+    function openPaymentModal() {
+      document.getElementById('payment-modal').classList.add('active');
+    }
+
+    function closePaymentModal() {
+      document.getElementById('payment-modal').classList.remove('active');
+    }
+
+    function selectPayment(method) {
+      document.getElementById('payment_method').value = method;
+      document.getElementById('payment-text').textContent = method;
+      closePaymentModal();
+    }
+
+    // Amount Calculator
+    let calcValue = '{{ expense.amount }}' || '';
+
+    function openAmountModal() {
+      document.getElementById('amount-modal').classList.add('active');
+      calcValue = document.getElementById('amount').value || '';
+      document.getElementById('calc-display').textContent = calcValue || '0';
+    }
+
+    function closeAmountModal() {
+      document.getElementById('amount-modal').classList.remove('active');
+    }
+
+    function calcInput(digit) {
+      if (calcValue === '' && digit === '.') {
+        calcValue = '0.';
+      } else if (digit === '.' && calcValue.includes('.')) {
+        return;
+      } else {
+        calcValue += digit;
       }
+      document.getElementById('calc-display').textContent = calcValue;
+    }
 
-      if (typeSelect) {
-        typeSelect.addEventListener("change", applyTypeLogic);
-        typeSelect.addEventListener("input", applyTypeLogic);
+    function calcDelete() {
+      calcValue = calcValue.slice(0, -1);
+      document.getElementById('calc-display').textContent = calcValue || '0';
+    }
+
+    function confirmAmount() {
+      const amount = parseFloat(calcValue) || 0;
+      document.getElementById('amount').value = amount;
+      document.getElementById('amount-text').textContent = amount.toFixed(2) + ' ₪';
+      closeAmountModal();
+    }
+
+    // Close modals on background click
+    window.addEventListener('click', function(e) {
+      if (e.target.classList.contains('modal')) {
+        e.target.classList.remove('active');
       }
-
-      // מצב התחלתי לפי הנתונים מהשרת
-      applyTypeLogic();
-    })();
+    });
   </script>
 </body>
 </html>

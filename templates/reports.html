@@ -4,7 +4,8 @@
   <meta charset="utf-8">
   <title>מה מצבינו - דוחות</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=5">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
   <div class="app-shell">
@@ -19,126 +20,170 @@
 
     <main class="content">
 
+      <!-- הודעות מערכת -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="flash-message flash-{{ category }}">
+              {{ message }}
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
       <!-- פילטרים עליונים -->
-      <section class="card" style="margin-bottom: 16px;">
-        <form method="get" class="filters-form">
-          <div class="filters-row">
-            <!-- חודש פיננסי -->
-            <div class="filter-item">
-              <label for="month">חודש</label>
-              <select id="month" name="month">
-                {% for m in months %}
-                  <option value="{{ m }}" {% if m == selected_month %}selected{% endif %}>
-                    {{ m }}
-                  </option>
-                {% endfor %}
-              </select>
-            </div>
-
-            <!-- קטגוריה -->
-            <div class="filter-item">
-              <label for="category_filter">קטגוריה</label>
-              <select id="category_filter" name="category_filter">
-                <option value="">כל הקטגוריות</option>
-                <option value="fixed" {% if category_filter == "fixed" %}selected{% endif %}>
-                  רק הוצאות קבועות
+      <section class="reports-filters-section">
+        <form method="get" class="reports-filters-form">
+          
+          <!-- חודש עם חיצים -->
+          <div class="reports-month-selector">
+            <button type="button" class="month-arrow-btn" id="reports-month-next" aria-label="חודש הבא">
+              →
+            </button>
+            <select id="month" name="month" class="modern-select month-select">
+              {% for m in months %}
+                <option value="{{ m }}" {% if m == selected_month %}selected{% endif %}>
+                  {{ m }}
                 </option>
-                {% for c in categories %}
-                  <option value="{{ c }}" {% if category_filter == c %}selected{% endif %}>
-                    {{ c }}
-                  </option>
-                {% endfor %}
-              </select>
-            </div>
-
-            <!-- אמצעי תשלום -->
-            <div class="filter-item">
-              <label for="payment_filter">אמצעי תשלום</label>
-              <select id="payment_filter" name="payment_filter">
-                <option value="">הכל</option>
-                {% for p in payment_methods %}
-                  <option value="{{ p }}" {% if payment_filter == p %}selected{% endif %}>
-                    {{ p }}
-                  </option>
-                {% endfor %}
-              </select>
-            </div>
-
-            <!-- סוג הוצאה -->
-            <div class="filter-item">
-              <label for="expense_type">סוג הוצאה</label>
-              <select id="expense_type" name="expense_type">
-                <option value="">הכל</option>
-                <option value="single" {% if expense_type == "single" %}selected{% endif %}>
-                  חד פעמית
-                </option>
-                <option value="standing" {% if expense_type == "standing" %}selected{% endif %}>
-                  קבועה / הוראת קבע
-                </option>
-                <option value="installments" {% if expense_type == "installments" %}selected{% endif %}>
-                  בתשלומים
-                </option>
-              </select>
-            </div>
-          </div>
-
-          <div style="margin-top: 8px; text-align: left;">
-            <button type="submit" class="btn-small">
-              סינון
+              {% endfor %}
+            </select>
+            <button type="button" class="month-arrow-btn" id="reports-month-prev" aria-label="חודש קודם">
+              ←
             </button>
           </div>
 
-          <p style="margin-top: 8px; font-size: 13px; color: #64748b;">
-            טווח חודש פיננסי נבחר:
-            <strong>{{ display_range }}</strong>
-          </p>
+          <div class="date-range-display">
+            <span class="range-icon">📅</span>
+            <span class="range-text">{{ display_range }}</span>
+          </div>
+
+          <!-- פילטרים בשורה אחת -->
+          <div class="reports-filters-single-row">
+            <select id="category_filter" name="category_filter" class="filter-select">
+              <option value="">קטגוריה</option>
+              <option value="fixed" {% if category_filter == "fixed" %}selected{% endif %}>קבועות</option>
+              {% for c in categories %}
+                <option value="{{ c }}" {% if category_filter == c %}selected{% endif %}>{{ c }}</option>
+              {% endfor %}
+            </select>
+
+            <select id="payment_filter" name="payment_filter" class="filter-select">
+              <option value="">אמצעי תשלום</option>
+              {% for p in payment_methods %}
+                <option value="{{ p }}" {% if payment_filter == p %}selected{% endif %}>{{ p }}</option>
+              {% endfor %}
+            </select>
+
+            <select id="expense_type" name="expense_type" class="filter-select">
+              <option value="">סוג הוצאה</option>
+              <option value="single" {% if expense_type == "single" %}selected{% endif %}>חד פעמית</option>
+              <option value="standing" {% if expense_type == "standing" %}selected{% endif %}>קבועה</option>
+              <option value="installments" {% if expense_type == "installments" %}selected{% endif %}>תשלומים</option>
+            </select>
+
+            <button type="submit" class="filter-btn-search">🔍</button>
+          </div>
+
         </form>
       </section>
 
-      <!-- 4 קוביות סיכום עליונות -->
-      <section class="reports-summary-grid">
+      <!-- סיכום פיננסי -->
+      <div class="reports-summary-vertical">
         <!-- הכנסות -->
-        <div class="stat-card summary-card summary-income">
-          <div class="summary-icon">💵</div>
-          <div class="summary-label">הכנסות לחודש הנבחר</div>
-          <div class="summary-value">
-            ₪ {{ "%.0f"|format(summary.total_income or 0) }}
+        <div class="stat-card-vertical summary-income">
+          <div class="stat-bar-wrapper">
+            <div class="stat-bar" style="height: 100%"></div>
+          </div>
+          <div class="stat-content">
+            <div class="stat-label">הכנסות החודש</div>
+            <div class="stat-value">{{ "%.0f"|format(summary.total_income or 0) }} ₪</div>
           </div>
         </div>
 
-        <!-- הוצאות קבועות + תשלומים -->
-        <div class="stat-card summary-card summary-fixed">
-          <div class="summary-icon">📆</div>
-          <div class="summary-label">הוצאות קבועות ויתרת תשלומים</div>
-          <div class="summary-value">
-            ₪ {{ "%.0f"|format(summary.total_fixed or 0) }}
+        <!-- התחייבויות -->
+        <div class="stat-card-vertical summary-commitments">
+          <div class="stat-bar-wrapper">
+            {% set commitments_percent = (summary.total_commitments / summary.total_income * 100) if summary.total_income > 0 else 0 %}
+            <div class="stat-bar" style="height: {{ commitments_percent if commitments_percent <= 100 else 100 }}%"></div>
           </div>
-        </div>
-
-        <!-- מותרות (כמה נשאר אחרי קבועות ותשלומים) -->
-        <div class="stat-card summary-card summary-luxury">
-          <div class="summary-icon">✨</div>
-          <div class="summary-label">סכום זמין למותרות</div>
-          <div class="summary-value">
-            ₪ {{ "%.0f"|format(summary.luxury_amount or 0) }}
-          </div>
-          {% if (summary.luxury_amount or 0) < 0 %}
-            <div class="summary-note negative">
-              ⚠ חרגתם מהתזרים אחרי קבועות ותשלומים
+          <div class="stat-content">
+            <div class="stat-label">התחייבויות קבועות</div>
+            <div class="stat-value">{{ "%.0f"|format(summary.total_commitments or 0) }} ₪</div>
+            <div class="stat-details">
+              <div>קבועות: {{ "%.0f"|format(summary.fixed_expenses or 0) }} ₪</div>
+              <div>תשלומים: {{ "%.0f"|format(summary.installments_this_month or 0) }} ₪</div>
             </div>
-          {% else %}
-            <div class="summary-note">
-              סכום שנשאר לחיות ממנו בפועל
-            </div>
-          {% endif %}
+          </div>
         </div>
 
-        <!-- תקציב חודשי -->
-        <div class="stat-card summary-card summary-budget">
-          <div class="summary-icon">📊</div>
-          <div class="summary-label">סה״כ תקציב חודשי</div>
-          <div class="summary-value">
-            ₪ {{ "%.0f"|format(summary.monthly_budget or 0) }}
+        <!-- נשאר למותרות -->
+        <div class="stat-card-vertical summary-luxury {% if (summary.available_for_luxuries or 0) < 0 %}negative{% endif %}">
+          <div class="stat-bar-wrapper">
+            {% set luxury_percent = (summary.available_for_luxuries / summary.total_income * 100) if summary.total_income > 0 else 0 %}
+            <div class="stat-bar" style="height: {{ luxury_percent if luxury_percent <= 100 else 100 }}%"></div>
+          </div>
+          <div class="stat-content">
+            <div class="stat-label">נשאר למותרות</div>
+            <div class="stat-value big">{{ "%.0f"|format(summary.available_for_luxuries or 0) }} ₪</div>
+          </div>
+        </div>
+
+        <!-- כבר הוצאת -->
+        <div class="stat-card-vertical summary-spent">
+          <div class="stat-bar-wrapper">
+            {% set usage = summary.usage_percent or 0 %}
+            <div class="stat-bar" style="height: {{ usage if usage <= 100 else 100 }}%"></div>
+          </div>
+          <div class="stat-content">
+            <div class="stat-label">כבר הוצאת החודש</div>
+            <div class="stat-value">{{ "%.0f"|format(summary.already_spent or 0) }} ₪</div>
+            <div class="stat-percent">({{ "%.0f"|format(summary.usage_percent or 0) }}%)</div>
+          </div>
+        </div>
+
+        <!-- עוד יכול -->
+        <div class="stat-card-vertical summary-remaining">
+          <div class="stat-bar-wrapper">
+            {% set remaining_percent = (summary.can_still_spend / summary.available_for_luxuries * 100) if summary.available_for_luxuries > 0 else 0 %}
+            <div class="stat-bar" style="height: {{ remaining_percent if remaining_percent <= 100 else 100 }}%"></div>
+          </div>
+          <div class="stat-content">
+            <div class="stat-label">עוד יכול להוציא</div>
+            <div class="stat-value success">{{ "%.0f"|format(summary.can_still_spend or 0) }} ₪</div>
+          </div>
+        </div>
+
+        <!-- ממוצע יומי -->
+        <div class="stat-card-vertical summary-daily">
+          <div class="stat-bar-wrapper">
+            {% set days_percent = (summary.days_remaining / 30 * 100) %}
+            <div class="stat-bar" style="height: {{ days_percent if days_percent <= 100 else 100 }}%"></div>
+          </div>
+          <div class="stat-content">
+            <div class="stat-label">ממוצע יומי</div>
+            <div class="stat-value">{{ "%.0f"|format(summary.daily_average or 0) }} ₪</div>
+            <div class="stat-details">נשארו {{ summary.days_remaining or 0 }} ימים</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- גרפים אינטראקטיביים -->
+      <section class="charts-section">
+        <div class="charts-grid">
+          <!-- גרף עמודות - קטגוריות -->
+          <div class="chart-card">
+            <h3 class="chart-title">📊 הוצאות לפי קטגוריה</h3>
+            <div class="chart-container">
+              <canvas id="categoriesChart"></canvas>
+            </div>
+          </div>
+
+          <!-- גרף עוגה - אמצעי תשלום -->
+          <div class="chart-card">
+            <h3 class="chart-title">💳 פילוח אמצעי תשלום</h3>
+            <div class="chart-container">
+              <canvas id="paymentChart"></canvas>
+            </div>
           </div>
         </div>
       </section>
@@ -162,10 +207,10 @@
               {% for row in category_rows %}
                 <tr>
                   <td>{{ row.category }}</td>
-                  <td>₪ {{ "%.0f"|format(row.spent or 0) }}</td>
-                  <td>₪ {{ "%.0f"|format(row.budget or 0) }}</td>
+                  <td>{{ "%.0f"|format(row.spent or 0) }} ₪</td>
+                  <td>{{ "%.0f"|format(row.budget or 0) }} ₪</td>
                   <td class="{% if row.diff < 0 %}neg{% elif row.diff > 0 %}pos{% endif %}">
-                    ₪ {{ "%.0f"|format(row.diff or 0) }}
+                    {{ "%.0f"|format(row.diff or 0) }} ₪
                   </td>
                 </tr>
               {% endfor %}
@@ -177,6 +222,16 @@
                 </tr>
               {% endif %}
             </tbody>
+            <tfoot>
+              <tr class="table-total-row">
+                <th>סכ"ם</th>
+                <th>{{ "%.0f"|format(category_rows|sum(attribute='spent') or 0) }} ₪</th>
+                <th>{{ "%.0f"|format(category_rows|sum(attribute='budget') or 0) }} ₪</th>
+                <th class="{% if (category_rows|sum(attribute='diff') or 0) < 0 %}neg{% elif (category_rows|sum(attribute='diff') or 0) > 0 %}pos{% endif %}">
+                  {{ "%.0f"|format(category_rows|sum(attribute='diff') or 0) }} ₪
+                </th>
+              </tr>
+            </tfoot>
           </table>
         </div>
       </section>
@@ -198,7 +253,7 @@
               {% for row in payment_rows %}
                 <tr>
                   <td>{{ row.method }}</td>
-                  <td>₪ {{ "%.0f"|format(row.total or 0) }}</td>
+                  <td>{{ "%.0f"|format(row.total or 0) }} ₪</td>
                 </tr>
               {% endfor %}
               {% if not payment_rows %}
@@ -209,6 +264,12 @@
                 </tr>
               {% endif %}
             </tbody>
+            <tfoot>
+              <tr class="table-total-row">
+                <th>סכ"ם</th>
+                <th>{{ "%.0f"|format(payment_rows|sum(attribute='total') or 0) }} ₪</th>
+              </tr>
+            </tfoot>
           </table>
         </div>
       </section>
@@ -221,7 +282,7 @@
           </h2>
         </div>
         <div class="card-body">
-          <table class="simple-table expenses-table">
+          <table class="reports-table-only">
             <thead>
               <tr>
                 <th>תאריך</th>
@@ -232,17 +293,27 @@
             </thead>
             <tbody>
               {% for e in expenses %}
-                <tr id="exp-{{ e.id }}">
-                  <td>{{ e.date }}</td>
-                  <td class="col-notes">{{ e.notes }}</td>
-                  <td>₪ {{ "%.0f"|format(e.amount or 0) }}</td>
+                <tr id="exp-{{ e.id }}" class="{% if e.get('current_installment') %}row-installments{% elif e.is_fixed %}row-fixed{% endif %}">
+                  <td>{{ e.display_date or e.date }}</td>
+                  <td class="col-notes">
+                    <strong>{{ e.comment or "ללא תיאור" }}</strong>
+                    <div class="expense-meta-row">
+                      <span class="expense-category">{{ e.category or "לא מסווג" }}</span>
+                      {% if e.get('current_installment') %}
+                        <span class="installment-badge">💳 {{ e.current_installment }}/{{ e.total_installments }}</span>
+                      {% elif e.is_fixed %}
+                        <span class="fixed-badge">📆 קבועה</span>
+                      {% endif %}
+                    </div>
+                  </td>
+                  <td>{{ "%.0f"|format(e.amount or 0) }} ₪</td>
                   <td class="actions-cell">
                     <button
                       type="button"
                       class="table-action-btn"
                       data-id="{{ e.id }}"
-                      data-date="{{ e.date }}"
-                      data-notes="{{ e.notes|default('', true) }}"
+                      data-date="{{ e.display_date or e.date }}"
+                      data-notes="{{ e.comment|default('', true) }}"
                       data-category="{{ e.category }}"
                       data-amount="{{ '%.0f'|format(e.amount or 0) }}"
                       data-edit-url="{{ url_for(
@@ -293,39 +364,36 @@
       <h3 class="expense-modal-title">פרטי הוצאה</h3>
 
       <div class="expense-modal-body">
-        <div class="expense-modal-row">
-          <span class="label">תאריך:</span>
-          <span class="value" id="modal-expense-date"></span>
+        <div class="expense-detail-item">
+          <span class="detail-label">תאריך:</span>
+          <span class="detail-value" id="modal-expense-date"></span>
         </div>
-        <div class="expense-modal-row">
-          <span class="label">קטגוריה:</span>
-          <span class="value" id="modal-expense-category"></span>
+        <div class="expense-detail-item">
+          <span class="detail-label">קטגוריה:</span>
+          <span class="detail-value" id="modal-expense-category"></span>
         </div>
-        <div class="expense-modal-row">
-          <span class="label">סכום:</span>
-          <span class="value" id="modal-expense-amount"></span>
+        <div class="expense-detail-item">
+          <span class="detail-label">סכום:</span>
+          <span class="detail-value detail-amount" id="modal-expense-amount"></span>
         </div>
-        <div class="expense-modal-row">
-          <span class="label">תיאור:</span>
-          <span class="value" id="modal-expense-notes"></span>
+        <div class="expense-detail-item">
+          <span class="detail-label">תיאור:</span>
+          <span class="detail-value" id="modal-expense-notes"></span>
         </div>
       </div>
 
       <div class="expense-modal-actions">
-        <a id="expense-modal-edit-link" href="#" class="btn-main modal-edit-btn">
-          ✏️ עריכת הוצאה
+        <a id="expense-modal-edit-link" href="#" class="modal-edit-btn">
+          ✏️ עריכה
         </a>
-
-        <form id="expense-modal-delete-form"
-              method="post"
-              action="{{ url_for('delete_selected') }}"
-              onsubmit="return confirm('למחוק את ההוצאה הזו?');">
-          <input type="hidden" name="selected_ids" id="expense-modal-delete-id">
-          <button type="submit" class="btn-danger-small modal-delete-btn">
-            🗑 מחיקת הוצאה
-          </button>
-        </form>
+        <button type="button" class="modal-delete-btn" onclick="deleteExpenseFromModal()">
+          🗑️ מחיקה
+        </button>
       </div>
+      
+      <form id="expense-modal-delete-form" method="post" action="{{ url_for('delete_selected') }}" style="display: none;">
+        <input type="hidden" name="selected_ids" id="expense-modal-delete-id">
+      </form>
     </div>
   </div>
 
@@ -552,19 +620,6 @@
       word-break: break-word;
     }
 
-    .expense-modal-actions {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .modal-edit-btn,
-    .modal-delete-btn {
-      width: 100%;
-      text-align: center;
-      box-sizing: border-box;
-    }
-
     /* מובייל */
     @media (max-width: 480px) {
       .filters-row {
@@ -622,6 +677,201 @@
 
     function closeExpenseModal() {
       document.getElementById("expense-modal").classList.add("hidden");
+    }
+
+    function deleteExpenseFromModal() {
+      if (confirm('האם אתה בטוח שברצונך למחוק הוצאה זו?')) {
+        document.getElementById('expense-modal-delete-form').submit();
+      }
+    }
+
+    // Month navigation buttons
+    var monthSelect = document.getElementById('month');
+    var prevBtn = document.getElementById('reports-month-prev');
+    var nextBtn = document.getElementById('reports-month-next');
+
+    if (prevBtn && monthSelect) {
+      prevBtn.addEventListener('click', function() {
+        var currentIndex = monthSelect.selectedIndex;
+        if (currentIndex > 0) {
+          monthSelect.selectedIndex = currentIndex - 1;
+          monthSelect.form.submit();
+        }
+      });
+    }
+
+    if (nextBtn && monthSelect) {
+      nextBtn.addEventListener('click', function() {
+        var currentIndex = monthSelect.selectedIndex;
+        if (currentIndex < monthSelect.options.length - 1) {
+          monthSelect.selectedIndex = currentIndex + 1;
+          monthSelect.form.submit();
+        }
+      });
+    }
+
+    // Auto-hide flash messages after 1 second
+    var flashMessages = document.querySelectorAll('.flash-message');
+    flashMessages.forEach(function(msg) {
+      setTimeout(function() {
+        msg.remove();
+      }, 1000);
+    });
+
+    // ======= גרפים Chart.js =======
+    
+    // נתונים מהשרת
+    const categoryData = [
+      {% for row in category_rows %}
+        { category: "{{ row.category }}", spent: {{ row.spent or 0 }}, budget: {{ row.budget or 0 }} },
+      {% endfor %}
+    ];
+
+    const paymentData = [
+      {% for row in payment_rows %}
+        { method: "{{ row.method }}", total: {{ row.total or 0 }} },
+      {% endfor %}
+    ];
+
+    // גרף עמודות - קטגוריות
+    if (document.getElementById('categoriesChart')) {
+      const ctx1 = document.getElementById('categoriesChart').getContext('2d');
+      new Chart(ctx1, {
+        type: 'bar',
+        data: {
+          labels: categoryData.map(d => d.category),
+          datasets: [{
+            label: 'הוצאה בפועל',
+            data: categoryData.map(d => d.spent),
+            backgroundColor: 'rgba(168, 85, 247, 0.7)',
+            borderColor: 'rgba(168, 85, 247, 1)',
+            borderWidth: 2,
+            borderRadius: 8,
+          }, {
+            label: 'תקציב',
+            data: categoryData.map(d => d.budget),
+            backgroundColor: 'rgba(14, 165, 233, 0.5)',
+            borderColor: 'rgba(14, 165, 233, 1)',
+            borderWidth: 2,
+            borderRadius: 8,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: {
+              display: true,
+              position: 'top',
+              rtl: true,
+              labels: {
+                font: { size: 13, family: 'Heebo' },
+                padding: 12,
+                usePointStyle: true
+              }
+            },
+            tooltip: {
+              backgroundColor: 'rgba(30, 41, 59, 0.95)',
+              padding: 12,
+              titleFont: { size: 14, family: 'Heebo' },
+              bodyFont: { size: 13, family: 'Heebo' },
+              rtl: true,
+              callbacks: {
+                label: function(context) {
+                  return context.dataset.label + ': ' + context.parsed.y.toLocaleString('he-IL') + ' ₪';
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                font: { size: 12, family: 'Heebo' },
+                callback: function(value) {
+                  return value.toLocaleString('he-IL') + ' ₪';
+                }
+              },
+              grid: {
+                color: 'rgba(148, 163, 184, 0.1)'
+              }
+            },
+            x: {
+              ticks: {
+                font: { size: 12, family: 'Heebo' },
+                maxRotation: 45,
+                minRotation: 30
+              },
+              grid: {
+                display: false
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // גרף עוגה - אמצעי תשלום
+    if (document.getElementById('paymentChart')) {
+      const ctx2 = document.getElementById('paymentChart').getContext('2d');
+      const colors = [
+        'rgba(168, 85, 247, 0.8)',
+        'rgba(14, 165, 233, 0.8)',
+        'rgba(16, 185, 129, 0.8)',
+        'rgba(251, 146, 60, 0.8)',
+        'rgba(236, 72, 153, 0.8)',
+      ];
+      
+      new Chart(ctx2, {
+        type: 'doughnut',
+        data: {
+          labels: paymentData.map(d => d.method),
+          datasets: [{
+            data: paymentData.map(d => d.total),
+            backgroundColor: colors,
+            borderWidth: 3,
+            borderColor: '#ffffff',
+            hoverBorderWidth: 4,
+            hoverOffset: 8
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: {
+              display: true,
+              position: 'bottom',
+              rtl: true,
+              labels: {
+                font: { size: 13, family: 'Heebo' },
+                padding: 12,
+                usePointStyle: true,
+                pointStyle: 'circle'
+              }
+            },
+            tooltip: {
+              backgroundColor: 'rgba(30, 41, 59, 0.95)',
+              padding: 12,
+              titleFont: { size: 14, family: 'Heebo' },
+              bodyFont: { size: 13, family: 'Heebo' },
+              rtl: true,
+              callbacks: {
+                label: function(context) {
+                  const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                  const percent = ((context.parsed / total) * 100).toFixed(1);
+                  return context.label + ': ' + context.parsed.toLocaleString('he-IL') + ' ₪ (' + percent + '%)';
+                }
+              }
+            }
+          },
+          cutout: '60%',
+          animation: {
+            animateScale: true,
+            animateRotate: true
+          }
+        }
+      });
     }
   </script>
 </body>

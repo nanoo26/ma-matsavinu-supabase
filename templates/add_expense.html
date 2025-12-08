@@ -8,254 +8,315 @@
 </head>
 <body>
   <div class="app-shell">
-
-    <!-- כותרת עליונה -->
     <header class="app-header">
       <h1 class="app-title">מה מצבינו</h1>
       <p class="app-subtitle">הוספת הוצאה חדשה</p>
-
       {% include "tabs.html" %}
     </header>
 
     <main class="content">
 
-      {% if error_message %}
-        <section class="card">
-          <div class="card-body">
-            <div class="alert-error">
-              {{ error_message }}
+      <!-- הודעות מערכת -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="flash-message flash-{{ category }}">
+              {{ message }}
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <section class="card compact-form-card">
+        <form method="post" action="{{ url_for('add_expense') }}" id="expense-form">
+
+          <!-- תאריך וקטגוריה - באותה שורה -->
+          <div class="field-row">
+            <div class="compact-field half-width">
+              <label>📅 תאריך</label>
+              <input type="date" name="date" id="date" value="{{ today or '' }}" required>
+            </div>
+
+            <div class="compact-field half-width">
+              <label>📊 קטגוריה</label>
+              <div class="selected-display" id="category-display" onclick="openCategoryModal()">
+                <span id="category-text">בחר</span>
+                <span class="arrow">▼</span>
+              </div>
+              <input type="hidden" name="category" id="category" required>
             </div>
           </div>
-        </section>
-      {% endif %}
 
-      <!-- כרטיס הוספת הוצאה -->
-      <section class="card add-expense-card">
-        <div class="card-header">
-          <h2 class="card-title">✏️ הוספת הוצאה</h2>
-          <p class="card-subtitle">מלא את הפרטים הבאים והוסף הוצאה חדשה למעקב</p>
-        </div>
+          <!-- סכום - עם מקלדת מספרים -->
+          <div class="compact-field">
+            <label>💰 סכום</label>
+            <div class="selected-display" id="amount-display" onclick="openAmountModal()">
+              <span id="amount-text">0.00 ₪</span>
+              <span class="arrow">🔢</span>
+            </div>
+            <input type="hidden" name="amount" id="amount" required>
+          </div>
 
-        <div class="card-body">
-          <!-- טופס הוספת הוצאה -->
-          <form action="{{ url_for('add_expense') }}" method="post" class="expense-form">
-
-            <!-- סוג הוצאה -->
-            <div class="form-group">
-              <label for="expense_type">סוג הוצאה</label>
-              <select id="expense_type" name="expense_type" class="input">
-                <option value="">בחר סוג הוצאה</option>
-                <option value="single">רכישה חד פעמית</option>
-                <option value="standing">הוצאה קבועה (הוראת קבע)</option>
-                <option value="installments">רכישה בתשלומים</option>
-              </select>
+          <!-- אמצעי תשלום עם צ'קבוקס קבוע -->
+          <div class="field-row">
+            <div class="compact-field half-width">
+              <label>💳 אמצעי תשלום</label>
+              <div class="selected-display" id="payment-display" onclick="openPaymentModal()">
+                <span id="payment-text">בחר</span>
+                <span class="arrow">▼</span>
+              </div>
+              <input type="hidden" name="payment_method" id="payment_method" required>
             </div>
 
-            <!-- הוצאה קבועה (צ׳קבוקס יחיד) -->
-            <div class="form-group">
-              <label class="checkbox-label">
-                <input type="checkbox" id="is_fixed" name="is_fixed" value="1">
-                <span>הוצאה קבועה (תשלום חוזר / הוראת קבע)</span>
+            <div class="compact-field half-width checkbox-inline">
+              <label>
+                <input type="checkbox" name="is_fixed" id="is_fixed" value="1" disabled>
+                <span id="fixed-indicator">✓</span>
+                <span class="checkbox-label-text">קבוע</span>
               </label>
             </div>
+          </div>
 
-            <!-- חלונית תשלומים קטנה -->
-            <div id="installments-panel" class="installments-panel" style="display:none;">
-              <div class="installments-header">
-                <span class="installments-title">תשלומים</span>
-                <span class="installments-chip">רכישה בתשלומים</span>
-              </div>
-
-              <label for="installments_count">מספר תשלומים</label>
-              <input
-                type="number"
-                id="installments_count"
-                name="installments_count"
-                min="1"
-                max="60"
-                value="1"
-              >
-              <p class="installments-hint">
-                סכום לחיוב חודשי יחושב מתוך הסכום הכולל.
-              </p>
+          <!-- סוג הוצאה - כפתורים -->
+          <div class="compact-field">
+            <label>🏷️ סוג הוצאה</label>
+            <div class="type-buttons">
+              <button type="button" class="type-btn active" data-type="single">חד פעמית</button>
+              <button type="button" class="type-btn" data-type="standing">קבועה</button>
+              <button type="button" class="type-btn" data-type="installments">תשלומים</button>
             </div>
+            <input type="hidden" name="expense_type" id="expense_type" value="single">
+          </div>
 
-            <!-- תאריך -->
-            <div class="form-group">
-              <label for="date">תאריך</label>
-              <input
-                type="date"
-                id="date"
-                name="date"
-                value="{{ today }}"
-                required
-              >
-            </div>
+          <!-- מספר תשלומים - מוסתר בברירת מחדל -->
+          <div class="compact-field" id="installments-field" style="display: none;">
+            <label>💳 מספר תשלומים</label>
+            <input type="number" name="installments_count" id="installments_count" 
+                   class="compact-input" min="2" max="36" placeholder="12">
+          </div>
 
-            <!-- קטגוריה -->
-            <div class="form-group">
-              <label for="category">קטגוריה</label>
-              <select id="category" name="category" required>
-                <option value="" disabled selected>בחר קטגוריה</option>
-                {% for c in categories %}
-                  <option value="{{ c }}">{{ c }}</option>
-                {% endfor %}
-              </select>
-            </div>
+          <!-- הערות - 2 שורות -->
+          <div class="compact-field">
+            <label>📝 הערות</label>
+            <textarea name="comment" id="comment" class="compact-textarea" 
+                      rows="2" placeholder="הערות או תיאור (אופציונלי)"></textarea>
+          </div>
 
-            <!-- סכום -->
-            <div class="form-group">
-              <label for="amount">סכום (₪)</label>
-              <input
-                type="number"
-                id="amount"
-                name="amount"
-                step="0.01"
-                min="0"
-                required
-                placeholder="לדוגמה: 150.00"
-              >
-            </div>
-
-            <!-- אמצעי תשלום -->
-            <div class="form-group">
-              <label for="payment_method">אמצעי תשלום</label>
-              <select id="payment_method" name="payment_method" required>
-                <option value="" disabled selected>בחר אמצעי תשלום</option>
-                {% for p in payment_methods %}
-                  <option value="{{ p }}">{{ p }}</option>
-                {% endfor %}
-              </select>
-            </div>
-
-            <!-- הערות -->
-            <div class="form-group">
-              <label for="note">הערות</label>
-              <textarea
-                id="note"
-                name="note"
-                rows="2"
-                placeholder="הערות (לא חובה)"
-              ></textarea>
-            </div>
-
-            <!-- כפתור שמירה -->
-            <button type="submit" class="btn-main full-width">
-              💾 שמירת הוצאה
+          <!-- כפתורי פעולה -->
+          <div class="form-actions">
+            <button type="button" class="btn-cancel" onclick="window.location.href='{{ url_for('expenses') }}'">
+              ✕ ביטול
             </button>
-          </form>
-        </div>
+            <button type="submit" class="btn-primary btn-save">
+              💾 שמור
+            </button>
+          </div>
+
+        </form>
       </section>
 
-      <div class="bottom-links">
-        <a href="{{ url_for('expenses') }}" class="link-back">
-          ← חזרה לרשימת ההוצאות
-        </a>
-      </div>
     </main>
   </div>
 
-  <!-- לוגיקה עבור תשלומים + צ׳קבוקס -->
+  <!-- מודל בחירת קטגוריה -->
+  <div class="modal" id="category-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>בחר קטגוריה</h3>
+        <button type="button" class="modal-close" onclick="closeCategoryModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="category-grid">
+          {% set category_icons = {
+            'מזון': '🍕',
+            'בריאות': '💊',
+            'חינוך': '📚',
+            'תחבורה': '🚗',
+            'בילויים': '🎉',
+            'ביגוד': '👕',
+            'בית': '🏠',
+            'רכב': '🚙',
+            'ילדים': '👶',
+            'חוגים': '⚽',
+            'קניות': '🛒',
+            'טבק': '🚬',
+            'שונות': '📦'
+          } %}
+          {% for c in categories %}
+            <div class="category-btn" onclick="selectCategory('{{ c }}')">
+              <div class="category-icon">{{ category_icons[c] or '📌' }}</div>
+              <div class="category-name">{{ c }}</div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- מודל בחירת אמצעי תשלום -->
+  <div class="modal" id="payment-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>בחר אמצעי תשלום</h3>
+        <button type="button" class="modal-close" onclick="closePaymentModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="payment-cards">
+          {% for p in payment_methods %}
+            <div class="payment-card" onclick="selectPayment('{{ p }}')">
+              <div class="payment-card-icon">💳</div>
+              <div class="payment-card-name">{{ p }}</div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- מודל מקלדת סכום -->
+  <div class="modal" id="amount-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>הזן סכום</h3>
+        <button type="button" class="modal-close" onclick="closeAmountModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="calculator-display" id="calc-display">0</div>
+        <div class="calculator-grid">
+          <button type="button" class="calc-btn" onclick="calcInput('7')">7</button>
+          <button type="button" class="calc-btn" onclick="calcInput('8')">8</button>
+          <button type="button" class="calc-btn" onclick="calcInput('9')">9</button>
+          <button type="button" class="calc-btn" onclick="calcInput('4')">4</button>
+          <button type="button" class="calc-btn" onclick="calcInput('5')">5</button>
+          <button type="button" class="calc-btn" onclick="calcInput('6')">6</button>
+          <button type="button" class="calc-btn" onclick="calcInput('1')">1</button>
+          <button type="button" class="calc-btn" onclick="calcInput('2')">2</button>
+          <button type="button" class="calc-btn" onclick="calcInput('3')">3</button>
+          <button type="button" class="calc-btn" onclick="calcInput('0')">0</button>
+          <button type="button" class="calc-btn" onclick="calcInput('.')">.</button>
+          <button type="button" class="calc-btn calc-del" onclick="calcDelete()">⌫</button>
+        </div>
+        <button type="button" class="calc-confirm" onclick="confirmAmount()">אישור</button>
+      </div>
+    </div>
+  </div>
+
   <script>
-    document.addEventListener("DOMContentLoaded", function () {
-      const typeSelect = document.getElementById("expense_type");
-      const panel = document.getElementById("installments-panel");
-      const installmentsInput = document.getElementById("installments_count");
-      const fixedCheckbox = document.getElementById("is_fixed");
+    // Auto-hide flash messages
+    var flashMessages = document.querySelectorAll('.flash-message');
+    flashMessages.forEach(function(msg) {
+      setTimeout(function() { msg.remove(); }, 1000);
+    });
 
-      function applyTypeLogic() {
-        if (!typeSelect) return;
-        const v = (typeSelect.value || "").trim();
+    // Auto-fill today's date
+    const dateInput = document.getElementById('date');
+    if (!dateInput.value) {
+      const today = new Date().toISOString().split('T')[0];
+      dateInput.value = today;
+    }
 
-        // 1. תצוגת חלונית תשלומים
-        const isInstallments = v === "installments";
-        if (panel && installmentsInput) {
-          panel.style.display = isInstallments ? "block" : "none";
-          installmentsInput.required = isInstallments;
-          if (isInstallments) {
-            if (!installmentsInput.value || parseInt(installmentsInput.value, 10) < 1) {
-              installmentsInput.value = 1;
-            }
-          }
+    // Type buttons logic
+    const typeBtns = document.querySelectorAll('.type-btn');
+    const expenseTypeInput = document.getElementById('expense_type');
+    const isFixedCheckbox = document.getElementById('is_fixed');
+    const installmentsField = document.getElementById('installments-field');
+
+    typeBtns.forEach(btn => {
+      btn.addEventListener('click', function() {
+        typeBtns.forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        const type = this.dataset.type;
+        expenseTypeInput.value = type;
+
+        // Logic for checkbox and installments
+        if (type === 'single') {
+          isFixedCheckbox.disabled = true;
+          isFixedCheckbox.checked = false;
+          installmentsField.style.display = 'none';
+        } else if (type === 'standing') {
+          isFixedCheckbox.disabled = false;
+          isFixedCheckbox.checked = true;
+          installmentsField.style.display = 'none';
+        } else if (type === 'installments') {
+          isFixedCheckbox.disabled = false;
+          isFixedCheckbox.checked = true;
+          installmentsField.style.display = 'block';
         }
+      });
+    });
 
-        // 2. הוצאה קבועה / תשלומים - צ׳קבוקס
-        if (!fixedCheckbox) return;
+    // Category Modal
+    function openCategoryModal() {
+      document.getElementById('category-modal').classList.add('active');
+    }
 
-        if (v === "standing") {
-          // הוראת קבע - מסומן וננעל
-          fixedCheckbox.checked = true;
-          fixedCheckbox.disabled = true;
-        } else if (v === "installments") {
-          // תשלומים - יורד אוטומטית, אפשר לשנות
-          fixedCheckbox.checked = false;
-          fixedCheckbox.disabled = false;
-        } else {
-          // חד פעמי / ריק - חופשי
-          fixedCheckbox.disabled = false;
-        }
+    function closeCategoryModal() {
+      document.getElementById('category-modal').classList.remove('active');
+    }
+
+    function selectCategory(cat) {
+      document.getElementById('category').value = cat;
+      document.getElementById('category-text').textContent = cat;
+      closeCategoryModal();
+    }
+
+    // Payment Modal
+    function openPaymentModal() {
+      document.getElementById('payment-modal').classList.add('active');
+    }
+
+    function closePaymentModal() {
+      document.getElementById('payment-modal').classList.remove('active');
+    }
+
+    function selectPayment(method) {
+      document.getElementById('payment_method').value = method;
+      document.getElementById('payment-text').textContent = method;
+      closePaymentModal();
+    }
+
+    // Amount Calculator
+    let calcValue = '';
+
+    function openAmountModal() {
+      document.getElementById('amount-modal').classList.add('active');
+      calcValue = document.getElementById('amount').value || '';
+      document.getElementById('calc-display').textContent = calcValue || '0';
+    }
+
+    function closeAmountModal() {
+      document.getElementById('amount-modal').classList.remove('active');
+    }
+
+    function calcInput(digit) {
+      if (calcValue === '' && digit === '.') {
+        calcValue = '0.';
+      } else if (digit === '.' && calcValue.includes('.')) {
+        return;
+      } else {
+        calcValue += digit;
       }
+      document.getElementById('calc-display').textContent = calcValue;
+    }
 
-      if (typeSelect) {
-        typeSelect.addEventListener("change", applyTypeLogic);
-        typeSelect.addEventListener("input", applyTypeLogic);
+    function calcDelete() {
+      calcValue = calcValue.slice(0, -1);
+      document.getElementById('calc-display').textContent = calcValue || '0';
+    }
+
+    function confirmAmount() {
+      const amount = parseFloat(calcValue) || 0;
+      document.getElementById('amount').value = amount;
+      document.getElementById('amount-text').textContent = amount.toFixed(2) + ' ₪';
+      closeAmountModal();
+    }
+
+    // Close modals on background click
+    window.addEventListener('click', function(e) {
+      if (e.target.classList.contains('modal')) {
+        e.target.classList.remove('active');
       }
-
-      // מצב התחלתי
-      applyTypeLogic();
     });
   </script>
-
-  <!-- עיצוב מובייל למסך הוספת הוצאה -->
-  <style>
-    @media (max-width: 480px) {
-      .add-expense-card {
-        padding: 14px;
-        margin: 0 auto;
-        max-width: 95%;
-      }
-
-      .expense-form {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-      }
-
-      .expense-form .form-group {
-        display: flex;
-        flex-direction: column;
-      }
-
-      .expense-form label {
-        font-size: 14px;
-        margin-bottom: 5px;
-        color: var(--text-secondary);
-      }
-
-      .expense-form input,
-      .expense-form select,
-      .expense-form textarea {
-        width: 100%;
-        padding: 10px;
-        border-radius: 6px;
-        border: 1px solid #ccc;
-        font-size: 15px;
-        background: #fff;
-      }
-
-      .expense-form textarea {
-        resize: vertical;
-        min-height: 70px;
-      }
-
-      .btn-main.full-width {
-        width: 100%;
-        padding: 12px;
-        font-size: 16px;
-        border-radius: 8px;
-        margin-top: 8px;
-      }
-    }
-  </style>
 </body>
 </html>

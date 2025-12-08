@@ -7,7 +7,6 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-
   <div class="app-shell">
     <header class="app-header">
       <h1 class="app-title">מה מצבינו</h1>
@@ -17,571 +16,281 @@
 
     <main class="content">
 
-      {% set total_budget = total_budget or 0 %}
-      {% set total_income = total_income or 0 %}
-      {% set net_after_budget = net_after_budget or (total_income - total_budget) %}
-      {% set percent = 0 %}
-      {% if total_income and total_income > 0 %}
-        {% set percent = ((total_budget / total_income) * 100) | round(1) %}
-      {% endif %}
+      <!-- הודעות מערכת -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="flash-message flash-{{ category }}">
+              {{ message }}
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <!-- סיכום כללי -->
+      <section class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">חודש תקציב</div>
+            <div class="card-subtitle">{{ month }}</div>
+          </div>
+          <div class="card-value-main">
+            {{ "%.0f"|format(total_budget or 0) }} ₪
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="stats-row">
+            <div class="stat-item">
+              <div class="stat-label">סה"כ הכנסות</div>
+              <div class="stat-value">
+                {{ "%.0f"|format(total_income or 0) }} ₪
+              </div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">יתרה אחרי תקציב</div>
+              <div class="stat-value">
+                {{ "%.0f"|format(net_after_budget or 0) }} ₪
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       <!-- בחירת חודש -->
-      <section class="card month-select-card">
-        <div class="card-header">
-          <h2 class="card-title">📅 בחירת חודש לתקציב</h2>
-          <p class="card-subtitle">בחר חודש לעדכון התקציב</p>
-        </div>
+      <section class="reports-filters-section">
+        <form method="get" action="{{ url_for('budget') }}" class="reports-filters-form">
+          
+          <!-- חודש עם חיצים -->
+          <div class="reports-month-selector">
+            <button type="button" class="month-arrow-btn" id="budget-month-next" aria-label="חודש הבא">
+              →
+            </button>
+            <input
+              type="month"
+              id="global-month-select"
+              name="month"
+              value="{{ month }}"
+              class="modern-select month-select"
+              required
+            >
+            <button type="button" class="month-arrow-btn" id="budget-month-prev" aria-label="חודש קודם">
+              ←
+            </button>
+          </div>
 
-        <div class="card-body">
-          <form method="get" action="{{ url_for('budget') }}" class="month-form">
-            <div class="month-picker-row">
-              <button type="button"
-                      class="month-nav-btn"
-                      id="month-prev-btn"
-                      aria-label="חודש קודם">
-                ←
-              </button>
+          <div class="date-range-display">
+            <span class="range-icon">📅</span>
+            <span class="range-text">
+              {% set year, month_num = month.split('-') %}
+              {% set year = year|int %}
+              {% set month_num = month_num|int %}
+              {% if month_num == 12 %}
+                10/{{ month_num }}/{{ year }} - 09/01/{{ year + 1 }}
+              {% else %}
+                10/{{ "%02d"|format(month_num) }}/{{ year }} - 09/{{ "%02d"|format(month_num + 1) }}/{{ year }}
+              {% endif %}
+            </span>
+          </div>
 
-              <div class="month-input-wrapper">
-                <label for="global-month-select" class="month-label">חודש:</label>
-                <input
-                  type="month"
-                  id="global-month-select"
-                  name="month"
-                  value="{{ month }}"
-                  required
-                  onchange="this.form.submit()"
-                >
-              </div>
-
-              <button type="button"
-                      class="month-nav-btn"
-                      id="month-next-btn"
-                      aria-label="חודש הבא">
-                →
-              </button>
-            </div>
-          </form>
-        </div>
+        </form>
       </section>
 
-      <!-- כרטיס סיכום הכנסות/תקציב -->
-      <section class="card budget-progress-card">
-        <div class="card-header">
-          <h2 class="card-title">מד תקציב חודשי 📊</h2>
-          <p class="card-subtitle">
-            הכנסות לחודש: {{ "%.0f"|format(total_income or 0) }} ₪ |
-            תקציב שהוגדר: {{ "%.0f"|format(total_budget or 0) }} ₪
-          </p>
-        </div>
-        <div class="card-body">
-          <div class="progress-bar">
-            <div
-              class="progress-fill
-                {% if percent < 60 %}good
-                {% elif percent < 90 %}warning
-                {% else %}danger
-                {% endif %}"
-              style="width: {{ percent if percent <= 130 else 130 }}%">
+      <!-- טופס עריכה מאוחד -->
+      <form method="post" action="{{ url_for('budget') }}" id="budget-form">
+        <input type="hidden" name="month" value="{{ month }}">
+
+        
+        <!-- כפתור שמירה -->
+        <section class="card">
+          <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; font-size: 16px; padding: 14px;">
+            💾 שמור שינויים
+          </button>
+        </section>
+
+        <!-- תקציב והכנסות במקביל -->
+        <div class="budget-grid">
+          <!-- תקציב לפי קטגוריות -->
+          <section class="card">
+            <div class="card-header">
+              <h2 class="card-title">📊 תקציב לפי קטגוריות</h2>
             </div>
-          </div>
-          <p class="progress-label">{{ percent }}% מההכנסות מוקצות בתקציב</p>
+            <div class="card-body">
+              <div class="budget-edit-table">
+                <div class="budget-row budget-row-header">
+                  <div class="budget-cell budget-category">קטגוריה</div>
+                  <div class="budget-cell budget-prev">חודש קודם</div>
+                  <div class="budget-cell budget-current">תקציב נוכחי</div>
+                </div>
 
-          <div class="budget-summary-row">
-            <div class="summary-box">
-              <span class="summary-label">סה״כ הכנסות</span>
-              <span class="summary-value">{{ "%.0f"|format(total_income or 0) }} ₪</span>
-            </div>
-            <div class="summary-box">
-              <span class="summary-label">סה״כ תקציב</span>
-              <span class="summary-value">{{ "%.0f"|format(total_budget or 0) }} ₪</span>
-            </div>
-            <div class="summary-box">
-              <span class="summary-label">נשאר אחרי תקציב</span>
-              <span class="summary-value">
-                {{ "%.0f"|format(net_after_budget or 0) }} ₪
-              </span>
-            </div>
-          </div>
-        </div>
-      </section>
+                {% for row in budgets %}
+                <div class="budget-row">
+                  <div class="budget-cell budget-category">{{ row.category }}</div>
+                  <div class="budget-cell budget-prev">
+                    <span class="prev-amount">{{ "%.0f"|format(row.previous_amount or 0) }}</span>
+                  </div>
+                  <div class="budget-cell budget-current">
+                    <input 
+                      type="number" 
+                      name="budget_{{ row.category }}" 
+                      value="{{ row.amount or 0 }}" 
+                      class="budget-input"
+                      step="0.01"
+                      placeholder="0"
+                    >
+                  </div>
+                </div>
+                {% endfor %}
 
-      <!-- עריכת תקציב -->
-      <section class="card budget-edit-card">
-        <div class="card-header">
-          <h2 class="card-title">✏️ הגדרת הכנסות ותקציב חודשי</h2>
-          <p class="card-subtitle">קבע את ההכנסות ואת התקציב לכל קטגוריה עבור החודש {{ month }}</p>
-        </div>
-
-        <div class="card-body">
-          <form method="post" action="{{ url_for('budget') }}" class="budget-form">
-            <input type="hidden" name="month" value="{{ month }}">
-
-            <!-- הכנסות חודשיות -->
-            <div class="form-group">
-              <label>💰 הכנסות חודשיות:</label>
-              <small class="hint-text">
-                סה״כ ההכנסות מחושב מסך ארבעת השדות הבאים.
-              </small>
-            </div>
-
-            <div class="income-total-box">
-              <span class="income-total-label">סה״כ הכנסות:</span>
-              <span class="income-total-value">
-                {{ "%.0f"|format(total_income or 0) }} ₪
-              </span>
-            </div>
-
-            <div class="form-group">
-              <label for="income_shalom">שכר שלום:</label>
-              <input
-                type="number"
-                id="income_shalom"
-                name="income_shalom"
-                step="1"
-                min="0"
-                value="{{ income_shalom or '' }}"
-                placeholder="0"
-              >
-            </div>
-
-            <div class="form-group">
-              <label for="income_hagit">שכר חגית:</label>
-              <input
-                type="number"
-                id="income_hagit"
-                name="income_hagit"
-                step="1"
-                min="0"
-                value="{{ income_hagit or '' }}"
-                placeholder="0"
-              >
-            </div>
-
-            <div class="form-group">
-              <label for="income_bitua">ביטוח לאומי:</label>
-              <input
-                type="number"
-                id="income_bitua"
-                name="income_bitua"
-                step="1"
-                min="0"
-                value="{{ income_bitua or '' }}"
-                placeholder="0"
-              >
-            </div>
-
-            <div class="form-group">
-              <label for="income_kids">קצבת ילדים:</label>
-              <input
-                type="number"
-                id="income_kids"
-                name="income_kids"
-                step="1"
-                min="0"
-                value="{{ income_kids or '' }}"
-                placeholder="0"
-              >
-            </div>
-
-            <!-- מפריד ברור בין הכנסות לתקציב + כפתור שמירה קטן למעלה -->
-            <div class="section-separator">
-              <div class="section-line"></div>
-
-              <div class="section-title-wrapper">
-                <span class="section-title"> 📦  תקציב חודשי לפי קטגוריה</span>
-                <button type="submit"
-                        class="btn-save-icon"
-                        title="שמירת התקציב">
-                  💾
-                </button>
-              </div>
-
-              <div class="section-line"></div>
-            </div>
-
-            <!-- שדות התקציב לכל קטגוריה -->
-            {% for b in budgets %}
-              <div class="form-group budget-line">
-                <label for="budget_{{ b.category }}">{{ b.category }}</label>
-                <div class="budget-input">
-                  <input
-                    type="number"
-                    step="1"
-                    id="budget_{{ b.category }}"
-                    name="budget_{{ b.category }}"
-                    value="{{ b.amount }}"
-                    placeholder="0 ₪"
-                  >
-                  <span class="currency-symbol">₪</span>
+                <div class="budget-row budget-row-total">
+                  <div class="budget-cell budget-category">סה״כ תקציב</div>
+                  <div class="budget-cell budget-prev">
+                    <span class="prev-amount">-</span>
+                  </div>
+                  <div class="budget-cell budget-current">
+                    <span class="total-value">{{ "%.0f"|format(total_budget or 0) }} ₪</span>
+                  </div>
                 </div>
               </div>
-            {% endfor %}
-
-            <!-- סה"כ תקציב מתחת לכל השדות -->
-            <div class="budget-total-box">
-              <span class="budget-total-label">סה״כ תקציב לכל הקטגוריות:</span>
-              <span class="budget-total-value">
-                {{ "%.0f"|format(total_budget or 0) }} ₪
-              </span>
             </div>
+          </section>
 
-            <button type="submit" class="btn-main full-width">💾 שמירת תקציב</button>
-          </form>
+          <!-- הכנסות -->
+          <section class="card">
+            <div class="card-header">
+              <h2 class="card-title">💰 הכנסות חודשיות</h2>
+            </div>
+            <div class="card-body">
+            <div class="budget-edit-table">
+              <div class="budget-row budget-row-header">
+                <div class="budget-cell budget-source">מקור הכנסה</div>
+                <div class="budget-cell budget-amount">סכום</div>
+              </div>
+
+              <div class="budget-row">
+                <div class="budget-cell budget-source">שכר שלום</div>
+                <div class="budget-cell budget-amount">
+                  <input 
+                    type="number" 
+                    name="income_shalom" 
+                    value="{{ income_shalom or 0 }}" 
+                    class="budget-input"
+                    step="0.01"
+                    placeholder="0"
+                  >
+                </div>
+              </div>
+
+              <div class="budget-row">
+                <div class="budget-cell budget-source">שכר חגית</div>
+                <div class="budget-cell budget-amount">
+                  <input 
+                    type="number" 
+                    name="income_hagit" 
+                    value="{{ income_hagit or 0 }}" 
+                    class="budget-input"
+                    step="0.01"
+                    placeholder="0"
+                  >
+                </div>
+              </div>
+
+              <div class="budget-row">
+                <div class="budget-cell budget-source">ביטוח לאומי</div>
+                <div class="budget-cell budget-amount">
+                  <input 
+                    type="number" 
+                    name="income_bitua" 
+                    value="{{ income_bitua or 0 }}" 
+                    class="budget-input"
+                    step="0.01"
+                    placeholder="0"
+                  >
+                </div>
+              </div>
+
+              <div class="budget-row">
+                <div class="budget-cell budget-source">קצבת ילדים</div>
+                <div class="budget-cell budget-amount">
+                  <input 
+                    type="number" 
+                    name="income_kids" 
+                    value="{{ income_kids or 0 }}" 
+                    class="budget-input"
+                    step="0.01"
+                    placeholder="0"
+                  >
+                </div>
+              </div>
+
+              <div class="budget-row budget-row-total">
+                <div class="budget-cell budget-source">סה״כ הכנסות</div>
+                <div class="budget-cell budget-amount">
+                  <span class="total-value">{{ "%.0f"|format(total_income or 0) }} ₪</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
         </div>
-      </section>
+
+        <!-- כפתור שמירה -->
+        <section class="card">
+          <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; font-size: 16px; padding: 14px;">
+            💾 שמור שינויים
+          </button>
+        </section>
+
+      </form>
 
     </main>
   </div>
 
-  <style>
-  /* בחירת חודש */
-  .month-select-card {
-    margin-top: 8px;
-  }
-
-  .month-form {
-    display: block;
-  }
-
-  .month-picker-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .month-input-wrapper {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .month-label {
-    font-size: 13px;
-    color: var(--text-secondary, #666);
-  }
-
-  .month-form input[type="month"] {
-    width: 100%;
-    padding: 10px 12px;
-    font-size: 16px;
-    border-radius: 10px;
-    border: 1px solid #ddd;
-    background-color: #fff;
-    box-sizing: border-box;
-  }
-
-  .month-nav-btn {
-    width: 36px;
-    height: 36px;
-    border-radius: 999px;
-    border: 1px solid #ddd;
-    background: #f5f5f5;
-    font-size: 18px;
-    line-height: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-  }
-
-  .month-nav-btn:active {
-    transform: scale(0.95);
-  }
-
-  /* טופס תקציב */
-  .budget-form {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-  }
-
-  .form-group {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .form-group label {
-    font-size: 15px;
-    margin-bottom: 6px;
-    color: var(--text-secondary);
-  }
-
-  .budget-input {
-    display: flex;
-    align-items: center;
-    position: relative;
-  }
-
-  .budget-input input {
-    width: 100%;
-    padding-right: 30px;
-    box-sizing: border-box;
-  }
-
-  .currency-symbol {
-    position: absolute;
-    right: 8px;
-    color: #888;
-    font-weight: bold;
-  }
-
-  .hint-text {
-    font-size: 12px;
-    color: #888;
-  }
-
-  .divider {
-    border: 0;
-    height: 1px;
-    background: #ddd;
-    margin: 12px 0;
-  }
-
-  /* קופסת סה"כ הכנסות */
-  .income-total-box {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: #f0f9ff;
-    border: 1px solid #cfe6ff;
-    border-radius: 10px;
-    padding: 8px 10px;
-    margin-bottom: 8px;
-  }
-
-  .income-total-label {
-    font-size: 13px;
-    color: #2563eb;
-    font-weight: 600;
-  }
-
-  .income-total-value {
-    font-size: 15px;
-    font-weight: 700;
-    color: #1e3a8a;
-  }
-
-  /* מפריד בין הכנסות לתקציב */
-  .section-separator {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin: 18px 0 10px;
-  }
-
-  .section-line {
-    flex: 1;
-    height: 2px;
-    background: linear-gradient(to left, #e5e7eb, #9ca3af, #e5e7eb);
-    border-radius: 999px;
-  }
-
-  .section-title-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    white-space: nowrap;
-  }
-
-  .section-title {
-    font-size: 13px;
-    font-weight: 600;
-    color: #555;
-  }
-
-  .btn-save-icon {
-    border: none;
-    background: #eef2ff;
-    border-radius: 999px;
-    padding: 4px 8px;
-    font-size: 14px;
-    cursor: pointer;
-  }
-
-  .btn-save-icon:active {
-    transform: scale(0.95);
-  }
-
-  /* מד תקציב וסיכומים */
-  .progress-bar {
-    width: 100%;
-    height: 14px;
-    background: #e0e0e0;
-    border-radius: 7px;
-    overflow: hidden;
-    margin: 10px 0;
-  }
-
-  .progress-fill {
-    height: 100%;
-    transition: width 0.4s ease;
-  }
-
-  .progress-fill.good { background: #4caf50; }
-  .progress-fill.warning { background: #ff9800; }
-  .progress-fill.danger { background: #f44336; }
-
-  .progress-label {
-    text-align: center;
-    font-size: 14px;
-    font-weight: 600;
-    color: #333;
-    margin-bottom: 8px;
-  }
-
-  .budget-summary-row {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 8px;
-    margin-top: 8px;
-  }
-
-  .summary-box {
-    background: #f7f7f7;
-    border-radius: 10px;
-    padding: 8px;
-    text-align: center;
-  }
-
-  .summary-label {
-    display: block;
-    font-size: 12px;
-    color: #666;
-    margin-bottom: 4px;
-  }
-
-  .summary-value {
-    font-size: 14px;
-    font-weight: 700;
-    color: #222;
-  }
-
-  /* סה"כ תקציב בתחתית */
-  .budget-total-box {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: #fefce8;
-    border: 1px solid #facc15;
-    border-radius: 10px;
-    padding: 8px 10px;
-    margin-top: 6px;
-  }
-
-  .budget-total-label {
-    font-size: 13px;
-    color: #92400e;
-    font-weight: 600;
-  }
-
-  .budget-total-value {
-    font-size: 15px;
-    font-weight: 700;
-    color: #92400e;
-  }
-
-  /* מובייל */
-  @media (max-width: 480px) {
-    .month-select-card,
-    .budget-edit-card,
-    .budget-progress-card {
-      padding: 14px;
-      margin: 0 auto 16px;
-      max-width: 95%;
-    }
-
-    .card-title {
-      font-size: 18px;
-      text-align: center;
-    }
-
-    .card-subtitle {
-      font-size: 13px;
-      text-align: center;
-    }
-
-    .budget-form {
-      gap: 12px;
-    }
-
-    .form-group label {
-      font-size: 14px;
-    }
-
-    input,
-    select,
-    button {
-      font-size: 15px;
-      padding: 10px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-      width: 100%;
-      box-sizing: border-box;
-    }
-
-    .btn-main.full-width {
-      width: 100%;
-      padding: 12px;
-      margin-top: 10px;
-      font-size: 16px;
-    }
-
-    .hint-text {
-      font-size: 12px;
-      margin-top: 3px;
-    }
-
-    .budget-summary-row {
-      grid-template-columns: 1fr;
-    }
-
-    .section-title-wrapper {
-      gap: 4px;
-    }
-  }
-  </style>
-
   <script>
-    (function() {
-      var monthInput = document.getElementById('global-month-select');
-      var prevBtn = document.getElementById('month-prev-btn');
-      var nextBtn = document.getElementById('month-next-btn');
+    var monthInput = document.getElementById('global-month-select');
+    var prevBtn = document.getElementById('budget-month-prev');
+    var nextBtn = document.getElementById('budget-month-next');
 
-      function changeMonth(delta) {
-        if (!monthInput || !monthInput.value) return;
+    // Auto-submit on month change
+    monthInput.addEventListener('change', function() {
+      this.form.submit();
+    });
 
-        var parts = monthInput.value.split('-');
-        if (parts.length !== 2) return;
-
-        var year = parseInt(parts[0], 10);
-        var month = parseInt(parts[1], 10) - 1;
-
-        if (isNaN(year) || isNaN(month)) return;
-
-        var d = new Date(year, month, 1);
-        d.setMonth(d.getMonth() + delta);
-
-        var newYear = d.getFullYear();
-        var newMonth = (d.getMonth() + 1).toString().padStart(2, '0');
-
-        monthInput.value = newYear + '-' + newMonth;
-        monthInput.form.submit();
+    // Month navigation
+    function changeMonth(delta) {
+      if (!monthInput || !monthInput.value) return;
+      var parts = monthInput.value.split('-');
+      if (parts.length < 2) return;
+      var y = parseInt(parts[0], 10);
+      var m = parseInt(parts[1], 10);
+      if (isNaN(y) || isNaN(m)) return;
+      m += delta;
+      if (m <= 0) {
+        m += 12;
+        y -= 1;
       }
-
-      if (prevBtn && monthInput) {
-        prevBtn.addEventListener('click', function() {
-          changeMonth(-1);
-        });
+      if (m > 12) {
+        m -= 12;
+        y += 1;
       }
+      var mm = (m < 10) ? '0' + m : '' + m;
+      monthInput.value = y + '-' + mm;
+      monthInput.form.submit();
+    }
 
-      if (nextBtn && monthInput) {
-        nextBtn.addEventListener('click', function() {
-          changeMonth(1);
-        });
-      }
-    })();
+    if (prevBtn) {
+      prevBtn.addEventListener('click', function() { changeMonth(-1); });
+    }
+    if (nextBtn) {
+      nextBtn.addEventListener('click', function() { changeMonth(+1); });
+    }
+
+    // Auto-hide flash messages after 1 second
+    var flashMessages = document.querySelectorAll('.flash-message');
+    flashMessages.forEach(function(msg) {
+      setTimeout(function() {
+        msg.remove();
+      }, 1000);
+    });
   </script>
 </body>
 </html>
