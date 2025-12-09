@@ -358,7 +358,7 @@
                   {{ row["notes"] }}
               </div>
               <div class="expense-actions">
-                <a href="{{ url_for('edit_expense', expense_id=row['id']) }}" class="expense-action-btn expense-action-edit">
+                <a href="{{ url_for('edit_expense', expense_id=row['id'], return_to=request.full_path) }}" class="expense-action-btn expense-action-edit">
                   <span class="material-icons">edit</span> ערוך
                 </a>
                 <a href="{{ url_for('delete_expense', expense_id=row['id']) }}" class="expense-action-btn expense-action-delete"
@@ -401,7 +401,7 @@
                   <td>{{ row["category"] }}</td>
                   <td>{{ row["payment_method"] }}</td>
                   <td class="table-actions">
-                    <a href="{{ url_for('edit_expense', expense_id=row['id']) }}" class="table-action-link table-edit">ערוך</a>
+                    <a href="{{ url_for('edit_expense', expense_id=row['id'], return_to=request.full_path) }}" class="table-action-link table-edit">ערוך</a>
                     <a href="{{ url_for('delete_expense', expense_id=row['id']) }}" class="table-action-link table-delete"
                        onclick="return confirm('בטוח למחוק?');">מחק</a>
                   </td>
@@ -415,7 +415,7 @@
   </main>
 
   <!-- כפתור FAB -->
-  <a href="{{ url_for('add_expense') }}" class="btn-fab" title="הוסף הוצאה">
+  <a href="{{ url_for('add_expense', return_to=request.full_path) }}" class="btn-fab" title="הוסף הוצאה">
     <span class="material-icons">add</span>
   </a>
 </div>

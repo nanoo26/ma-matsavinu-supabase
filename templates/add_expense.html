@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <title>מה מצבינו - הוספת הוצאה</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
@@ -28,7 +28,7 @@
       {% endwith %}
 
       <section class="card compact-form-card">
-        <form method="post" action="{{ url_for('add_expense') }}" id="expense-form">
+        <form method="post" action="{{ url_for('add_expense', return_to=return_to) }}" id="expense-form">
 
           <!-- תאריך וקטגוריה - באותה שורה -->
           <div class="field-row">
@@ -91,20 +91,23 @@
           <!-- מספר תשלומים - מוסתר בברירת מחדל -->
           <div class="compact-field" id="installments-field" style="display: none;">
             <label>💳 מספר תשלומים</label>
-            <input type="number" name="installments_count" id="installments_count" 
-                   class="compact-input" min="2" max="36" placeholder="12">
+            <div class="selected-display" onclick="openInstallmentsModal()">
+              <span id="installments-text">בחר</span>
+              <span class="arrow">🔢</span>
+            </div>
+            <input type="hidden" name="installments_count" id="installments_count">
           </div>
 
           <!-- הערות - 2 שורות -->
           <div class="compact-field">
-            <label>📝 הערות</label>
+            <label>📝 הערות (חובה)</label>
             <textarea name="comment" id="comment" class="compact-textarea" 
-                      rows="2" placeholder="הערות או תיאור (אופציונלי)"></textarea>
+                      rows="2" placeholder="הזן הערות או תיאור" required></textarea>
           </div>
 
           <!-- כפתורי פעולה -->
           <div class="form-actions">
-            <button type="button" class="btn-cancel" onclick="window.location.href='{{ url_for('expenses') }}'">
+            <button type="button" class="btn-cancel" onclick="window.location.href='{{ return_to or url_for('expenses') }}'">
               ✕ ביטול
             </button>
             <button type="submit" class="btn-primary btn-save">
@@ -131,7 +134,7 @@
             'מזון': '🍕',
             'בריאות': '💊',
             'חינוך': '📚',
-            'תחבורה': '🚗',
+            'מתנות': '🎁',
             'בילויים': '🎉',
             'ביגוד': '👕',
             'בית': '🏠',
@@ -214,6 +217,55 @@
       const today = new Date().toISOString().split('T')[0];
       dateInput.value = today;
     }
+
+    // Form validation before submit
+    document.getElementById('expense-form').addEventListener('submit', function(e) {
+      const category = document.getElementById('category').value;
+      const amount = document.getElementById('amount').value;
+      const payment = document.getElementById('payment_method').value;
+      const date = document.getElementById('date').value;
+      const comment = document.getElementById('comment').value.trim();
+      const expenseType = document.getElementById('expense_type').value;
+      
+      if (!category) {
+        e.preventDefault();
+        alert('אנא בחר קטגוריה');
+        return false;
+      }
+      
+      if (!amount || parseFloat(amount) <= 0) {
+        e.preventDefault();
+        alert('אנא הזן סכום תקין');
+        return false;
+      }
+      
+      if (!payment) {
+        e.preventDefault();
+        alert('אנא בחר אמצעי תשלום');
+        return false;
+      }
+      
+      if (!date) {
+        e.preventDefault();
+        alert('אנא בחר תאריך');
+        return false;
+      }
+      
+      if (!comment) {
+        e.preventDefault();
+        alert('אנא הזן הערות');
+        return false;
+      }
+      
+      if (expenseType === 'installments') {
+        const installments = document.getElementById('installments_count').value;
+        if (!installments || parseInt(installments) < 2) {
+          e.preventDefault();
+          alert('אנא הזן מספר תשלומים (לפחות 2)');
+          return false;
+        }
+      }
+    });
 
     // Type buttons logic
     const typeBtns = document.querySelectorAll('.type-btn');
@@ -311,6 +363,51 @@
       closeAmountModal();
     }
 
+    // Installments calculator modal
+    let installmentsCalcValue = '';
+
+    function openInstallmentsModal() {
+      installmentsCalcValue = '';
+      updateInstallmentsDisplay();
+      document.getElementById('installments-calc-modal').classList.add('active');
+    }
+
+    function closeInstallmentsModal() {
+      document.getElementById('installments-calc-modal').classList.remove('active');
+    }
+
+    function installmentsCalcInput(num) {
+      if (installmentsCalcValue.length < 2) {
+        installmentsCalcValue += num;
+        updateInstallmentsDisplay();
+      }
+    }
+
+    function installmentsCalcDelete() {
+      installmentsCalcValue = installmentsCalcValue.slice(0, -1);
+      updateInstallmentsDisplay();
+    }
+
+    function updateInstallmentsDisplay() {
+      const display = document.getElementById('installments-calc-display');
+      display.textContent = installmentsCalcValue || '0';
+    }
+
+    function confirmInstallments() {
+      const count = parseInt(installmentsCalcValue) || 0;
+      if (count < 2) {
+        alert('מספר תשלומים חייב להיות לפחות 2');
+        return;
+      }
+      if (count > 36) {
+        alert('מספר תשלומים מקסימלי הוא 36');
+        return;
+      }
+      document.getElementById('installments_count').value = count;
+      document.getElementById('installments-text').textContent = count + ' תשלומים';
+      closeInstallmentsModal();
+    }
+
     // Close modals on background click
     window.addEventListener('click', function(e) {
       if (e.target.classList.contains('modal')) {
@@ -318,5 +415,34 @@
       }
     });
   </script>
+
+  <!-- מודל מחשבון תשלומים -->
+  <div class="modal" id="installments-calc-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>מספר תשלומים</h3>
+        <button type="button" class="modal-close" onclick="closeInstallmentsModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="calculator-display" id="installments-calc-display">0</div>
+        <div class="calculator-grid">
+          <button type="button" class="calc-btn" onclick="installmentsCalcInput('9')">9</button>
+          <button type="button" class="calc-btn" onclick="installmentsCalcInput('8')">8</button>
+          <button type="button" class="calc-btn" onclick="installmentsCalcInput('7')">7</button>
+          <button type="button" class="calc-btn" onclick="installmentsCalcInput('6')">6</button>
+          <button type="button" class="calc-btn" onclick="installmentsCalcInput('5')">5</button>
+          <button type="button" class="calc-btn" onclick="installmentsCalcInput('4')">4</button>
+          <button type="button" class="calc-btn" onclick="installmentsCalcInput('3')">3</button>
+          <button type="button" class="calc-btn" onclick="installmentsCalcInput('2')">2</button>
+          <button type="button" class="calc-btn" onclick="installmentsCalcInput('1')">1</button>
+          <button type="button" class="calc-btn" onclick="installmentsCalcInput('0')">0</button>
+          <button type="button" class="calc-btn" style="visibility: hidden;"></button>
+          <button type="button" class="calc-btn calc-del" onclick="installmentsCalcDelete()">⌫</button>
+        </div>
+        <button type="button" class="calc-confirm" onclick="confirmInstallments()">אישור</button>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>

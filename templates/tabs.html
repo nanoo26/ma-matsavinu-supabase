@@ -1,15 +1,15 @@
 <nav class="main-tabs">
-  <a href="{{ url_for('budget') }}"
+  <a href="{{ url_for('budget', month=selected_month) if selected_month else url_for('budget') }}"
      class="main-tab {% if active_tab == 'budget' %}active{% endif %}">
     🏅 תקציב
   </a>
 
-  <a href="{{ url_for('reports') }}"
+  <a href="{{ url_for('reports', month=selected_month) if selected_month else url_for('reports') }}"
      class="main-tab {% if active_tab == 'reports' %}active{% endif %}">
     📊 דוחות
   </a>
 
-  <a href="{{ url_for('expenses') }}"
+  <a href="{{ url_for('expenses', month=selected_month) if selected_month else url_for('expenses') }}"
      class="main-tab {% if active_tab == 'expenses' %}active{% endif %}">
     🧾 הוצאות
   </a>

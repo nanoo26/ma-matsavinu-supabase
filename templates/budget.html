@@ -3,10 +3,16 @@
 <head>
   <meta charset="utf-8">
   <title>מה מצבינו - תקציב חודשי</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
+  <!-- סרגל חודשים צף -->
+  <div class="floating-month-timeline" id="month-timeline">
+    <div class="month-timeline-scroller" id="timeline-scroller">
+    </div>
+  </div>
+
   <div class="app-shell">
     <header class="app-header">
       <h1 class="app-title">מה מצבינו</h1>
@@ -290,6 +296,80 @@
         msg.remove();
       }, 1000);
     });
+
+    // Month timeline generation
+    (function() {
+      const scroller = document.getElementById('timeline-scroller');
+      if (!scroller) return;
+
+      const today = new Date();
+      const months = [];
+      
+      for (let i = -12; i <= 11; i++) {
+        const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
+        const yearMonth = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+        const hebrewMonth = getHebrewMonth(d.getMonth());
+        const year = d.getFullYear();
+        
+        months.push({ value: yearMonth, label: hebrewMonth + ' ' + year });
+      }
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const currentMonth = urlParams.get('month') || (today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0'));
+      
+      months.forEach(m => {
+        const btn = document.createElement('button');
+        btn.className = 'timeline-month-btn';
+        btn.textContent = m.label;
+        btn.dataset.month = m.value;
+        if (m.value === currentMonth) {
+          btn.classList.add('active');
+          setTimeout(() => btn.scrollIntoView({ behavior: 'smooth', inline: 'center' }), 100);
+        }
+        btn.onclick = function() {
+          sessionStorage.setItem('scrollPosition', window.pageYOffset);
+          window.location.href = '{{ url_for("budget") }}?month=' + m.value;
+        };
+        scroller.appendChild(btn);
+      });
+
+      let isDown = false, startX, scrollLeft;
+      scroller.addEventListener('mousedown', (e) => {
+        isDown = true;
+        startX = e.pageX - scroller.offsetLeft;
+        scrollLeft = scroller.scrollLeft;
+      });
+      scroller.addEventListener('mouseleave', () => isDown = false);
+      scroller.addEventListener('mouseup', () => isDown = false);
+      scroller.addEventListener('mousemove', (e) => {
+        if (!isDown) return;
+        e.preventDefault();
+        const x = e.pageX - scroller.offsetLeft;
+        scroller.scrollLeft = scrollLeft - (x - startX) * 2;
+      });
+      scroller.addEventListener('touchstart', (e) => {
+        startX = e.touches[0].pageX - scroller.offsetLeft;
+        scrollLeft = scroller.scrollLeft;
+      });
+      scroller.addEventListener('touchmove', (e) => {
+        const x = e.touches[0].pageX - scroller.offsetLeft;
+        scroller.scrollLeft = scrollLeft - (x - startX) * 2;
+      });
+
+      function getHebrewMonth(m) {
+        return ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני',
+                'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'][m];
+      }
+
+      // Restore scroll position after page load
+      const savedScrollPos = sessionStorage.getItem('scrollPosition');
+      if (savedScrollPos) {
+        setTimeout(() => {
+          window.scrollTo(0, parseInt(savedScrollPos));
+          sessionStorage.removeItem('scrollPosition');
+        }, 100);
+      }
+    })();
   </script>
 </body>
 </html>

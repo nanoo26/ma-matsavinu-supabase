@@ -3,11 +3,17 @@
 <head>
   <meta charset="utf-8">
   <title>מה מצבינו - דוחות</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=5">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
+  <!-- סרגל חודשים צף -->
+  <div class="floating-month-timeline" id="month-timeline">
+    <div class="month-timeline-scroller" id="timeline-scroller">
+    </div>
+  </div>
+
   <div class="app-shell">
 
     <!-- כותרת עליונה -->
@@ -104,7 +110,7 @@
         </div>
 
         <!-- התחייבויות -->
-        <div class="stat-card-vertical summary-commitments">
+        <div class="stat-card-vertical summary-commitments clickable-stat" onclick="openCommitmentsModal()" style="cursor: pointer;">
           <div class="stat-bar-wrapper">
             {% set commitments_percent = (summary.total_commitments / summary.total_income * 100) if summary.total_income > 0 else 0 %}
             {% set commitments_capped = commitments_percent if commitments_percent <= 100 else 100 %}
@@ -134,7 +140,7 @@
         </div>
 
         <!-- כבר הוצאת -->
-        <div class="stat-card-vertical summary-spent">
+        <div class="stat-card-vertical summary-spent clickable-stat" onclick="openAlreadySpentModal()" style="cursor: pointer;">
           <div class="stat-bar-wrapper">
             {% set usage = summary.usage_percent or 0 %}
             {% set usage_capped = usage if usage <= 100 else 100 %}
@@ -213,7 +219,7 @@
             </thead>
             <tbody>
               {% for row in category_rows %}
-                <tr>
+                <tr class="category-summary-row" data-category="{{ row.category }}" style="cursor: pointer;">
                   <td>{{ row.category }}</td>
                   <td>{{ "%.0f"|format(row.spent or 0) }} ₪</td>
                   <td>{{ "%.0f"|format(row.budget or 0) }} ₪</td>
@@ -232,7 +238,7 @@
             </tbody>
             <tfoot>
               <tr class="table-total-row">
-                <th>סכ"ם</th>
+                <th>סה"כ</th>
                 <th>{{ "%.0f"|format(category_rows|sum(attribute='spent') or 0) }} ₪</th>
                 <th>{{ "%.0f"|format(category_rows|sum(attribute='budget') or 0) }} ₪</th>
                 <th class="{% if (category_rows|sum(attribute='diff') or 0) < 0 %}neg{% elif (category_rows|sum(attribute='diff') or 0) > 0 %}pos{% endif %}">
@@ -259,7 +265,7 @@
             </thead>
             <tbody>
               {% for row in payment_rows %}
-                <tr>
+                <tr class="payment-summary-row" data-payment="{{ row.method }}" style="cursor: pointer;">
                   <td>{{ row.method }}</td>
                   <td>{{ "%.0f"|format(row.total or 0) }} ₪</td>
                 </tr>
@@ -274,7 +280,7 @@
             </tbody>
             <tfoot>
               <tr class="table-total-row">
-                <th>סכ"ם</th>
+                <th>סה"כ</th>
                 <th>{{ "%.0f"|format(payment_rows|sum(attribute='total') or 0) }} ₪</th>
               </tr>
             </tfoot>
@@ -307,6 +313,7 @@
                     <strong>{{ e.comment or "ללא תיאור" }}</strong>
                     <div class="expense-meta-row">
                       <span class="expense-category">{{ e.category or "לא מסווג" }}</span>
+                      <span class="expense-payment">{{ e.payment_method or "-" }}</span>
                       {% if e.get('current_installment') %}
                         <span class="installment-badge">💳 {{ e.current_installment }}/{{ e.total_installments }}</span>
                       {% elif e.is_fixed %}
@@ -664,6 +671,9 @@
 
   <script>
     function openExpenseModal(btn) {
+      // שמירת מיקום גלילה לפני מעבר לעריכה
+      sessionStorage.setItem('scrollPosition', window.pageYOffset);
+      
       var id = btn.getAttribute("data-id");
       var date = btn.getAttribute("data-date") || "";
       var notes = btn.getAttribute("data-notes") || "";
@@ -879,6 +889,326 @@
           }
         }
       });
+    }
+
+    // Month timeline generation
+    (function() {
+      const scroller = document.getElementById('timeline-scroller');
+      if (!scroller) return;
+
+      const today = new Date();
+      const months = [];
+      
+      for (let i = -12; i <= 11; i++) {
+        const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
+        const yearMonth = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+        const hebrewMonth = getHebrewMonth(d.getMonth());
+        const year = d.getFullYear();
+        
+        months.push({ value: yearMonth, label: hebrewMonth + ' ' + year });
+      }
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const currentMonth = urlParams.get('month') || (today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0'));
+      
+      months.forEach(m => {
+        const btn = document.createElement('button');
+        btn.className = 'timeline-month-btn';
+        btn.textContent = m.label;
+        btn.dataset.month = m.value;
+        if (m.value === currentMonth) {
+          btn.classList.add('active');
+          setTimeout(() => btn.scrollIntoView({ behavior: 'smooth', inline: 'center' }), 100);
+        }
+        btn.onclick = function() {
+          sessionStorage.setItem('scrollPosition', window.pageYOffset);
+          window.location.href = '{{ url_for("reports") }}?month=' + m.value;
+        };
+        scroller.appendChild(btn);
+      });
+
+      let isDown = false, startX, scrollLeft;
+      scroller.addEventListener('mousedown', (e) => {
+        isDown = true;
+        startX = e.pageX - scroller.offsetLeft;
+        scrollLeft = scroller.scrollLeft;
+      });
+      scroller.addEventListener('mouseleave', () => isDown = false);
+      scroller.addEventListener('mouseup', () => isDown = false);
+      scroller.addEventListener('mousemove', (e) => {
+        if (!isDown) return;
+        e.preventDefault();
+        const x = e.pageX - scroller.offsetLeft;
+        scroller.scrollLeft = scrollLeft - (x - startX) * 2;
+      });
+      scroller.addEventListener('touchstart', (e) => {
+        startX = e.touches[0].pageX - scroller.offsetLeft;
+        scrollLeft = scroller.scrollLeft;
+      });
+      scroller.addEventListener('touchmove', (e) => {
+        const x = e.touches[0].pageX - scroller.offsetLeft;
+        scroller.scrollLeft = scrollLeft - (x - startX) * 2;
+      });
+
+      function getHebrewMonth(m) {
+        return ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני',
+                'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'][m];
+      }
+
+      // Restore scroll position after page load
+      const savedScrollPos = sessionStorage.getItem('scrollPosition');
+      if (savedScrollPos) {
+        setTimeout(() => {
+          window.scrollTo(0, parseInt(savedScrollPos));
+          sessionStorage.removeItem('scrollPosition');
+        }, 100);
+      }
+    })();
+  </script>
+
+  <!-- Category Details Modal -->
+  <div id="categoryModal" class="category-modal-overlay" style="display: none;">
+    <div class="category-modal-box">
+      <div class="category-modal-header">
+        <h3 id="modalCategoryTitle"></h3>
+        <button class="modal-close-btn" onclick="closeCategoryModal()">✕</button>
+      </div>
+      <div class="category-modal-content">
+        <div id="modalExpensesList"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Category expenses data from Flask
+    const expensesByCategory = {{ expenses_by_category | tojson | safe }};
+
+    // Add click handlers to category rows
+    document.querySelectorAll('.category-summary-row').forEach(row => {
+      row.addEventListener('click', function() {
+        const category = this.getAttribute('data-category');
+        openCategoryModal(category);
+      });
+    });
+
+    function openCategoryModal(category) {
+      const modal = document.getElementById('categoryModal');
+      const title = document.getElementById('modalCategoryTitle');
+      const listContainer = document.getElementById('modalExpensesList');
+
+      title.textContent = category;
+
+      const expenses = expensesByCategory[category] || [];
+      
+      if (expenses.length === 0) {
+        listContainer.innerHTML = '<p style="text-align: center; color: #94a3b8; padding: 20px;">אין הוצאות להצגה</p>';
+      } else {
+        let html = '<div class="modal-expenses-list">';
+        expenses.forEach(exp => {
+          const amount = (exp.amount || 0).toFixed(0);
+          const date = exp.display_date || exp.date || '';
+          const comment = exp.comment || exp.description || '';
+          const payment = exp.payment_method || '';
+          
+          let badges = '';
+          if (exp.is_fixed) {
+            badges += '<span class="expense-badge badge-fixed">קבוע</span>';
+          }
+          if (exp.expense_type === 'installments' && exp.current_installment && exp.total_installments) {
+            badges += `<span class="expense-badge badge-installments">תשלום ${exp.current_installment}/${exp.total_installments}</span>`;
+          }
+
+          html += `
+            <div class="modal-expense-item">
+              <div class="modal-expense-row">
+                <span class="modal-expense-date">${date}</span>
+                <span class="modal-expense-amount">${amount} ₪</span>
+              </div>
+              <div class="modal-expense-comment">${comment}</div>
+              <div class="modal-expense-meta">
+                <span class="modal-expense-payment">${payment}</span>
+                ${badges}
+              </div>
+            </div>
+          `;
+        });
+        html += '</div>';
+        listContainer.innerHTML = html;
+      }
+
+      modal.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeCategoryModal() {
+      const modal = document.getElementById('categoryModal');
+      modal.style.display = 'none';
+      document.body.style.overflow = '';
+    }
+
+    // Close on overlay click
+    document.getElementById('categoryModal').addEventListener('click', function(e) {
+      if (e.target === this) {
+        closeCategoryModal();
+      }
+    });
+
+    // ============================================
+    // Payment Method Modal
+    // ============================================
+    const expensesByPayment = {{ expenses_by_payment | tojson | safe }};
+
+    document.querySelectorAll('.payment-summary-row').forEach(row => {
+      row.addEventListener('click', function() {
+        const payment = this.getAttribute('data-payment');
+        openPaymentModal(payment);
+      });
+    });
+
+    function openPaymentModal(payment) {
+      const modal = document.getElementById('categoryModal');
+      const title = document.getElementById('modalCategoryTitle');
+      const listContainer = document.getElementById('modalExpensesList');
+
+      title.textContent = 'אמצעי תשלום: ' + payment;
+
+      const expenses = expensesByPayment[payment] || [];
+      
+      if (expenses.length === 0) {
+        listContainer.innerHTML = '<p style="text-align: center; color: #94a3b8; padding: 20px;">אין הוצאות להצגה</p>';
+      } else {
+        let html = '<div class="modal-expenses-list">';
+        expenses.forEach(exp => {
+          const amount = (exp.amount || 0).toFixed(0);
+          const date = exp.display_date || exp.date || '';
+          const comment = exp.comment || exp.description || '';
+          const category = exp.category || '';
+          
+          let badges = '';
+          if (exp.is_fixed) {
+            badges += '<span class="expense-badge badge-fixed">קבוע</span>';
+          }
+          if (exp.expense_type === 'installments' && exp.current_installment && exp.total_installments) {
+            badges += `<span class="expense-badge badge-installments">תשלום ${exp.current_installment}/${exp.total_installments}</span>`;
+          }
+
+          html += `
+            <div class="modal-expense-item">
+              <div class="modal-expense-row">
+                <span class="modal-expense-date">${date}</span>
+                <span class="modal-expense-amount">${amount} ₪</span>
+              </div>
+              <div class="modal-expense-comment">${comment}</div>
+              <div class="modal-expense-meta">
+                <span class="modal-expense-payment">${category}</span>
+                ${badges}
+              </div>
+            </div>
+          `;
+        });
+        html += '</div>';
+        listContainer.innerHTML = html;
+      }
+
+      modal.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    }
+
+    // ============================================
+    // Commitments Modal
+    // ============================================
+    const commitmentsList = {{ commitments_list | tojson | safe }};
+
+    function openCommitmentsModal() {
+      const modal = document.getElementById('categoryModal');
+      const title = document.getElementById('modalCategoryTitle');
+      const listContainer = document.getElementById('modalExpensesList');
+
+      title.textContent = 'התחייבויות קבועות';
+
+      if (commitmentsList.length === 0) {
+        listContainer.innerHTML = '<p style="text-align: center; color: #94a3b8; padding: 20px;">אין התחייבויות להצגה</p>';
+      } else {
+        let html = '<div class="modal-expenses-list">';
+        commitmentsList.forEach(exp => {
+          const amount = (exp.amount || 0).toFixed(0);
+          const date = exp.display_date || exp.date || '';
+          const comment = exp.comment || exp.description || '';
+          const payment = exp.payment_method || '';
+          const category = exp.category || '';
+          
+          let badges = '';
+          if (exp.expense_type === 'standing') {
+            badges += '<span class="expense-badge badge-fixed">קבוע</span>';
+          }
+          if (exp.expense_type === 'installments' && exp.current_installment && exp.total_installments) {
+            badges += `<span class="expense-badge badge-installments">תשלום ${exp.current_installment}/${exp.total_installments}</span>`;
+          }
+
+          html += `
+            <div class="modal-expense-item">
+              <div class="modal-expense-row">
+                <span class="modal-expense-date">${date}</span>
+                <span class="modal-expense-amount">${amount} ₪</span>
+              </div>
+              <div class="modal-expense-comment">${comment}</div>
+              <div class="modal-expense-meta">
+                <span class="modal-expense-payment">${category} • ${payment}</span>
+                ${badges}
+              </div>
+            </div>
+          `;
+        });
+        html += '</div>';
+        listContainer.innerHTML = html;
+      }
+
+      modal.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    }
+
+    // ============================================
+    // Already Spent Modal
+    // ============================================
+    const alreadySpentList = {{ already_spent_list | tojson | safe }};
+
+    function openAlreadySpentModal() {
+      const modal = document.getElementById('categoryModal');
+      const title = document.getElementById('modalCategoryTitle');
+      const listContainer = document.getElementById('modalExpensesList');
+
+      title.textContent = 'כבר הוצאת החודש (חד-פעמיות)';
+
+      if (alreadySpentList.length === 0) {
+        listContainer.innerHTML = '<p style="text-align: center; color: #94a3b8; padding: 20px;">אין הוצאות להצגה</p>';
+      } else {
+        let html = '<div class="modal-expenses-list">';
+        alreadySpentList.forEach(exp => {
+          const amount = (exp.amount || 0).toFixed(0);
+          const date = exp.display_date || exp.date || '';
+          const comment = exp.comment || exp.description || '';
+          const payment = exp.payment_method || '';
+          const category = exp.category || '';
+
+          html += `
+            <div class="modal-expense-item">
+              <div class="modal-expense-row">
+                <span class="modal-expense-date">${date}</span>
+                <span class="modal-expense-amount">${amount} ₪</span>
+              </div>
+              <div class="modal-expense-comment">${comment}</div>
+              <div class="modal-expense-meta">
+                <span class="modal-expense-payment">${category} • ${payment}</span>
+              </div>
+            </div>
+          `;
+        });
+        html += '</div>';
+        listContainer.innerHTML = html;
+      }
+
+      modal.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
     }
   </script>
 </body>

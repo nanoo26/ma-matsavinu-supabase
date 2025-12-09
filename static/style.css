@@ -1230,6 +1230,12 @@ body {
   font-weight: 500;
 }
 
+.expense-payment {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
+}
+
 .expenses-table-only tbody tr.row-fixed {
   background: rgba(16,185,129,0.12);
   border-right: 4px solid #10b981;
@@ -1625,16 +1631,16 @@ body {
 
 /* אזור ניווט עליון */
 .main-tabs {
-  width: calc(100% - 32px);
-  max-width: 448px;
-  margin: 20px auto;
-  padding: 10px;
-  background: #eef4ff;
-  border-radius: 40px;
+  width: 100%;
+  max-width: 480px;
+  margin: 16px auto;
+  padding: 6px;
+  background: linear-gradient(135deg, #e0e7ff 0%, #dbeafe 100%);
+  border-radius: 50px;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  gap: 6px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 /* כפתור ניווט */
@@ -1643,25 +1649,32 @@ body {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 18px 16px;
+  padding: 14px 12px;
   width: 100%;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
-  background: #f8fbff;
-  border-radius: 40px;
+  background: white;
+  border-radius: 50px;
   text-decoration: none;
-  color: #1e293b;
+  color: #475569;
   cursor: pointer;
   pointer-events: auto;
   -webkit-tap-highlight-color: transparent;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+.main-tab:hover {
+  background: #f8fafc;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.12);
 }
 
 /* כפתור פעיל */
 .main-tab.active {
-  background: linear-gradient(90deg, #2563eb, #06b6d4);
+  background: linear-gradient(135deg, #3b82f6, #06b6d4);
   color: #ffffff !important;
-  box-shadow: 0 3px 10px rgba(0,0,0,0.18);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
   transform: scale(1.02);
 }
 
@@ -3288,3 +3301,348 @@ input[type="month"].modern-select {
   gap: 8px;
 }
 
+/* ============================================
+   FLOATING MONTH TIMELINE BAR
+   ============================================ */
+
+.floating-month-timeline {
+  position: sticky;
+  top: 0;
+  z-index: 999;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 10px 0;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  margin-bottom: 16px;
+  max-width: 480px;
+  margin-left: auto;
+  margin-right: auto;
+  overflow: hidden;
+}
+
+.month-timeline-scroller {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 8px 16px;
+  scroll-behavior: smooth;
+  cursor: grab;
+  user-select: none;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.month-timeline-scroller::-webkit-scrollbar {
+  display: none;
+}
+
+.month-timeline-scroller:active {
+  cursor: grabbing;
+}
+
+.timeline-month-btn {
+  flex-shrink: 0;
+  padding: 8px 14px;
+  background: rgba(255,255,255,0.2);
+  border: 2px solid rgba(255,255,255,0.3);
+  border-radius: 20px;
+  color: white;
+  font-family: 'Heebo', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  backdrop-filter: blur(10px);
+}
+
+.timeline-month-btn:hover {
+  background: rgba(255,255,255,0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.timeline-month-btn.active {
+  background: white;
+  color: #667eea;
+  border-color: white;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+  font-weight: 700;
+}
+
+/* ============================================
+   CLICKABLE ELEMENTS
+   ============================================ */
+
+.clickable-stat, .clickable-card, .clickable-row {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.clickable-stat:hover, .clickable-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+}
+
+.clickable-row:hover {
+  background: #f8fafc;
+}
+
+.clickable-stat:active, .clickable-card:active, .clickable-row:active {
+  transform: scale(0.98);
+}
+
+/* ============================================
+   INSTALLMENT CALCULATOR MODAL
+   ============================================ */
+
+.installment-calc-result {
+  margin: 20px 0;
+  padding: 16px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 12px;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(102,126,234,0.3);
+}
+
+.installment-calc-result strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 400;
+  margin-bottom: 8px;
+  opacity: 0.9;
+}
+
+.installment-calc-result span {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+/* ============================================
+   DETAIL POPUP
+   ============================================ */
+
+.large-modal {
+  max-width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+#popup-content {
+  min-height: 200px;
+  padding: 16px;
+  color: var(--text-primary);
+}
+
+/* ============================================
+   FORM VALIDATION STYLES
+   ============================================ */
+
+input:invalid:not(:placeholder-shown),
+textarea:invalid:not(:placeholder-shown) {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239,68,68,0.1);
+}
+
+input:valid:not(:placeholder-shown),
+textarea:valid:not(:placeholder-shown) {
+  border-color: var(--primary-green);
+  box-shadow: 0 0 0 3px rgba(16,185,129,0.1);
+}
+
+/* ============================================
+   MOBILE OPTIMIZATIONS
+   ============================================ */
+
+@media (max-width: 480px) {
+  .floating-month-timeline {
+    max-width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  .timeline-month-btn {
+    font-size: 12px;
+    padding: 6px 12px;
+  }
+}
+
+/* ============================================
+   DISABLE TEXT SELECTION ON DRAGGABLE ELEMENTS
+   ============================================ */
+
+.month-timeline-scroller * {
+  pointer-events: none;
+}
+
+.timeline-month-btn {
+  pointer-events: all;
+}
+
+/* ============================================
+   CATEGORY MODAL POPUP
+   ============================================ */
+
+.category-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn 0.2s ease;
+}
+
+.category-modal-box {
+  background: white;
+  border-radius: 16px;
+  max-width: 480px;
+  width: 100%;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.category-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 2px solid #e5e7eb;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 16px 16px 0 0;
+}
+
+.category-modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.modal-close-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  font-size: 24px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  line-height: 1;
+  padding: 0;
+}
+
+.modal-close-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+.category-modal-content {
+  overflow-y: auto;
+  padding: 16px 20px;
+  flex: 1;
+  -webkit-overflow-scrolling: touch;
+}
+
+.modal-expenses-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.modal-expense-item {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 12px 14px;
+  border-right: 4px solid #0891b2;
+  transition: all 0.2s ease;
+}
+
+.modal-expense-item:hover {
+  background: #f0f9ff;
+  transform: translateX(-2px);
+}
+
+.modal-expense-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.modal-expense-date {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.modal-expense-amount {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.modal-expense-comment {
+  font-size: 14px;
+  color: #1e293b;
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+
+.modal-expense-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.modal-expense-payment {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.category-summary-row,
+.payment-summary-row {
+  transition: background 0.2s ease;
+}
+
+.category-summary-row:hover,
+.payment-summary-row:hover {
+  background: #f0f9ff;
+}
+
+.clickable-stat {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.clickable-stat:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}

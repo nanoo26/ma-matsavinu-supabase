@@ -29,7 +29,7 @@ CATEGORIES = [
     "מזון",
     "בריאות",
     "חינוך",
-    "תחבורה",
+    "מתנות",
     "בילויים",
     "ביגוד",
     "בית",
@@ -922,6 +922,9 @@ def add_expense():
     - בשגיאה: מציג שוב את הטופס עם הודעת שגיאה.
     - GET: מציג טופס ריק.
     """
+    # שמירת ה-URL לחזרה
+    return_to = request.args.get("return_to") or request.referrer or url_for("expenses")
+    
     error_message = None
 
     if request.method == "POST":
@@ -970,7 +973,7 @@ def add_expense():
             flash("ההוצאה נוספה בהצלחה", "success")
             
             # חזרה לעמוד הקודם
-            return redirect(request.referrer or url_for("expenses"))
+            return redirect(return_to)
 
         except Exception as ex:
             print("❌ שגיאה בהוספת הוצאה:", ex)
@@ -979,6 +982,7 @@ def add_expense():
 
     # GET או POST שנכשל – מציגים את הטופס
     today_str = date.today().strftime("%Y-%m-%d")
+    selected_month = session.get("selected_month") or current_month()
     return render_template(
         "add_expense.html",
         categories=CATEGORIES,
@@ -986,18 +990,20 @@ def add_expense():
         active_tab="expenses",
         error_message=error_message,
         today=today_str,
+        return_to=return_to,
+        selected_month=selected_month,
     )
 
 
 @app.route("/edit/<int:expense_id>", methods=["GET", "POST"])
 def edit_expense(expense_id):
-    # שמירת ה-URL לחזרה
+    # שמירת ה-URL המלא לחזרה (כולל פרמטרים)
     return_to = request.args.get("return_to") or request.referrer or url_for("expenses")
     
     exp = get_expense_by_id(expense_id)
     if not exp:
         flash("הוצאה לא נמצאה", "error")
-        return redirect(return_to)
+        return redirect(url_for("expenses"))
 
     if request.method == "POST":
         try:
@@ -1050,6 +1056,7 @@ def edit_expense(expense_id):
             print("❌ שגיאה בעדכון הוצאה:", ex)
             flash(f"שגיאה בעדכון הוצאה: {ex}", "error")
 
+    selected_month = session.get("selected_month") or current_month()
     return render_template(
         "edit_expense.html",
         expense=exp,
@@ -1057,6 +1064,7 @@ def edit_expense(expense_id):
         payment_methods=PAYMENT_METHODS,
         active_tab="expenses",
         return_to=return_to,  # מעביר את הנתיב גם לטמפלייט
+        selected_month=selected_month,
     )
 
 
@@ -1316,6 +1324,7 @@ def budget():
         "budget.html",
         budgets=budgets,
         month=month,
+        selected_month=month,
         income=total_income,          # סה"כ הכנסות
         income_shalom=income_shalom,
         income_hagit=income_hagit,
@@ -1515,9 +1524,13 @@ def reports():
     # סיכומי קטגוריות
     # ---------------------------------------------------------
     totals_by_cat = {}
+    expenses_by_category = {}
     for e in expenses_for_display:
         cat = e.get("category") or "ללא קטגוריה"
         totals_by_cat[cat] = totals_by_cat.get(cat, 0) + e.get("amount", 0)
+        if cat not in expenses_by_category:
+            expenses_by_category[cat] = []
+        expenses_by_category[cat].append(e)
 
     category_rows = [
         {
@@ -1529,6 +1542,14 @@ def reports():
         for cat, spent in totals_by_cat.items()
     ]
 
+    # קיבוץ לפי אמצעי תשלום
+    expenses_by_payment = {}
+    for e in expenses_for_display:
+        method = e.get("payment_method") or "לא צוין"
+        if method not in expenses_by_payment:
+            expenses_by_payment[method] = []
+        expenses_by_payment[method].append(e)
+
     payment_rows = build_payment_rows(expenses_for_display)
 
     # ---------------------------------------------------------
@@ -1539,15 +1560,19 @@ def reports():
     total_income = calc_total_income_from_budgets(budgets)
     
     # 2. התחייבויות קבועות
-    fixed_expenses = sum(e["amount"] for e in all_month_expenses if e.get("expense_type") == "standing")
+    fixed_expenses_list = [e for e in all_month_expenses if e.get("expense_type") == "standing"]
+    installments_list = [e for e in all_month_expenses if e.get("expense_type") == "installments"]
+    fixed_expenses = sum(e["amount"] for e in fixed_expenses_list)
     installments_this_month = installments_current_month
     total_commitments = fixed_expenses + installments_this_month
+    commitments_list = fixed_expenses_list + installments_list
     
     # 3. נשאר למותרות
     available_for_luxuries = total_income - total_commitments
     
     # 4. כבר הוצאת החודש (רק חד-פעמיות)
-    already_spent = sum(e["amount"] for e in all_month_expenses if e.get("expense_type") == "single")
+    already_spent_list = [e for e in all_month_expenses if e.get("expense_type") == "single"]
+    already_spent = sum(e["amount"] for e in already_spent_list)
     
     # 5. עוד יכול להוציא
     can_still_spend = available_for_luxuries - already_spent
@@ -1599,6 +1624,10 @@ def reports():
         payment_methods=PAYMENT_METHODS,
         summary=summary,
         category_rows=category_rows,
+        expenses_by_category=expenses_by_category,
+        expenses_by_payment=expenses_by_payment,
+        commitments_list=commitments_list,
+        already_spent_list=already_spent_list,
         payment_rows=payment_rows,
         expenses=expenses_for_display,
         display_range=display_range,
@@ -1608,4 +1637,4 @@ def reports():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=8080, debug=True)
