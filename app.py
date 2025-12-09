@@ -19,6 +19,10 @@ app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
 def home_redirect():
     return redirect(url_for("expenses"))
 
+@app.route("/health")
+def health_check():
+    return {"status": "ok"}, 200
+
 now = datetime.now()
 
 # =========================

@@ -69,3 +69,13 @@ desktop.ini
 dist/
 build/
 *.egg-info/
+
+# Fly.io secrets (don't commit these!)
+setup_and_deploy.bat
+quick_deploy.bat
+
+# Fly.io local state
+.fly/
+
+# Docker
+.dockerignore

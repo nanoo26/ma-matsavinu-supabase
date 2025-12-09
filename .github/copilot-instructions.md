@@ -15,12 +15,15 @@ PROJECT OVERVIEW
 - Main stylesheet in `static/style.css`.
 - Design reference in `design-system.md` at the repo root.
 - Data stored in Supabase, accessed via REST using `requests` (no ORM).
+- Deployed on Fly.io (see `Dockerfile` and `fly.toml`).
 
 The app is:
 
 - RTL by default (Hebrew).
 - Mobile first.
 - Max width around 480px.
+- Production port: 8080 (Gunicorn with 3 workers).
+- Health check endpoint: `/health` (returns `{"status": "ok"}`).
 
 Always preserve these constraints.
 
@@ -33,7 +36,8 @@ Never do the following unless the user clearly requests it:
 - Do not rename variables, functions, routes or Supabase column names.
 - Do not change form field names or Jinja expression names.
 - Do not introduce new frameworks or reorganize the folder structure.
-- Do not modify Docker, Render, or deployment files on your own.
+- Do not modify `/health` endpoint - it's critical for Fly.io health checks.
+- Do not modify Docker, Fly.io, or deployment files on your own.
 - Do not change the financial month logic (10th to 9th) or date helpers.
 
 If you must touch backend code, keep changes minimal and clearly related
@@ -104,6 +108,26 @@ When editing `static/style.css`:
 2. Avoid large rewrites of entire sections.
 3. Do not use inline styles in HTML.
 4. Keep selectors simple and tied to existing class names.
+
+====================================================
+DEPLOYMENT
+====================================================
+
+The app is deployed on Fly.io:
+
+- **Dockerfile**: Multi-stage build (Python 3.12-slim).
+- **fly.toml**: App config with Frankfurt region (`fra`), port 8080.
+- **Health checks**: `/health` endpoint checked every 15s.
+- **Environment variables**: `SUPABASE_URL`, `SUPABASE_KEY`, `SECRET_KEY`.
+- **Deploy command**: `flyctl deploy --app ma-matsavinu`
+- **Live URL**: https://ma-matsavinu.fly.dev/
+
+Critical deployment rules:
+
+- DO NOT modify `/health` route - it's required for Fly.io health checks.
+- DO NOT change `internal_port` in `fly.toml` (must be 8080).
+- DO NOT modify Dockerfile or fly.toml unless explicitly asked.
+- Health check must return 200 OK (not redirects or errors).
 
 ====================================================
 HOW TO RESPOND TO THE USER

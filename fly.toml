@@ -4,7 +4,7 @@
 #
 
 app = 'ma-matsavinu'
-primary_region = 'ams'
+primary_region = 'fra'
 
 [build]
   dockerfile = 'Dockerfile'
@@ -25,7 +25,7 @@ primary_region = 'ams'
     timeout = '10s'
     grace_period = '30s'
     method = 'GET'
-    path = '/'
+    path = '/health'
 
 [[vm]]
   cpu_kind = 'shared'
