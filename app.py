@@ -16,7 +16,7 @@ app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
 
 # ⬅️ ואז מגדירים את ה־ROUTE הראשי
 @app.route("/")
-def home_redirect():
+def index():
     return redirect(url_for("expenses"))
 
 @app.route("/health")
@@ -870,14 +870,31 @@ def expenses():
         # ברירת מחדל רחוקה בעבר
         return datetime(2000, 1, 1)
 
-    # מיון: חדש→ישן, קבועות בסוף
+    # מיון לפי סוג: חד פעמי -> תשלומים -> קבועות
+    def get_expense_type_priority(e):
+        if e.get("expense_type") == "installments":
+            return 2  # תשלומים במקום שני
+        elif e.get("is_fixed"):
+            return 3  # קבועות בסוף
+        else:
+            return 1  # חד פעמי בהתחלה
+    
     expenses_sorted = sorted(
         expenses_for_view,
         key=lambda e: (
-            1 if e.get("is_fixed") else 0,  # קבועות בסוף
-            -(sort_key_for_expense(e).timestamp() if hasattr(sort_key_for_expense(e), 'timestamp') else 0)  # חדש לישן
+            get_expense_type_priority(e),  # קודם לפי סוג
+            -(sort_key_for_expense(e).timestamp() if hasattr(sort_key_for_expense(e), 'timestamp') else 0)  # אחר כך חדש לישן
         ),
     )
+
+    # חלוקה לקבוצות עם סיכומים
+    single_expenses = [e for e in expenses_sorted if get_expense_type_priority(e) == 1]
+    installment_expenses = [e for e in expenses_sorted if get_expense_type_priority(e) == 2]
+    fixed_expenses = [e for e in expenses_sorted if get_expense_type_priority(e) == 3]
+
+    single_total = sum(parse_amount(e.get("amount", 0)) for e in single_expenses)
+    installment_total = sum(parse_amount(e.get("amount", 0)) for e in installment_expenses)
+    fixed_total = sum(parse_amount(e.get("amount", 0)) for e in fixed_expenses)
 
     amounts = [parse_amount(e.get("amount", 0)) for e in expenses_sorted]
     total_amount = sum(amounts)
@@ -901,6 +918,12 @@ def expenses():
     return render_template(
         "expenses.html",
         expenses=expenses_sorted,
+        single_expenses=single_expenses,
+        installment_expenses=installment_expenses,
+        fixed_expenses=fixed_expenses,
+        single_total=single_total,
+        installment_total=installment_total,
+        fixed_total=fixed_total,
         total_amount=total_amount,
         max_expense_amount=max_expense_amount,
         top_categories=top_categories,
@@ -1525,6 +1548,17 @@ def reports():
     )
 
     # ---------------------------------------------------------
+    # חלוקה לקבוצות לפי סוג
+    # ---------------------------------------------------------
+    single_expenses_reports = [e for e in expenses_for_display if e.get("expense_type") == "single"]
+    installment_expenses_reports = [e for e in expenses_for_display if e.get("expense_type") == "installments"]
+    fixed_expenses_reports = [e for e in expenses_for_display if e.get("expense_type") == "standing"]
+
+    single_total_reports = sum(e.get("amount", 0) for e in single_expenses_reports)
+    installment_total_reports = sum(e.get("amount", 0) for e in installment_expenses_reports)
+    fixed_total_reports = sum(e.get("amount", 0) for e in fixed_expenses_reports)
+
+    # ---------------------------------------------------------
     # סיכומי קטגוריות
     # ---------------------------------------------------------
     totals_by_cat = {}
@@ -1634,6 +1668,12 @@ def reports():
         already_spent_list=already_spent_list,
         payment_rows=payment_rows,
         expenses=expenses_for_display,
+        single_expenses=single_expenses_reports,
+        installment_expenses=installment_expenses_reports,
+        fixed_expenses=fixed_expenses_reports,
+        single_total_reports=single_total_reports,
+        installment_total_reports=installment_total_reports,
+        fixed_total_reports=fixed_total_reports,
         display_range=display_range,
         active_tab="reports",
         now=now_local,

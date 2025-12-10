@@ -212,45 +212,50 @@ body {
   box-shadow: var(--shadow-glow);
 }
 
-/* ========== הודעות Flash ========== */
+/* ========== הודעות Flash (Toast Notifications) ========== */
 .flash-message {
   position: fixed;
-  top: 20px;
+  bottom: 90px; /* מעל הניווט התחתון */
   left: 50%;
-  transform: translateX(-50%);
+  transform: translateX(-50%) translateY(100px);
   max-width: 90%;
   width: auto;
-  padding: 12px 24px;
-  border-radius: 12px;
-  font-size: 14px;
-  font-weight: 500;
+  min-width: 280px;
+  padding: 16px 24px;
+  border-radius: 16px;
+  font-size: 15px;
+  font-weight: 600;
   text-align: center;
   z-index: 10000;
-  box-shadow: var(--shadow-lg);
-  animation: flashSlideIn 0.2s ease, flashSlideOut 0.2s ease 0.8s;
-  animation-fill-mode: forwards;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+  animation: toastSlideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards,
+             toastFadeOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) 2.7s forwards;
+  backdrop-filter: blur(12px);
   pointer-events: none;
 }
 
 .flash-success {
-  background: linear-gradient(135deg, #4CAF50, #66BB6A);
+  background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
   color: white;
+  border: 2px solid rgba(255,255,255,0.3);
 }
 
 .flash-error {
-  background: linear-gradient(135deg, #f44336, #ef5350);
+  background: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
   color: white;
+  border: 2px solid rgba(255,255,255,0.3);
 }
 
 .flash-info {
-  background: linear-gradient(135deg, var(--primary-blue), var(--secondary-cyan));
+  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
   color: white;
+  border: 2px solid rgba(255,255,255,0.3);
 }
 
-@keyframes flashSlideIn {
+@keyframes toastSlideUp {
   from {
     opacity: 0;
-    transform: translateX(-50%) translateY(-20px);
+    transform: translateX(-50%) translateY(100px);
   }
   to {
     opacity: 1;
@@ -258,14 +263,23 @@ body {
   }
 }
 
-@keyframes flashSlideOut {
+@keyframes toastFadeOut {
   from {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
   }
   to {
     opacity: 0;
-    transform: translateX(-50%) translateY(-20px);
+    transform: translateX(-50%) translateY(50px);
+  }
+}
+
+@media (max-width: 480px) {
+  .flash-message {
+    bottom: 65px;
+    min-width: 260px;
+    padding: 14px 20px;
+    font-size: 14px;
   }
 }
 /* ========== סוף הודעות Flash ========== */
@@ -1276,11 +1290,15 @@ body {
 }
 
 .reports-table-only tbody tr {
-  transition: background 150ms ease;
+  transition: background 0.2s ease;
+  cursor: pointer;
 }
 
 .reports-table-only tbody tr:hover {
-  background: #f0fdfa;
+  background: linear-gradient(90deg, 
+    rgba(99, 102, 241, 0.05) 0%,
+    rgba(139, 92, 246, 0.05) 100%);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 .reports-table-only th:nth-child(1),
@@ -1340,23 +1358,36 @@ body {
   background: rgba(16,185,129,0.18);
 }
 
-/* שורות תשלומים - כתום עדין */
+/* שורות תשלומים - אדום עדין */
 .expenses-table-only tbody tr.row-installments {
-  background: rgba(251,146,60,0.08);
-  border-right: 3px solid #fb923c;
+  background: rgba(239,68,68,0.08);
+  border-right: 3px solid #ef4444;
 }
 
 .expenses-table-only tbody tr.row-installments:hover {
-  background: rgba(251,146,60,0.14);
+  background: rgba(239,68,68,0.14);
 }
 
 .reports-table-only tbody tr.row-installments {
-  background: rgba(251,146,60,0.08);
-  border-right: 3px solid #fb923c;
+  background: rgba(239,68,68,0.08);
+  border-right: 3px solid #ef4444;
 }
 
 .reports-table-only tbody tr.row-installments:hover {
-  background: rgba(251,146,60,0.14);
+  background: rgba(239,68,68,0.14);
+}
+
+/* שורות סיכום ביניים */
+.subtotal-row {
+  border-top: 2px solid #cbd5e1 !important;
+  border-bottom: 2px solid #cbd5e1 !important;
+  font-weight: 700 !important;
+  font-size: 15px !important;
+}
+
+.subtotal-row td {
+  padding: 12px 8px !important;
+  font-weight: 700 !important;
 }
 
 .simple-table td {
@@ -1629,72 +1660,103 @@ body {
 
 
 
-/* אזור ניווט עליון */
+/* אזור ניווט תחתון קבוע */
 .main-tabs {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
   width: 100%;
   max-width: 480px;
-  margin: 16px auto;
-  padding: 6px;
-  background: linear-gradient(135deg, #e0e7ff 0%, #dbeafe 100%);
-  border-radius: 50px;
+  margin: 0;
+  padding: 4px 5px 5px 5px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 20px 20px 0 0;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  gap: 4px;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+  overflow: hidden;
+  z-index: 9999;
+  pointer-events: auto;
 }
 
 /* כפתור ניווט */
 .main-tab {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 14px 12px;
+  gap: 2px;
+  padding: 5px 4px;
   width: 100%;
-  font-size: 15px;
+  font-size: 10px;
   font-weight: 600;
-  background: white;
-  border-radius: 50px;
+  background: transparent;
+  border-radius: 10px;
   text-decoration: none;
-  color: #475569;
+  color: rgba(255, 255, 255, 0.75);
   cursor: pointer;
   pointer-events: auto;
+  touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
-  transition: all 0.3s ease;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  margin: 0 1px;
 }
 
-.main-tab:hover {
-  background: #f8fafc;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+.main-tab .tab-icon {
+  font-size: 18px;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.main-tab .tab-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+.main-tab:active {
+  transform: scale(0.95);
 }
 
 /* כפתור פעיל */
 .main-tab.active {
-  background: linear-gradient(135deg, #3b82f6, #06b6d4);
-  color: #ffffff !important;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
-  transform: scale(1.02);
+  background: rgba(255, 255, 255, 0.95);
+  color: #667eea !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  width: 70%;
+  margin: 0 auto;
 }
 
-/* תיקון שכבת טאבים שלא לוחיצה במובייל */
-.main-tabs {
-  position: relative;
-  z-index: 9999;
-  pointer-events: auto;
+.main-tab.active .tab-icon {
+  transform: scale(1);
 }
 
-.main-tab {
-  pointer-events: auto !important;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
+@keyframes tabActivate {
+  0% {
+    transform: scale(0.98);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  }
+  50% {
+    transform: scale(1.02);
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.2);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  }
 }
 
 /* ביטול חפיפה של header כדי שלא יכסה על הטאבים */
 .app-header {
   position: relative;
   z-index: 1;
+}
+
+/* רווח תחתון לגוף העמוד כדי שהתוכן לא ייחסם על ידי הניווט */
+.app-shell {
+  padding-bottom: 55px;
 }
 
 header * {
@@ -1706,11 +1768,11 @@ header * {
 /* Floating Add Button - 3D Design */
 .fab-add {
   position: fixed;
-  bottom: 28px;
+  bottom: 65px;
   left: 50%;
   transform: translateX(-50%);
-  width: 68px;
-  height: 68px;
+  width: 72px;
+  height: 72px;
   border-radius: 50%;
   background: linear-gradient(145deg, #10b981, #059669);
   color: #ffffff;
@@ -1720,7 +1782,7 @@ header * {
   text-decoration: none;
   font-size: 36px;
   font-weight: 700;
-  z-index: 999;
+  z-index: 10000;
   transition: all 0.2s ease;
   cursor: pointer;
   
@@ -3313,6 +3375,7 @@ input[type="month"].modern-select {
   padding: 10px 0;
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
   margin-bottom: 16px;
+  width: 100%;
   max-width: 480px;
   margin-left: auto;
   margin-right: auto;
@@ -3582,6 +3645,7 @@ textarea:valid:not(:placeholder-shown) {
   padding: 12px 14px;
   border-right: 4px solid #0891b2;
   transition: all 0.2s ease;
+  position: relative;
 }
 
 .modal-expense-item:hover {
@@ -3589,11 +3653,30 @@ textarea:valid:not(:placeholder-shown) {
   transform: translateX(-2px);
 }
 
+/* רקעים צבעוניים לפי סוג */
+.modal-item-fixed {
+  background: rgba(16,185,129,0.12) !important;
+  border-right-color: #10b981 !important;
+}
+
+.modal-item-fixed:hover {
+  background: rgba(16,185,129,0.18) !important;
+}
+
+.modal-item-installments {
+  background: rgba(239,68,68,0.08) !important;
+  border-right-color: #ef4444 !important;
+}
+
+.modal-item-installments:hover {
+  background: rgba(239,68,68,0.14) !important;
+}
+
 .modal-expense-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .modal-expense-date {
@@ -3603,15 +3686,16 @@ textarea:valid:not(:placeholder-shown) {
 }
 
 .modal-expense-amount {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 700;
   color: #0f172a;
 }
 
 .modal-expense-comment {
-  font-size: 14px;
+  font-size: 16px;
+  font-weight: 600;
   color: #1e293b;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
   line-height: 1.4;
 }
 
@@ -3620,12 +3704,43 @@ textarea:valid:not(:placeholder-shown) {
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.modal-expense-category {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 500;
 }
 
 .modal-expense-payment {
-  font-size: 12px;
+  font-size: 11px;
   color: #64748b;
   font-weight: 500;
+}
+
+/* כפתור עריכה בחלונית */
+.modal-edit-btn {
+  background: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+  margin-top: 4px;
+}
+
+.modal-edit-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.modal-edit-btn:active {
+  transform: scale(0.98);
 }
 
 .category-summary-row,
@@ -3645,4 +3760,222 @@ textarea:valid:not(:placeholder-shown) {
 .clickable-stat:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+/* ========================================
+   כפתור חזרה (Top Right Back Button)
+   ======================================== */
+.back-button {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  width: 44px;
+  height: 44px;
+  background: rgba(148, 163, 184, 0.85);
+  backdrop-filter: blur(8px);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: white;
+  text-decoration: none;
+  cursor: pointer;
+  z-index: 9998;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.back-button:hover,
+.back-button:active {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  transform: scale(1.1);
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+}
+
+.back-button:active {
+  transform: scale(0.95);
+}
+
+@media (max-width: 480px) {
+  .back-button {
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+    top: 12px;
+    right: 50%;
+    transform: translateX(calc(240px - 52px));
+  }
+  
+  .back-button:hover,
+  .back-button:active {
+    transform: translateX(calc(240px - 52px)) scale(1.1);
+  }
+  
+  .back-button:active {
+    transform: translateX(calc(240px - 52px)) scale(0.95);
+  }
+}
+
+/* ========================================
+   Swipe על שורות הוצאה
+   ======================================== */
+.expenses-table-only tbody tr {
+  position: relative;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+  touch-action: pan-y;
+}
+
+.expenses-table-only tbody tr.swipe-active {
+  background: linear-gradient(90deg, 
+    rgba(239, 68, 68, 0.15) 0%,
+    rgba(59, 130, 246, 0.15) 100%);
+  box-shadow: inset 0 0 20px rgba(0,0,0,0.1);
+}
+
+/* הנפשת hover על שורות */
+.expenses-table-only tbody tr[id^="exp-"]:hover {
+  background: linear-gradient(90deg, 
+    rgba(99, 102, 241, 0.05) 0%,
+    rgba(139, 92, 246, 0.05) 100%);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.expenses-table-only tbody tr.row-fixed:hover {
+  background: linear-gradient(90deg, 
+    rgba(16, 185, 129, 0.18) 0%,
+    rgba(16, 185, 129, 0.12) 100%);
+}
+
+/* ========================================
+   משוב ויזואלי מיידי (Touch Feedback)
+   ======================================== */
+
+/* כפתורים */
+button:active,
+.btn-primary:active,
+.btn-main:active,
+.btn-submit:active,
+.btn-ghost:active,
+.btn-danger:active,
+a.btn-primary:active,
+a.btn-main:active {
+  transform: scale(0.95) !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* כרטיסים */
+.card:active,
+.form-card:active,
+.stat-card:active,
+.summary-item:active {
+  transform: scale(0.97) translateY(2px);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* כפתורים קטנים */
+.table-action-btn:active,
+.month-arrow-btn:active,
+.filter-btn-search:active {
+  transform: scale(0.9);
+  background: rgba(99, 102, 241, 0.2);
+}
+
+/* לינקים וכפתורי ניווט */
+.nav-item:active,
+.top-tab:active {
+  transform: scale(0.95);
+}
+
+/* כפתורי מודל */
+.modal-close:active,
+.calculator-btn:active {
+  transform: scale(0.9);
+  background: rgba(99, 102, 241, 0.3);
+}
+
+/* FAB (Floating Action Button) */
+.fab-add:active {
+  transform: scale(0.85) rotate(90deg);
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.5);
+}
+
+/* אנימציה רכה לכל האלמנטים */
+*:not(.month-timeline-scroller):not(.timeline-month-btn) {
+  -webkit-tap-highlight-color: rgba(99, 102, 241, 0.1);
+  tap-highlight-color: rgba(99, 102, 241, 0.1);
+}
+
+/* ========================================
+   אנימציות מעבר דפים (Page Transitions)
+   ======================================== */
+body {
+  animation: pageEnter 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* אנימציית יציאה מהדף */
+body.page-leaving {
+  animation: pageLeave 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes pageLeave {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-15px);
+  }
+}
+
+/* אנימציה רכה לכרטיסים וסקשנים */
+.card,
+.form-card,
+section {
+  animation: fadeInUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  animation-fill-mode: backwards;
+}
+
+.card:nth-child(1),
+section:nth-child(1) {
+  animation-delay: 0.05s;
+}
+
+.card:nth-child(2),
+section:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.card:nth-child(3),
+section:nth-child(3) {
+  animation-delay: 0.15s;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

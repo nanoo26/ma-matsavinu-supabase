@@ -7,6 +7,9 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
+  <!-- כפתור חזרה -->
+  <a href="{{ url_for('index') }}" class="back-button" aria-label="חזרה לדף הבית">←</a>
+
   <!-- סרגל חודשים צף -->
   <div class="floating-month-timeline" id="month-timeline">
     <div class="month-timeline-scroller" id="timeline-scroller">
@@ -333,27 +336,77 @@
         scroller.appendChild(btn);
       });
 
-      let isDown = false, startX, scrollLeft;
+      // Drag and swipe functionality with RTL support
+      let isDown = false, startX, scrollLeft, isDragging = false;
+      let swipeStartX = 0, swipeStartTime = 0;
+
       scroller.addEventListener('mousedown', (e) => {
         isDown = true;
+        isDragging = false;
         startX = e.pageX - scroller.offsetLeft;
         scrollLeft = scroller.scrollLeft;
+        scroller.style.cursor = 'grabbing';
       });
-      scroller.addEventListener('mouseleave', () => isDown = false);
-      scroller.addEventListener('mouseup', () => isDown = false);
+
+      scroller.addEventListener('mouseleave', () => {
+        isDown = false;
+        scroller.style.cursor = 'grab';
+      });
+
+      scroller.addEventListener('mouseup', () => {
+        isDown = false;
+        scroller.style.cursor = 'grab';
+      });
+
       scroller.addEventListener('mousemove', (e) => {
         if (!isDown) return;
+        isDragging = true;
         e.preventDefault();
         const x = e.pageX - scroller.offsetLeft;
-        scroller.scrollLeft = scrollLeft - (x - startX) * 2;
+        const walk = (x - startX) * 2;
+        scroller.scrollLeft = scrollLeft - walk;
       });
+
+      // Touch events with swipe detection (RTL-correct)
       scroller.addEventListener('touchstart', (e) => {
+        swipeStartX = e.touches[0].pageX;
+        swipeStartTime = Date.now();
         startX = e.touches[0].pageX - scroller.offsetLeft;
         scrollLeft = scroller.scrollLeft;
+        isDragging = false;
       });
+
       scroller.addEventListener('touchmove', (e) => {
+        isDragging = true;
         const x = e.touches[0].pageX - scroller.offsetLeft;
-        scroller.scrollLeft = scrollLeft - (x - startX) * 2;
+        const walk = (x - startX) * 1.5;
+        scroller.scrollLeft = scrollLeft - walk;
+      });
+
+      scroller.addEventListener('touchend', (e) => {
+        const swipeEndX = e.changedTouches[0].pageX;
+        const swipeEndTime = Date.now();
+        const swipeDistance = swipeEndX - swipeStartX;
+        const swipeTime = swipeEndTime - swipeStartTime;
+        const swipeVelocity = Math.abs(swipeDistance) / swipeTime;
+
+        // Quick swipe detection (RTL: right = next month, left = previous)
+        if (!isDragging && swipeTime < 300 && Math.abs(swipeDistance) > 50 && swipeVelocity > 0.3) {
+          const currentActiveBtn = scroller.querySelector('.timeline-month-btn.active');
+          let targetBtn = null;
+
+          if (swipeDistance > 0) {
+            // Swipe right (RTL) = next month
+            targetBtn = currentActiveBtn ? currentActiveBtn.nextElementSibling : null;
+          } else {
+            // Swipe left (RTL) = previous month
+            targetBtn = currentActiveBtn ? currentActiveBtn.previousElementSibling : null;
+          }
+
+          if (targetBtn && targetBtn.classList.contains('timeline-month-btn')) {
+            targetBtn.click();
+          }
+        }
       });
 
       function getHebrewMonth(m) {
