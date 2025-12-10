@@ -152,6 +152,25 @@ def main():
     
     # יצירת סיכום
     create_backup_summary(backup_folder, stats)
+
+    # גיבוי ZIP של כל תיקיית הפרויקט
+    print("\n📦 יוצר ZIP של כל תיקיית הפרויקט...")
+    import zipfile
+    project_root = Path(__file__).parent.resolve()
+    zip_name = f"ma-matsavinu-backup-{datetime.now().strftime('%Y-%m-%d_%H-%M')}.zip"
+    zip_path = backup_folder / zip_name
+    exclude_dirs = {"backups"}
+    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
+        for foldername, subfolders, filenames in os.walk(project_root):
+            rel_folder = os.path.relpath(foldername, project_root)
+            # מדלג על תיקיית backups וכל תת-תיקיה שלה
+            if any(part in exclude_dirs for part in Path(rel_folder).parts):
+                continue
+            for filename in filenames:
+                file_path = Path(foldername) / filename
+                rel_path = os.path.relpath(file_path, project_root)
+                zipf.write(file_path, arcname=rel_path)
+    print(f"✅ נוצר ZIP מלא: {zip_path}")
     
     print("\n" + "="*50)
     print(f"✅ גיבוי הושלם בהצלחה!")
