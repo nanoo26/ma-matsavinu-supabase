@@ -42,6 +42,7 @@ CATEGORIES = [
     "חוגים",
     "קניות",
     "טבק",
+    "צ'אבי",
     "שונות",
 ]
 
@@ -51,6 +52,7 @@ PAYMENT_METHODS = [
     "כאל ויזה",
     "לאומי שלום",
     "עו\"ש",
+    "שופרסל",
 ]
 
 INCOME_CATEGORIES = (
@@ -1169,7 +1171,7 @@ def budget():
     categories = [
         "מזון", "בריאות", "חינוך", "תחבורה", "בילויים",
         "ביגוד", "בית", "רכב", "ילדים", "חוגים",
-        "קניות", "טבק", "שונות",
+        "קניות", "טבק", "צ'אבי", "שונות",
     ]
 
     # מיפוי לפי קטגוריה מתוך מה שחזר מסופבייס
@@ -1550,7 +1552,19 @@ def reports():
     # ---------------------------------------------------------
     # חלוקה לקבוצות לפי סוג
     # ---------------------------------------------------------
-    single_expenses_reports = [e for e in expenses_for_display if e.get("expense_type") == "single"]
+    def single_report_sort_key(expense):
+        parsed = expense.get("_parsed_date")
+        if isinstance(parsed, datetime):
+            return parsed
+
+        parsed = parse_any_date(expense.get("raw_date") or expense.get("date"))
+        return parsed or datetime(2000, 1, 1)
+
+    single_expenses_reports = sorted(
+        [e for e in expenses_for_display if e.get("expense_type") == "single"],
+        key=single_report_sort_key,
+        reverse=True,
+    )
     installment_expenses_reports = [e for e in expenses_for_display if e.get("expense_type") == "installments"]
     fixed_expenses_reports = [e for e in expenses_for_display if e.get("expense_type") == "standing"]
 

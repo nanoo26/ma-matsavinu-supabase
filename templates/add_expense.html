@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body>
+<body class="add-expense-page">
   <div class="app-shell">
     <header class="app-header">
       <h1 class="app-title">מה מצבינו</h1>
@@ -30,62 +30,71 @@
       <section class="card compact-form-card">
         <form method="post" action="{{ url_for('add_expense', return_to=return_to) }}" id="expense-form">
 
-          <!-- תאריך וקטגוריה - באותה שורה -->
+          <!-- מתי וכמה - התחלת הזנה מהירה -->
           <div class="field-row">
             <div class="compact-field half-width">
-              <label>📅 תאריך</label>
+              <label>מתי?</label>
               <input type="date" name="date" id="date" value="{{ today or '' }}" required>
+              <div class="field-error" id="date-error" aria-live="polite"></div>
             </div>
 
             <div class="compact-field half-width">
-              <label>📊 קטגוריה</label>
+              <label>כמה?</label>
+              <div class="selected-display" id="amount-display" onclick="openAmountModal()">
+                <span id="amount-text">0.00 ₪</span>
+                <span class="arrow">🔢</span>
+              </div>
+              <input type="hidden" name="amount" id="amount" required>
+              <div class="field-error" id="amount-error" aria-live="polite"></div>
+            </div>
+          </div>
+
+          <!-- על מה ואיך -->
+          <div class="field-row">
+            <div class="compact-field half-width">
+              <label>על מה?</label>
               <div class="selected-display" id="category-display" onclick="openCategoryModal()">
-                <span id="category-text">בחר</span>
+                <span id="category-text">קטגוריה</span>
                 <span class="arrow">▼</span>
               </div>
               <input type="hidden" name="category" id="category" required>
+              <div class="field-error" id="category-error" aria-live="polite"></div>
             </div>
-          </div>
 
-          <!-- סכום - עם מקלדת מספרים -->
-          <div class="compact-field">
-            <label>💰 סכום</label>
-            <div class="selected-display" id="amount-display" onclick="openAmountModal()">
-              <span id="amount-text">0.00 ₪</span>
-              <span class="arrow">🔢</span>
-            </div>
-            <input type="hidden" name="amount" id="amount" required>
-          </div>
-
-          <!-- אמצעי תשלום עם צ'קבוקס קבוע -->
-          <div class="field-row">
             <div class="compact-field half-width">
-              <label>💳 אמצעי תשלום</label>
+              <label>איך?</label>
               <div class="selected-display" id="payment-display" onclick="openPaymentModal()">
-                <span id="payment-text">בחר</span>
+                <span id="payment-text">תשלום</span>
                 <span class="arrow">▼</span>
               </div>
               <input type="hidden" name="payment_method" id="payment_method" required>
-            </div>
-
-            <div class="compact-field half-width checkbox-inline">
-              <label>
-                <input type="checkbox" name="is_fixed" id="is_fixed" value="1" disabled>
-                <span id="fixed-indicator">✓</span>
-                <span class="checkbox-label-text">קבוע</span>
-              </label>
+              <div class="field-error" id="payment-error" aria-live="polite"></div>
             </div>
           </div>
 
-          <!-- סוג הוצאה - כפתורים -->
-          <div class="compact-field">
-            <label>🏷️ סוג הוצאה</label>
+          <!-- פירוט קצר - נשאר חובה -->
+          <div class="compact-field quick-note-field">
+            <label>פירוט קצר</label>
+            <textarea name="comment" id="comment" class="compact-textarea"
+                      rows="1" placeholder="לדוגמה: סופר, דלק, מסעדה" required></textarea>
+            <div class="field-error" id="comment-error" aria-live="polite"></div>
+          </div>
+
+          <!-- סוג הוצאה - שליטה משנית קומפקטית -->
+          <div class="compact-field expense-type-field">
+            <label>סוג</label>
             <div class="type-buttons">
               <button type="button" class="type-btn active" data-type="single">חד פעמית</button>
               <button type="button" class="type-btn" data-type="standing">קבועה</button>
               <button type="button" class="type-btn" data-type="installments">תשלומים</button>
+              <label class="fixed-status-chip" id="fixed-status-chip" aria-live="polite">
+                <input type="checkbox" name="is_fixed" id="is_fixed" value="1" class="auto-fixed-input" disabled aria-hidden="true" tabindex="-1">
+                <span class="fixed-status-box" id="fixed-indicator">✓</span>
+                <span class="fixed-status-text">קבוע</span>
+              </label>
             </div>
             <input type="hidden" name="expense_type" id="expense_type" value="single">
+            <div class="type-helper" id="expense-type-helper" hidden></div>
           </div>
 
           <!-- מספר תשלומים - מוסתר בברירת מחדל -->
@@ -96,13 +105,7 @@
               <span class="arrow">🔢</span>
             </div>
             <input type="hidden" name="installments_count" id="installments_count">
-          </div>
-
-          <!-- הערות - 2 שורות -->
-          <div class="compact-field">
-            <label>📝 הערות (חובה)</label>
-            <textarea name="comment" id="comment" class="compact-textarea" 
-                      rows="2" placeholder="הזן הערות או תיאור" required></textarea>
+            <div class="field-error" id="installments-error" aria-live="polite"></div>
           </div>
 
           <!-- כפתורי פעולה -->
@@ -146,7 +149,7 @@
             'שונות': '📦'
           } %}
           {% for c in categories %}
-            <div class="category-btn" onclick="selectCategory('{{ c }}')">
+            <div class="category-btn" onclick='selectCategory({{ c|tojson }})'>
               <div class="category-icon">{{ category_icons[c] or '📌' }}</div>
               <div class="category-name">{{ c }}</div>
             </div>
@@ -166,7 +169,7 @@
       <div class="modal-body">
         <div class="payment-cards">
           {% for p in payment_methods %}
-            <div class="payment-card" onclick="selectPayment('{{ p }}')">
+            <div class="payment-card" onclick='selectPayment({{ p|tojson }})'>
               <div class="payment-card-icon">💳</div>
               <div class="payment-card-name">{{ p }}</div>
             </div>
@@ -218,6 +221,25 @@
       dateInput.value = today;
     }
 
+    function setFieldError(fieldId, message) {
+      const error = document.getElementById(fieldId + '-error');
+      const field = document.getElementById(fieldId);
+      if (error) {
+        error.textContent = message || '';
+      }
+      if (field) {
+        const wrapper = field.closest('.compact-field');
+        const display = wrapper ? (wrapper.querySelector('.selected-display') || field) : field;
+        display.classList.toggle('field-invalid', Boolean(message));
+      }
+    }
+
+    function clearFieldErrors() {
+      ['date', 'category', 'amount', 'payment', 'installments', 'comment'].forEach(function(fieldId) {
+        setFieldError(fieldId, '');
+      });
+    }
+
     // Form validation before submit
     document.getElementById('expense-form').addEventListener('submit', function(e) {
       const category = document.getElementById('category').value;
@@ -226,44 +248,53 @@
       const date = document.getElementById('date').value;
       const comment = document.getElementById('comment').value.trim();
       const expenseType = document.getElementById('expense_type').value;
+      let hasError = false;
+
+      clearFieldErrors();
       
       if (!category) {
-        e.preventDefault();
-        alert('אנא בחר קטגוריה');
-        return false;
+        setFieldError('category', 'בחר קטגוריה להוצאה');
+        hasError = true;
       }
       
       if (!amount || parseFloat(amount) <= 0) {
-        e.preventDefault();
-        alert('אנא הזן סכום תקין');
-        return false;
+        setFieldError('amount', 'הזן סכום גדול מ-0');
+        hasError = true;
       }
       
       if (!payment) {
-        e.preventDefault();
-        alert('אנא בחר אמצעי תשלום');
-        return false;
+        setFieldError('payment', 'בחר אמצעי תשלום');
+        hasError = true;
       }
       
       if (!date) {
-        e.preventDefault();
-        alert('אנא בחר תאריך');
-        return false;
+        setFieldError('date', 'בחר תאריך');
+        hasError = true;
       }
       
       if (!comment) {
-        e.preventDefault();
-        alert('אנא הזן הערות');
-        return false;
+        setFieldError('comment', 'הוסף תיאור קצר להוצאה');
+        hasError = true;
       }
       
       if (expenseType === 'installments') {
         const installments = document.getElementById('installments_count').value;
         if (!installments || parseInt(installments) < 2) {
-          e.preventDefault();
-          alert('אנא הזן מספר תשלומים (לפחות 2)');
-          return false;
+          setFieldError('installments', 'בחר מספר תשלומים - לפחות 2');
+          hasError = true;
         }
+      }
+
+      if (hasError) {
+        e.preventDefault();
+        const firstError = document.querySelector('.field-error:not(:empty)');
+        if (firstError) {
+          const firstField = firstError.closest('.compact-field');
+          if (firstField) {
+            firstField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }
+        return false;
       }
     });
 
@@ -272,6 +303,26 @@
     const expenseTypeInput = document.getElementById('expense_type');
     const isFixedCheckbox = document.getElementById('is_fixed');
     const installmentsField = document.getElementById('installments-field');
+    const expenseTypeHelper = document.getElementById('expense-type-helper');
+    const fixedStatusChip = document.getElementById('fixed-status-chip');
+
+    function updateExpenseTypeUi(type) {
+      fixedStatusChip.classList.toggle('is-active', type !== 'single');
+      fixedStatusChip.setAttribute('aria-label', type === 'single' ? 'קבוע לא מסומן' : 'קבוע מסומן');
+
+      if (type === 'single') {
+        expenseTypeHelper.textContent = '';
+        expenseTypeHelper.hidden = true;
+      } else if (type === 'standing') {
+        expenseTypeHelper.textContent = 'קבועה חודשית: תמשיך להופיע מהתאריך שנבחר.';
+        expenseTypeHelper.hidden = false;
+      } else if (type === 'installments') {
+        expenseTypeHelper.textContent = 'תשלומים: יש לבחור מספר תשלומים, לפחות 2.';
+        expenseTypeHelper.hidden = false;
+      }
+    }
+
+    updateExpenseTypeUi(expenseTypeInput.value);
 
     typeBtns.forEach(btn => {
       btn.addEventListener('click', function() {
@@ -294,6 +345,8 @@
           isFixedCheckbox.checked = true;
           installmentsField.style.display = 'block';
         }
+
+        updateExpenseTypeUi(type);
       });
     });
 
@@ -309,6 +362,7 @@
     function selectCategory(cat) {
       document.getElementById('category').value = cat;
       document.getElementById('category-text').textContent = cat;
+      setFieldError('category', '');
       closeCategoryModal();
     }
 
@@ -324,6 +378,7 @@
     function selectPayment(method) {
       document.getElementById('payment_method').value = method;
       document.getElementById('payment-text').textContent = method;
+      setFieldError('payment', '');
       closePaymentModal();
     }
 
@@ -360,6 +415,7 @@
       const amount = parseFloat(calcValue) || 0;
       document.getElementById('amount').value = amount;
       document.getElementById('amount-text').textContent = amount.toFixed(2) + ' ₪';
+      setFieldError('amount', amount > 0 ? '' : 'הזן סכום גדול מ-0');
       closeAmountModal();
     }
 
@@ -405,6 +461,7 @@
       }
       document.getElementById('installments_count').value = count;
       document.getElementById('installments-text').textContent = count + ' תשלומים';
+      setFieldError('installments', '');
       closeInstallmentsModal();
     }
 

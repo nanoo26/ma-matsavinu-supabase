@@ -167,7 +167,7 @@
                       </td>
                       <td>{{ "%.0f"|format(e.amount or 0) }} ₪</td>
                       <td class="actions-cell">
-                        <button type="button" class="table-action-btn" data-id="{{ e.id }}" data-date="{{ e.display_date or e.date }}" data-notes="{{ e.comment|default('', true) }}" data-category="{{ e.category }}" data-amount="{{ '%.0f'|format(e.amount or 0) }}" data-edit-url="{{ url_for('edit_expense', expense_id=e.id, return_to=request.full_path) }}" onclick="openExpenseModal(this)">⋮</button>
+                        <button type="button" class="table-action-btn" data-id="{{ e.id }}" data-date="{{ (e.display_date or e.date)|e }}" data-notes="{{ e.comment|default('', true)|e }}" data-category="{{ e.category|default('', true)|e }}" data-amount="{{ '%.0f'|format(e.amount or 0) }}" data-edit-url="{{ url_for('edit_expense', expense_id=e.id, return_to=request.full_path)|e }}">⋮</button>
                       </td>
                     </tr>
                   {% endfor %}
@@ -193,7 +193,7 @@
                       </td>
                       <td>{{ "%.0f"|format(e.amount or 0) }} ₪</td>
                       <td class="actions-cell">
-                        <button type="button" class="table-action-btn" data-id="{{ e.id }}" data-date="{{ e.display_date or e.date }}" data-notes="{{ e.comment|default('', true) }}" data-category="{{ e.category }}" data-amount="{{ '%.0f'|format(e.amount or 0) }}" data-edit-url="{{ url_for('edit_expense', expense_id=e.id, return_to=request.full_path) }}" onclick="openExpenseModal(this)">⋮</button>
+                        <button type="button" class="table-action-btn" data-id="{{ e.id }}" data-date="{{ (e.display_date or e.date)|e }}" data-notes="{{ e.comment|default('', true)|e }}" data-category="{{ e.category|default('', true)|e }}" data-amount="{{ '%.0f'|format(e.amount or 0) }}" data-edit-url="{{ url_for('edit_expense', expense_id=e.id, return_to=request.full_path)|e }}">⋮</button>
                       </td>
                     </tr>
                   {% endfor %}
@@ -219,7 +219,7 @@
                       </td>
                       <td>{{ "%.0f"|format(e.amount or 0) }} ₪</td>
                       <td class="actions-cell">
-                        <button type="button" class="table-action-btn" data-id="{{ e.id }}" data-date="{{ e.display_date or e.date }}" data-notes="{{ e.comment|default('', true) }}" data-category="{{ e.category }}" data-amount="{{ '%.0f'|format(e.amount or 0) }}" data-edit-url="{{ url_for('edit_expense', expense_id=e.id, return_to=request.full_path) }}" onclick="openExpenseModal(this)">⋮</button>
+                        <button type="button" class="table-action-btn" data-id="{{ e.id }}" data-date="{{ (e.display_date or e.date)|e }}" data-notes="{{ e.comment|default('', true)|e }}" data-category="{{ e.category|default('', true)|e }}" data-amount="{{ '%.0f'|format(e.amount or 0) }}" data-edit-url="{{ url_for('edit_expense', expense_id=e.id, return_to=request.full_path)|e }}">⋮</button>
                       </td>
                     </tr>
                   {% endfor %}
@@ -456,6 +456,20 @@
       }
     }
 
+    document.querySelectorAll('.table-action-btn').forEach(function(btn) {
+      btn.addEventListener('pointerdown', function(event) {
+        event.stopPropagation();
+      });
+      btn.addEventListener('touchstart', function(event) {
+        event.stopPropagation();
+      });
+      btn.addEventListener('click', function(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        openExpenseModal(this);
+      });
+    });
+
     // Swipe על שורות הוצאה - Visual feedback בלבד
     (function() {
       const expenseRows = document.querySelectorAll('.expenses-table-only tbody tr[id^="exp-"]');
@@ -465,11 +479,13 @@
         let startTime = 0;
         
         row.addEventListener('touchstart', (e) => {
+          if (e.target.closest('.table-action-btn')) return;
           startX = e.touches[0].pageX;
           startTime = Date.now();
         });
         
         row.addEventListener('touchmove', (e) => {
+          if (e.target.closest('.table-action-btn')) return;
           const currentX = e.touches[0].pageX;
           const diff = currentX - startX;
           
@@ -480,6 +496,7 @@
         });
         
         row.addEventListener('touchend', (e) => {
+          if (e.target.closest('.table-action-btn')) return;
           const endX = e.changedTouches[0].pageX;
           const endTime = Date.now();
           const swipeDistance = endX - startX;
@@ -505,6 +522,7 @@
         // Tap ארוך - פתיחת תפריט מיידית
         let tapTimer;
         row.addEventListener('touchstart', (e) => {
+          if (e.target.closest('.table-action-btn')) return;
           tapTimer = setTimeout(() => {
             const actionBtn = row.querySelector('.table-action-btn');
             if (actionBtn) {
@@ -517,11 +535,13 @@
           }, 500);
         });
         
-        row.addEventListener('touchend', () => {
+        row.addEventListener('touchend', (e) => {
+          if (e.target.closest('.table-action-btn')) return;
           clearTimeout(tapTimer);
         });
         
-        row.addEventListener('touchmove', () => {
+        row.addEventListener('touchmove', (e) => {
+          if (e.target.closest('.table-action-btn')) return;
           clearTimeout(tapTimer);
         });
       });
