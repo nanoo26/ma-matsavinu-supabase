@@ -163,6 +163,22 @@ def parse_any_date(raw):
     return None
 
 
+def expense_display_date_sort_key(expense):
+    """מפתח מיון לפי תאריך ההוצאה שמוצג בפועל ברשימות."""
+    parsed = expense.get("_parsed_date")
+    if isinstance(parsed, datetime):
+        return parsed
+
+    raw = expense.get("raw_date") or expense.get("date") or expense.get("display_date") or ""
+    parsed = parse_any_date(raw)
+    return parsed or datetime(2000, 1, 1)
+
+
+def sort_expenses_by_display_date_desc(expenses):
+    """מיון יציב של שורות הוצאה לפי תאריך בפועל, מהחדש לישן."""
+    return sorted(expenses, key=expense_display_date_sort_key, reverse=True)
+
+
 def current_month_key() -> str:
     return datetime.now().strftime("%Y-%m")
 
@@ -851,27 +867,6 @@ def expenses():
     if total_income > 0:
         battery_percent = min(100, round((spent_single / total_income) * 100, 1))
 
-    # מיון לפי created_at -> אם אין, לפי תאריך
-    def sort_key_for_expense(e):
-        # נסה קודם לפי created_at מה-DB
-        created_raw = e.get("created_at")
-        if created_raw:
-            try:
-                return datetime.fromisoformat(str(created_raw).replace("Z", "+00:00"))
-            except ValueError:
-                pass
-
-        # אם אין created_at תקין - נשתמש בתאריך של ההוצאה
-        if e.get("_parsed_date"):
-            return e["_parsed_date"]
-
-        raw = e.get("raw_date") or e.get("date") or ""
-        dt = parse_any_date(raw)
-        if dt:
-            return dt
-        # ברירת מחדל רחוקה בעבר
-        return datetime(2000, 1, 1)
-
     # מיון לפי סוג: חד פעמי -> תשלומים -> קבועות
     def get_expense_type_priority(e):
         if e.get("expense_type") == "installments":
@@ -881,13 +876,7 @@ def expenses():
         else:
             return 1  # חד פעמי בהתחלה
     
-    expenses_sorted = sorted(
-        expenses_for_view,
-        key=lambda e: (
-            get_expense_type_priority(e),  # קודם לפי סוג
-            -(sort_key_for_expense(e).timestamp() if hasattr(sort_key_for_expense(e), 'timestamp') else 0)  # אחר כך חדש לישן
-        ),
-    )
+    expenses_sorted = sort_expenses_by_display_date_desc(expenses_for_view)
 
     # חלוקה לקבוצות עם סיכומים
     single_expenses = [e for e in expenses_sorted if get_expense_type_priority(e) == 1]
@@ -1528,16 +1517,9 @@ def reports():
                 remaining_installments_total += remaining_after * monthly_amount
 
     # ---------------------------------------------------------
-    # מיון סופי - קבועות בסוף, אחר כך לפי תאריך
+    # מיון סופי לפי תאריך התצוגה בפועל, מהחדש לישן
     # ---------------------------------------------------------
-    all_month_expenses = sorted(
-        all_month_expenses,
-        key=lambda e: (
-            1 if e.get("is_fixed") else 0,  # קבועות בסוף
-            e.get("_parsed_date") or datetime(2000, 1, 1)  # ואז לפי תאריך
-        ),
-        reverse=False,
-    )
+    all_month_expenses = sort_expenses_by_display_date_desc(all_month_expenses)
 
     # ---------------------------------------------------------
     # פילטרים
@@ -1552,21 +1534,15 @@ def reports():
     # ---------------------------------------------------------
     # חלוקה לקבוצות לפי סוג
     # ---------------------------------------------------------
-    def single_report_sort_key(expense):
-        parsed = expense.get("_parsed_date")
-        if isinstance(parsed, datetime):
-            return parsed
-
-        parsed = parse_any_date(expense.get("raw_date") or expense.get("date"))
-        return parsed or datetime(2000, 1, 1)
-
-    single_expenses_reports = sorted(
-        [e for e in expenses_for_display if e.get("expense_type") == "single"],
-        key=single_report_sort_key,
-        reverse=True,
+    single_expenses_reports = sort_expenses_by_display_date_desc(
+        [e for e in expenses_for_display if e.get("expense_type") == "single"]
     )
-    installment_expenses_reports = [e for e in expenses_for_display if e.get("expense_type") == "installments"]
-    fixed_expenses_reports = [e for e in expenses_for_display if e.get("expense_type") == "standing"]
+    installment_expenses_reports = sort_expenses_by_display_date_desc(
+        [e for e in expenses_for_display if e.get("expense_type") == "installments"]
+    )
+    fixed_expenses_reports = sort_expenses_by_display_date_desc(
+        [e for e in expenses_for_display if e.get("expense_type") == "standing"]
+    )
 
     single_total_reports = sum(e.get("amount", 0) for e in single_expenses_reports)
     installment_total_reports = sum(e.get("amount", 0) for e in installment_expenses_reports)
