@@ -7,6 +7,8 @@ Designed specifically for fast daily use on mobile, with clean UI, category budg
 ## Live App
 https://ma-matsavinu.supabase.onrender.com/
 
+Note: current production deployment workflow targets Fly.io through GitHub Actions. Verify the active public URL before replacing any historical URL listed here.
+
 ---
 
 ## ✨ Key Features
@@ -82,7 +84,9 @@ Used across:
 - Animated UI components  
 
 ### Deployment
-- Render (auto-deploy from GitHub)  
+- Fly.io via GitHub Actions after push to `main`
+- Local `fly deploy` is not the preferred deployment path on this Windows machine
+- `render.yaml` remains present as secondary/legacy deployment config
 - Dockerfile + gunicorn  
 - Environment variables:
   - `SUPABASE_URL`
@@ -154,6 +158,27 @@ Open at http://localhost:5000
 
 ---
 
+## Deployment / פריסה ל-Fly.io
+
+Current production deployment workflow:
+1. Test locally.
+2. Run validation, including:
+   ```powershell
+   git status --short --branch
+   python -m py_compile app.py
+   git diff --check
+   ```
+3. Commit the reviewed changes.
+4. Push to `main`.
+5. GitHub Actions deploys to Fly.io automatically.
+
+Notes:
+- Local `fly deploy` is not the preferred path on this Windows machine because local attempts hit remote builder / Docker host issues.
+- Do not paste terminal output back into PowerShell as commands.
+- Do not edit or expose `.env`, Fly tokens, GitHub Actions secrets, Supabase keys, or production credentials.
+
+---
+
 ## 🧪 Testing
 Utility scripts included for:
 - Budget debugging  
@@ -172,4 +197,4 @@ Utility scripts included for:
   - RTL  
   - Mobile screen size  
   - Financial month logic  
-  - Supabase schema 
+  - Supabase schema

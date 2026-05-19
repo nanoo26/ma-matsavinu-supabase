@@ -120,7 +120,7 @@
             <div class="stat-bar" style="--progress: {{ commitments_capped }}" data-percent="{{ '%.0f'|format(commitments_percent) }}%"></div>
           </div>
           <div class="stat-content">
-            <div class="stat-label">התחייבויות קבועות</div>
+            <div class="stat-label">התחייבויות חודשיות</div>
             <div class="stat-value">{{ "%.0f"|format(summary.total_commitments or 0) }} ₪</div>
             <div class="stat-details">
               <div>קבועות: {{ "%.0f"|format(summary.fixed_expenses or 0) }} ₪</div>
@@ -129,7 +129,7 @@
           </div>
         </div>
 
-        <!-- נשאר למותרות -->
+        <!-- תקציב למותרות -->
         <div class="stat-card-vertical summary-luxury {% if (summary.available_for_luxuries or 0) < 0 %}negative{% endif %}">
           <div class="stat-bar-wrapper">
             {% set luxury_percent = (summary.available_for_luxuries / summary.total_income * 100) if summary.total_income > 0 else 0 %}
@@ -137,7 +137,7 @@
             <div class="stat-bar" style="--progress: {{ luxury_capped if luxury_capped > 0 else 0 }}" data-percent="{{ '%.0f'|format(luxury_percent if luxury_percent > 0 else 0) }}%"></div>
           </div>
           <div class="stat-content">
-            <div class="stat-label">נשאר למותרות</div>
+            <div class="stat-label">תקציב למותרות</div>
             <div class="stat-value big">{{ "%.0f"|format(summary.available_for_luxuries or 0) }} ₪</div>
           </div>
         </div>
@@ -150,36 +150,46 @@
             <div class="stat-bar" style="--progress: {{ usage_capped }}" data-percent="{{ '%.0f'|format(usage) }}%"></div>
           </div>
           <div class="stat-content">
-            <div class="stat-label">כבר הוצאת החודש</div>
+            <div class="stat-label">כבר הוצאת מהמותרות</div>
             <div class="stat-value">{{ "%.0f"|format(summary.already_spent or 0) }} ₪</div>
             <div class="stat-percent">({{ "%.0f"|format(summary.usage_percent or 0) }}%)</div>
           </div>
         </div>
 
-        <!-- עוד יכול -->
-        <div class="stat-card-vertical summary-remaining">
+        <!-- נשאר להוציא -->
+        <div class="stat-card-vertical summary-remaining {% if (summary.can_still_spend or 0) < 0 %}negative{% endif %}">
           <div class="stat-bar-wrapper">
             {% set remaining_percent = (summary.can_still_spend / summary.available_for_luxuries * 100) if summary.available_for_luxuries > 0 else 0 %}
-            {% set remaining_capped = remaining_percent if remaining_percent <= 100 else 100 %}
+            {% set remaining_progress = remaining_percent if remaining_percent > 0 else 0 %}
+            {% set remaining_capped = remaining_progress if remaining_progress <= 100 else 100 %}
             <div class="stat-bar" style="--progress: {{ remaining_capped }}" data-percent="{{ '%.0f'|format(remaining_percent) }}%"></div>
           </div>
           <div class="stat-content">
-            <div class="stat-label">עוד יכול להוציא</div>
-            <div class="stat-value success">{{ "%.0f"|format(summary.can_still_spend or 0) }} ₪</div>
+            <div class="stat-label">נשאר להוציא</div>
+            <div class="stat-value {% if (summary.can_still_spend or 0) >= 0 %}success{% endif %}">{{ "%.0f"|format(summary.can_still_spend or 0) }} ₪</div>
           </div>
         </div>
 
         <!-- ממוצע יומי -->
         <div class="stat-card-vertical summary-daily">
           <div class="stat-bar-wrapper">
+            {% if summary.daily_average_applicable %}
             {% set days_percent = (summary.days_remaining / 30 * 100) %}
             {% set days_capped = days_percent if days_percent <= 100 else 100 %}
             <div class="stat-bar" style="--progress: {{ days_capped }}" data-percent="{{ summary.days_remaining }}"></div>
+            {% else %}
+            <div class="stat-bar" style="--progress: 0" data-percent="—"></div>
+            {% endif %}
           </div>
           <div class="stat-content">
             <div class="stat-label">ממוצע יומי</div>
+            {% if summary.daily_average_applicable %}
             <div class="stat-value">{{ "%.0f"|format(summary.daily_average or 0) }} ₪</div>
             <div class="stat-details">נשארו {{ summary.days_remaining or 0 }} ימים</div>
+            {% else %}
+            <div class="stat-value">—</div>
+            <div class="stat-details">רלוונטי רק לחודש הנוכחי</div>
+            {% endif %}
           </div>
         </div>
       </div>

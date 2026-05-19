@@ -54,6 +54,19 @@ This repository is a legacy financial Flask + Supabase app. Treat it as producti
    - `render.yaml`
 2. Do not change deployment ports, health checks, startup command, or env variable contracts unless explicitly requested.
 3. Preserve `/health` behavior for platform health checks.
+4. Do not deploy automatically.
+5. Do not run `fly deploy` unless explicitly approved.
+6. Preferred production deployment is GitHub Actions after commit + push to `main`.
+
+## Safe Agent Workflow
+1. Before commit, run:
+   - `git status --short --branch`
+   - `python -m py_compile app.py`
+   - `git diff --check`
+2. Never edit `.env`, secrets, Fly tokens, GitHub secrets, Supabase keys, or production credentials.
+3. Never paste terminal output back into PowerShell as commands.
+4. For code changes, start with a read-only audit when calculations, database, deployment, reports, or production behavior may be affected.
+5. Do not touch routes, schema, Supabase, auth, sessions, financial calculations, or deployment config unless explicitly approved.
 
 ## Forbidden-by-Default Actions
 1. No `git reset --hard`, forced checkouts, or mass deletes.

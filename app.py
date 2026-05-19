@@ -1630,8 +1630,13 @@ def reports():
     can_still_spend = available_for_luxuries - already_spent
     
     # 6. ימים נותרים + ממוצע יומי
-    days_remaining = max(1, (end_date - today).days)
-    daily_average = can_still_spend / days_remaining if days_remaining > 0 else 0
+    is_current_financial_month = start_date <= today <= end_date
+    if is_current_financial_month:
+        days_remaining = max(1, (end_date - today).days)
+        daily_average = can_still_spend / days_remaining
+    else:
+        days_remaining = None
+        daily_average = None
     
     # אחוז ניצול
     usage_percent = (already_spent / available_for_luxuries * 100) if available_for_luxuries > 0 else 0
@@ -1652,6 +1657,8 @@ def reports():
         "can_still_spend": can_still_spend,
         "days_remaining": days_remaining,
         "daily_average": daily_average,
+        "daily_average_applicable": is_current_financial_month,
+        "is_current_financial_month": is_current_financial_month,
         "usage_percent": usage_percent,
         # ישן (לתאימות)
         "total_spent": total_spent,

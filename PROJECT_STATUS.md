@@ -1,6 +1,6 @@
 # PROJECT_STATUS
 
-Last verified: 2026-05-12
+Last verified: 2026-05-19
 
 ## Verified Architecture
 - Legacy Flask monolith in `app.py`
@@ -10,12 +10,26 @@ Last verified: 2026-05-12
 - Session-based month selection/state handling
 
 ## Current Deployment Setup
+- GitHub Actions deploy is active.
+- Fly.io production was updated through GitHub Actions.
+- Preferred production workflow: commit reviewed changes, push to `main`, and let GitHub Actions deploy to Fly.io.
+- Local `fly deploy` from this Windows machine had remote builder / Docker host issues and is not the preferred workflow.
 - Fly.io config in `fly.toml`
   - `internal_port = 8080`
   - health check path: `/health`
   - region: `fra`
 - Container startup in `Dockerfile` using `gunicorn`
 - Additional deployment config exists in `render.yaml`
+
+## Recent Completed Changes
+- Add Expense UI improved.
+- Edit Expense UI aligned with Add Expense.
+- Category `צ'אבי` added and connected to budget/categories.
+- Payment method `שופרסל` added.
+- Reports ordering fixed: first section newest-to-oldest.
+- Chart label escaping fixed for Hebrew/apostrophes/quotes.
+- Bottom navigation overlap fixed.
+- Reports page: six summary cards relabeled and daily average logic updated. Phase 2 complete.
 
 ## Supabase Usage
 - Environment-based credentials (`SUPABASE_URL`, `SUPABASE_KEY`)

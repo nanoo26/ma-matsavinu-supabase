@@ -16,6 +16,30 @@ Quick onboarding for safe work on this legacy Flask + Supabase + Fly.io financia
 - Data: Supabase REST via `requests` (no ORM)
 - Runtime: `gunicorn` on port `8080`
 
+## Local development / הפעלה מקומית
+1. Activate the local virtual environment:
+   ```powershell
+   .\.venv\Scripts\Activate.ps1
+   ```
+2. Check the working tree before running or changing anything:
+   ```powershell
+   git status --short --branch
+   ```
+3. Run a safe syntax check:
+   ```powershell
+   python -m py_compile app.py
+   ```
+4. Start the Flask app:
+   ```powershell
+   python app.py
+   ```
+   If needed, use the Flask fallback:
+   ```powershell
+   flask run
+   ```
+5. Open the localhost URL printed by Flask, usually `http://127.0.0.1:5000` or `http://localhost:5000`.
+   The actual port is the one printed in the terminal.
+
 ## Deployment Overview
 - Primary deployment config: `fly.toml` + `Dockerfile`
 - Health endpoint: `/health` (must remain stable for platform checks)
