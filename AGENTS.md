@@ -3,6 +3,8 @@
 ## Scope
 This repository is a legacy financial Flask + Supabase app. Treat it as production-sensitive.
 
+See `docs/AI_HANDOFF.md` for current project state, recent AI-assisted changes, and safe AI workflow.
+
 ## Core Rules
 1. Inspect first, then propose, then implement.
 2. Do not assume missing behavior, schema, routes, or business logic.

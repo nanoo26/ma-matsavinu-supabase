@@ -2,6 +2,8 @@
 
 Last verified: 2026-05-19
 
+See `docs/AI_HANDOFF.md` for current project state, recent AI-assisted changes, and safe AI workflow.
+
 ## Verified Architecture
 - Legacy Flask monolith in `app.py`
 - Jinja templates under `templates/`

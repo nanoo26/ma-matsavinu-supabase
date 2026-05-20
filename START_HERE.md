@@ -3,6 +3,8 @@
 ## Purpose
 Quick onboarding for safe work on this legacy Flask + Supabase + Fly.io financial app.
 
+See `docs/AI_HANDOFF.md` for current project state, recent AI-assisted changes, and safe AI workflow.
+
 ## Read First (in order)
 1. `README.md`
 2. `AGENTS.md`
