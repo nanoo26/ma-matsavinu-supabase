@@ -988,7 +988,7 @@ def add_expense():
                     )
 
             # הודעת הצלחה
-            flash("ההוצאה נוספה בהצלחה", "success")
+            flash("הוצאה נרשמה", "success")
             
             # חזרה לעמוד הקודם
             return redirect(return_to)

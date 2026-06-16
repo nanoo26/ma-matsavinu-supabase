@@ -252,16 +252,16 @@
       </section>
 
       <section class="card">
-        <a href="{{ url_for('add_expense', return_to=request.full_path) }}" class="btn btn-primary" style="width:100%; justify-content:center;">
+        <button type="button" class="btn btn-primary quick-expense-open" style="width:100%; justify-content:center;">
           ➕ הוספת הוצאה חדשה
-        </a>
+        </button>
       </section>
 
     </main>
 
-    <a href="{{ url_for('add_expense', return_to=request.full_path) }}" class="fab-add" title="הוספת הוצאה">
+    <button type="button" class="fab-add quick-expense-open" title="הוספת הוצאה" aria-label="הוספת הוצאה">
       +
-    </a>
+    </button>
 
     <!-- חלונית גרירה עם סיכום -->
     <div class="drawer" id="summary-drawer">
@@ -309,6 +309,98 @@
       </div>
     </div>
 
+  </div>
+
+  <!-- הוספת הוצאה מהירה -->
+  <div class="quick-expense-sheet" id="quick-expense-sheet" aria-hidden="true">
+    <div class="quick-expense-backdrop" data-quick-expense-close></div>
+    <div class="quick-expense-panel" role="dialog" aria-modal="true" aria-labelledby="quick-expense-title">
+      <div class="quick-expense-handle" aria-hidden="true"></div>
+      <div class="quick-expense-header">
+        <div>
+          <h2 id="quick-expense-title">הוצאה חדשה</h2>
+          <p>רישום מהיר בלי לצאת מהעמוד</p>
+        </div>
+        <button type="button" class="quick-expense-close" data-quick-expense-close aria-label="סגירה">✕</button>
+      </div>
+
+      <form method="post" action="{{ url_for('add_expense', return_to=url_for('expenses')) }}" class="quick-expense-form" id="quick-expense-form">
+        <input type="hidden" name="expense_type" value="single">
+        <input type="hidden" name="installments_count" value="0">
+
+        <label class="quick-expense-step quick-expense-amount-step">
+          <span class="quick-step-number">1</span>
+          <span class="quick-step-content">
+            <span class="quick-step-label">כמה?</span>
+            <span class="quick-amount-wrap">
+              <input
+                type="text"
+                inputmode="decimal"
+                autocomplete="off"
+                name="amount"
+                id="quick-expense-amount"
+                class="quick-expense-input quick-expense-amount"
+                placeholder="0"
+                required
+              >
+              <span class="quick-currency">₪</span>
+            </span>
+          </span>
+        </label>
+
+        <label class="quick-expense-step">
+          <span class="quick-step-number">2</span>
+          <span class="quick-step-content">
+            <span class="quick-step-label">פירוט קצר</span>
+            <input
+              type="text"
+              autocomplete="off"
+              name="comment"
+              id="quick-expense-comment"
+              class="quick-expense-input"
+              placeholder="לדוגמה: קפה, סופר, דלק"
+              required
+            >
+          </span>
+        </label>
+
+        <label class="quick-expense-step">
+          <span class="quick-step-number">3</span>
+          <span class="quick-step-content">
+            <span class="quick-step-label">איך שולם?</span>
+            <select name="payment_method" class="quick-expense-input" required>
+              <option value="">בחר אמצעי תשלום</option>
+              {% for p in payment_methods %}
+                <option value="{{ p }}">{{ p }}</option>
+              {% endfor %}
+            </select>
+          </span>
+        </label>
+
+        <label class="quick-expense-step">
+          <span class="quick-step-number">4</span>
+          <span class="quick-step-content">
+            <span class="quick-step-label">איפה לקטלג?</span>
+            <select name="category" class="quick-expense-input" required>
+              <option value="">בחר קטגוריה</option>
+              {% for c in categories %}
+                <option value="{{ c }}">{{ c }}</option>
+              {% endfor %}
+            </select>
+          </span>
+        </label>
+
+        <label class="quick-expense-date-row">
+          <span>תאריך</span>
+          <input type="date" name="date" id="quick-expense-date" autocomplete="off" required>
+        </label>
+
+        <div class="quick-expense-actions">
+          <button type="button" class="quick-expense-secondary" data-quick-expense-close>ביטול</button>
+          <button type="submit" class="quick-expense-submit">שמירת הוצאה</button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <!-- מודל עריכה/מחיקה להוצאה בודדת -->
@@ -420,6 +512,64 @@
         setTimeout(function() {
           msg.remove();
         }, 1000);
+      });
+
+      // Quick add bottom sheet
+      var quickSheet = document.getElementById('quick-expense-sheet');
+      var quickAmountInput = document.getElementById('quick-expense-amount');
+      var quickDateInput = document.getElementById('quick-expense-date');
+      var quickOpenButtons = document.querySelectorAll('.quick-expense-open');
+      var quickCloseButtons = document.querySelectorAll('[data-quick-expense-close]');
+
+      function todayForInput() {
+        var now = new Date();
+        var year = now.getFullYear();
+        var month = String(now.getMonth() + 1).padStart(2, '0');
+        var day = String(now.getDate()).padStart(2, '0');
+        return year + '-' + month + '-' + day;
+      }
+
+      function openQuickExpenseSheet(event) {
+        if (event) {
+          event.preventDefault();
+        }
+        if (!quickSheet) return;
+        if (quickDateInput && !quickDateInput.value) {
+          quickDateInput.value = todayForInput();
+        }
+        quickSheet.classList.add('active');
+        quickSheet.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('quick-expense-opened');
+        window.setTimeout(function() {
+          if (quickAmountInput) {
+            quickAmountInput.focus({ preventScroll: true });
+            quickAmountInput.select();
+          }
+        }, 80);
+      }
+
+      function closeQuickExpenseSheet(event) {
+        if (event) {
+          event.preventDefault();
+        }
+        if (!quickSheet) return;
+        quickSheet.classList.remove('active');
+        quickSheet.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('quick-expense-opened');
+      }
+
+      quickOpenButtons.forEach(function(btn) {
+        btn.addEventListener('click', openQuickExpenseSheet);
+      });
+
+      quickCloseButtons.forEach(function(btn) {
+        btn.addEventListener('click', closeQuickExpenseSheet);
+      });
+
+      document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape' && quickSheet && quickSheet.classList.contains('active')) {
+          closeQuickExpenseSheet(event);
+        }
       });
     })();
 

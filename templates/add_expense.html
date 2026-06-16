@@ -40,7 +40,7 @@
 
             <div class="compact-field half-width">
               <label>כמה?</label>
-              <div class="selected-display" id="amount-display" onclick="openAmountModal()">
+              <div class="selected-display" id="amount-display" onclick="openAmountModal()" tabindex="0" role="button" aria-label="הזנת סכום">
                 <span id="amount-text">0.00 ₪</span>
                 <span class="arrow">🔢</span>
               </div>
@@ -219,6 +219,19 @@
     if (!dateInput.value) {
       const today = new Date().toISOString().split('T')[0];
       dateInput.value = today;
+    }
+
+    const amountDisplay = document.getElementById('amount-display');
+    if (amountDisplay) {
+      setTimeout(function() {
+        amountDisplay.focus({ preventScroll: true });
+      }, 80);
+      amountDisplay.addEventListener('keydown', function(event) {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          openAmountModal();
+        }
+      });
     }
 
     function setFieldError(fieldId, message) {
