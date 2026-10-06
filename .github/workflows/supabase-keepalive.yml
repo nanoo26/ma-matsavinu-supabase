@@ -1,0 +1,26 @@
+name: Keep Supabase active
+
+on:
+  schedule:
+    - cron: "17 0,8,16 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  keepalive:
+    name: Check Supabase through the app
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Request the Supabase health endpoint
+        run: >-
+          curl
+          --fail
+          --silent
+          --show-error
+          --retry 3
+          --retry-all-errors
+          --max-time 30
+          https://ma-matsavinu.fly.dev/health/supabase

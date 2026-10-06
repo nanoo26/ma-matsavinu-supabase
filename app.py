@@ -354,6 +354,23 @@ def supabase_headers():
     }
 
 
+@app.route("/health/supabase")
+def supabase_health_check():
+    """Perform a minimal read so scheduled checks count as database activity."""
+    try:
+        response = requests.get(
+            SUPABASE_EXPENSES_URL,
+            headers=supabase_headers(),
+            params={"select": "id", "limit": 1},
+            timeout=10,
+        )
+        response.raise_for_status()
+    except requests.exceptions.RequestException:
+        return {"status": "unavailable"}, 503
+
+    return {"status": "ok"}, 200
+
+
 # =========================
 # CRUD על הוצאות
 # =========================
