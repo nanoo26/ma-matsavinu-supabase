@@ -31,11 +31,21 @@
         <form method="post" action="{{ url_for('edit_expense', expense_id=expense.id, return_to=return_to) }}" id="expense-form">
           {% set current_type = expense.expense_type or 'single' %}
 
+          {% if recurring %}
+          <div class="compact-field">
+            <label for="effective-month">החל מחודש פיננסי</label>
+            <input type="month" class="compact-input" id="effective-month" name="effective_month" value="{{ selected_month }}" min="{{ recurring_start }}" required>
+            <input type="hidden" name="recurring_revision" value="{{ expense.recurring_revision }}">
+            <p>החודש מתחיל ב־10 ומסתיים ב־9 בחודש הבא. חודשים קודמים יישמרו. עדכון יחול עד לשינוי עתידי שכבר נקבע.</p>
+            {% if not expense.recurring_active %}<p>ההוצאה הופסקה בחודש הזה. שמירת עדכון תחדש אותה מהחודש שבחרת.</p>{% endif %}
+          </div>
+          {% endif %}
+
           <!-- מתי וכמה - התחלת עריכה מהירה -->
           <div class="field-row">
             <div class="compact-field half-width">
-              <label>מתי?</label>
-              <input type="date" name="date" id="date" value="{{ expense.date_for_input }}" required>
+              <label>{{ 'תחילת ההוצאה' if recurring else 'מתי?' }}</label>
+              <input type="date" name="date" id="date" value="{{ expense.date_for_input }}" required {% if recurring %}readonly{% endif %}>
               <div class="field-error" id="date-error" aria-live="polite"></div>
             </div>
 
@@ -85,9 +95,9 @@
           <div class="compact-field expense-type-field">
             <label>סוג</label>
             <div class="type-buttons">
-              <button type="button" class="type-btn {% if current_type == 'single' %}active{% endif %}" data-type="single">חד פעמית</button>
+              <button type="button" class="type-btn {% if current_type == 'single' %}active{% endif %}" data-type="single" {% if recurring %}disabled{% endif %}>חד פעמית</button>
               <button type="button" class="type-btn {% if current_type == 'standing' %}active{% endif %}" data-type="standing">קבועה</button>
-              <button type="button" class="type-btn {% if current_type == 'installments' %}active{% endif %}" data-type="installments">תשלומים</button>
+              <button type="button" class="type-btn {% if current_type == 'installments' %}active{% endif %}" data-type="installments" {% if recurring %}disabled{% endif %}>תשלומים</button>
               <label class="fixed-status-chip {% if current_type != 'single' %}is-active{% endif %}" id="fixed-status-chip" aria-live="polite">
                 <input type="checkbox" name="is_fixed" id="is_fixed" value="1" class="auto-fixed-input" {% if current_type == 'single' %}disabled{% endif %} {% if current_type != 'single' %}checked{% endif %} aria-hidden="true" tabindex="-1">
                 <span class="fixed-status-box" id="fixed-indicator">✓</span>
@@ -97,6 +107,8 @@
             <input type="hidden" name="expense_type" id="expense_type" value="{{ current_type }}">
             <div class="type-helper" id="expense-type-helper" hidden></div>
           </div>
+
+          {% if recurring %}<p>להמרה לסוג אחר, הפסק את הקבועה והוסף הוצאה נפרדת.</p>{% endif %}
 
           <!-- מספר תשלומים - מוצג רק בתשלומים -->
           <div class="compact-field" id="installments-field" style="{% if current_type != 'installments' %}display: none;{% endif %}">
@@ -118,6 +130,10 @@
               💾 שמור
             </button>
           </div>
+          {% if recurring %}
+          <button type="submit" class="btn-cancel" name="recurring_action" value="stop" formnovalidate>⏹ הפסק מהחודש שנבחר</button>
+          <p>הפסקה תשמור את העבר ותבטל גם שינויים עתידיים שנקבעו.</p>
+          {% endif %}
         </form>
       </section>
 
@@ -235,6 +251,11 @@
 
     // Form validation before submit
     document.getElementById('expense-form').addEventListener('submit', function(e) {
+      if (e.submitter && e.submitter.value === 'stop') {
+        const month = document.getElementById('effective-month').value;
+        if (!month || !confirm('להפסיק מחודש ' + month + '? העבר יישמר ושינויים עתידיים יבוטלו.')) e.preventDefault();
+        return;
+      }
       const category = document.getElementById('category').value;
       const amount = document.getElementById('amount').value;
       const payment = document.getElementById('payment_method').value;
@@ -307,7 +328,7 @@
         expenseTypeHelper.textContent = '';
         expenseTypeHelper.hidden = true;
       } else if (type === 'standing') {
-        expenseTypeHelper.textContent = 'קבועה חודשית: תמשיך להופיע מהתאריך שנבחר.';
+        expenseTypeHelper.textContent = {{ ('קבועה חודשית: השינוי יחול מהחודש שבחרת.' if recurring else 'קבועה חודשית: תמשיך להופיע מהתאריך שנבחר.')|tojson }};
         expenseTypeHelper.hidden = false;
       } else if (type === 'installments') {
         expenseTypeHelper.textContent = 'תשלומים: יש לבחור מספר תשלומים, לפחות 2.';

@@ -1,5 +1,6 @@
 import os
 import re
+import math
 import requests
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 from datetime import datetime, date
@@ -375,6 +376,122 @@ def supabase_health_check():
 # CRUD על הוצאות
 # =========================
 
+class RecurringEditError(ValueError):
+    """הודעה בטוחה להצגה למשתמש, ללא פרטי תשובת API."""
+
+
+def is_recurring_expense(expense):
+    kind = normalize_expense_type_code(expense.get("expense_type"))
+    return kind == "standing" or (bool(expense.get("is_fixed")) and kind != "installments")
+
+
+def recurring_month(value):
+    if not isinstance(value, str) or not re.fullmatch(r"[0-9]{4}-(0[1-9]|1[0-2])", value) or value[:4] == "0000":
+        raise RecurringEditError("יש לבחור חודש תקין להחלת השינוי")
+    return value
+
+
+def recurring_start_month(expense):
+    parsed = parse_any_date(expense.get("raw_date") or expense.get("date_for_input") or expense.get("date"))
+    if not parsed:
+        raise RecurringEditError("לא ניתן לזהות את חודש ההתחלה של ההוצאה")
+    year, month = financial_label_for_date(parsed.date())
+    return f"{year:04d}-{month:02d}"
+
+
+def checked_recurring_history(expense):
+    history = expense.get("recurring_history", [])
+    if not isinstance(history, list):
+        raise RecurringEditError("היסטוריית ההוצאה אינה תקינה; השינוי לא נשמר")
+    previous = None
+    start = recurring_start_month(expense)
+    for entry in history:
+        if not isinstance(entry, dict):
+            raise RecurringEditError("היסטוריית ההוצאה אינה תקינה; השינוי לא נשמר")
+        month = recurring_month(entry.get("from_month"))
+        if month < start or (previous is not None and month <= previous) or type(entry.get("active")) is not bool:
+            raise RecurringEditError("היסטוריית ההוצאה אינה תקינה; השינוי לא נשמר")
+        if entry["active"]:
+            try:
+                amount = float(entry["amount"])
+            except (KeyError, ValueError, TypeError):
+                raise RecurringEditError("היסטוריית ההוצאה אינה תקינה; השינוי לא נשמר") from None
+            if not math.isfinite(amount) or amount <= 0 or any(not isinstance(entry.get(key), str) for key in ("category", "payment_method", "comment")):
+                raise RecurringEditError("היסטוריית ההוצאה אינה תקינה; השינוי לא נשמר")
+        previous = month
+    return history
+
+
+def recurring_for_month(expense, month, include_inactive=False):
+    """בחירת גרסה אחת לחודש, תוך שמירת שדות הבסיס המקוריים."""
+    month = recurring_month(month)
+    if month < recurring_start_month(expense):
+        return None
+    result = expense.copy()
+    result.update(expense_type="standing", is_fixed=True, recurring_active=True)
+    for entry in checked_recurring_history(expense):
+        if entry["from_month"] > month:
+            break
+        result["recurring_active"] = entry["active"]
+        if entry["active"]:
+            result.update({key: entry[key] for key in ("category", "payment_method", "comment")})
+            result["amount"] = float(entry["amount"])
+    return result if result["recurring_active"] or include_inactive else None
+
+
+def checked_recurring_revision(expense, submitted):
+    revision = expense.get("recurring_revision")
+    if "recurring_history" not in expense or type(revision) is not int or revision < 0:
+        raise RecurringEditError("שמירת היסטוריית קבועות אינה זמינה עדיין")
+    if revision >= 9223372036854775807:
+        raise RecurringEditError("לא ניתן לשמור שינוי נוסף בהוצאה")
+    if not isinstance(submitted, str) or not re.fullmatch(r"[0-9]{1,19}", submitted) or int(submitted) != revision:
+        raise RecurringEditError("ההוצאה השתנתה מאז פתיחת הטופס; יש לפתוח אותה מחדש")
+    return revision
+
+
+def save_recurring_change(expense, month, submitted_revision, profile=None):
+    """PATCH מותנה יחיד: היסטוריה ומספר גרסה מתעדכנים יחד."""
+    month = recurring_month(month)
+    if month < recurring_start_month(expense):
+        raise RecurringEditError("חודש השינוי אינו יכול להיות לפני תחילת ההוצאה")
+    revision = checked_recurring_revision(expense, submitted_revision)
+    history = checked_recurring_history(expense)
+    if profile is None:
+        # הפסקה מבטלת גם שינויים עתידיים, אך שומרת כל גרסה קודמת לחודש הנבחר.
+        updated = [entry.copy() for entry in history if entry["from_month"] < month]
+        updated.append({"from_month": month, "active": False})
+    else:
+        amount = parse_amount(profile.get("amount"))
+        if not math.isfinite(amount) or amount <= 0:
+            raise RecurringEditError("סכום ההוצאה חייב להיות חיובי")
+        entry = {"from_month": month, "active": True, "amount": str(amount)}
+        for key in ("category", "payment_method", "comment"):
+            value = profile.get(key)
+            if not isinstance(value, str) or not value.strip():
+                raise RecurringEditError("יש למלא תיאור, קטגוריה ואמצעי תשלום")
+            entry[key] = value.strip()
+        updated = [item.copy() for item in history if item["from_month"] != month] + [entry]
+        updated.sort(key=lambda item: item["from_month"])
+    headers = supabase_headers().copy()
+    headers["Prefer"] = "return=representation"
+    response = requests.patch(
+        SUPABASE_EXPENSES_URL, headers=headers,
+        params={"id": f"eq.{expense['id']}", "recurring_revision": f"eq.{revision}"},
+        json={"recurring_history": updated, "recurring_revision": revision + 1},
+        timeout=20, allow_redirects=False,
+    )
+    response.raise_for_status()
+    if not 200 <= response.status_code < 300:
+        raise RecurringEditError("לא ניתן לאשר שהשינוי נשמר; יש לרענן לפני ניסיון נוסף")
+    rows = response.json()
+    if rows == []:
+        raise RecurringEditError("ההוצאה השתנתה במקביל; יש לפתוח אותה מחדש")
+    if not isinstance(rows, list) or len(rows) != 1 or not isinstance(rows[0], dict) or type(rows[0].get("id")) is not int or rows[0].get("id") != expense["id"] or type(rows[0].get("recurring_revision")) is not int or rows[0].get("recurring_revision") != revision + 1 or rows[0].get("recurring_history") != updated:
+        raise RecurringEditError("לא ניתן לאשר שהשינוי נשמר; יש לרענן לפני ניסיון נוסף")
+    return True
+
+
 def fetch_expenses():
     """שליפת כל ההוצאות מ-Supabase, כולל is_fixed, description ו-created_at."""
     try:
@@ -414,6 +531,8 @@ def fetch_expenses():
                 "expense_type": row.get("expense_type") or "",
                 # נשמור גם את זמן היצירה כדי שנוכל למיין לפי זה
                 "created_at": row.get("created_at"),
+                "recurring_history": row.get("recurring_history", []),
+                "recurring_revision": row.get("recurring_revision"),
             }
         )
 
@@ -644,9 +763,11 @@ def get_expense_by_id(expense_id: int):
         "expense_type": normalize_expense_type_code(row.get("expense_type")),
         "is_fixed": bool(row.get("is_fixed")) if "is_fixed" in row else False,
         "installments_count": 0,
+        "recurring_history": row.get("recurring_history", []),
+        "recurring_revision": row.get("recurring_revision"),
     }
 
-    plan = get_payment_plan_for_expense(expense_id)
+    plan = None if is_recurring_expense(exp) else get_payment_plan_for_expense(expense_id)
     if plan:
         exp["installments_count"] = plan.get("installments_count", 0)
 
@@ -768,6 +889,10 @@ def expenses():
     # ניסיון לפרש תאריך לכל הוצאה
     enriched = []
     for e in expenses_raw:
+        if is_recurring_expense(e):
+            e = recurring_for_month(e, selected_month)
+            if e is None:
+                continue
         parsed_date = parse_any_date(e.get("raw_date") or e.get("date"))
         if parsed_date:
             e["_parsed_date"] = parsed_date
@@ -779,7 +904,7 @@ def expenses():
     adjusted_expenses = []
     for e in enriched:
         exp_id = e.get("id")
-        plan = plans_map.get(int(exp_id)) if exp_id else None
+        plan = plans_map.get(int(exp_id)) if exp_id and not is_recurring_expense(e) else None
         dt = e.get("_parsed_date")
 
         # אם אין תאריך מפוענח - לא מסננים לפי טווח (נכניס כמו שהוא)
@@ -1040,6 +1165,38 @@ def edit_expense(expense_id):
         flash("הוצאה לא נמצאה", "error")
         return redirect(url_for("expenses"))
 
+    if is_recurring_expense(exp):
+        selected_month = request.form.get("effective_month") or request.args.get("month") or session.get("selected_month") or current_month()
+        start_month = recurring_start_month(exp)
+        if request.method == "POST":
+            try:
+                action = request.form.get("recurring_action", "update")
+                if action not in ("update", "stop"):
+                    raise RecurringEditError("פעולה לא תקינה")
+                profile = None
+                if action == "update":
+                    if normalize_expense_type_code(request.form.get("expense_type") or "standing") != "standing" or request.form.get("date") != exp["date_for_input"]:
+                        raise RecurringEditError("תאריך ההתחלה וסוג ההוצאה נשמרים; להמרה יש להפסיק ולהוסיף הוצאה נפרדת")
+                    profile = {key: request.form.get(key, "") for key in ("amount", "category", "payment_method", "comment")}
+                save_recurring_change(exp, request.form.get("effective_month"), request.form.get("recurring_revision"), profile)
+                flash("ההוצאה הקבועה הופסקה מהחודש שנבחר; ההיסטוריה נשמרה" if action == "stop" else "ההוצאה הקבועה עודכנה מהחודש שנבחר; ההיסטוריה נשמרה", "success")
+                return redirect(return_to)
+            except RecurringEditError as ex:
+                flash(str(ex), "error")
+            except Exception as ex:
+                print(f"❌ שינוי הוצאה קבועה נכשל ({type(ex).__name__})")
+                flash("לא ניתן לאשר שהשינוי נשמר; יש לרענן ולבדוק לפני ניסיון נוסף", "error")
+        try:
+            selected_month = max(recurring_month(selected_month), start_month)
+        except RecurringEditError:
+            selected_month = max(current_month(), start_month)
+        display_exp = recurring_for_month(exp, selected_month, include_inactive=True)
+        return render_template(
+            "edit_expense.html", expense=display_exp, categories=CATEGORIES,
+            payment_methods=PAYMENT_METHODS, active_tab="expenses", return_to=return_to,
+            selected_month=selected_month, recurring=True, recurring_start=start_month,
+        )
+
     if request.method == "POST":
         try:
             # סוג הוצאה - אם לא נשלח מהטופס, נשמור את הקיים
@@ -1107,10 +1264,19 @@ def edit_expense(expense_id):
 def delete_expense(expense_id):
     """מחיקת הוצאה בודדת מכפתור האשפה בכרטיס."""
     try:
-        delete_expense_record(expense_id)
-        flash("ההוצאה נמחקה בהצלחה", "success")
+        exp = get_expense_by_id(expense_id)
+        if not exp:
+            raise RecurringEditError("הוצאה לא נמצאה; לא בוצעה מחיקה")
+        if is_recurring_expense(exp):
+            save_recurring_change(exp, request.form.get("effective_month"), request.form.get("recurring_revision"))
+            flash("ההוצאה הקבועה הופסקה מהחודש שנבחר; ההיסטוריה נשמרה", "success")
+        else:
+            delete_expense_record(expense_id)
+            flash("ההוצאה נמחקה בהצלחה", "success")
+    except RecurringEditError as e:
+        flash(str(e), "error")
     except Exception as e:
-        print(f"❌ שגיאה במחיקת הוצאה {expense_id}:", e)
+        print(f"❌ מחיקה או הפסקת הוצאה נכשלו ({type(e).__name__})")
         flash("אירעה שגיאה במחיקת ההוצאה", "error")
     return redirect(request.referrer or url_for("expenses"))
 
@@ -1124,26 +1290,32 @@ def delete_selected():
         flash("לא נבחרו הוצאות למחיקה", "error")
         return redirect(request.referrer or url_for("expenses"))
 
-    deleted_count = 0
-    for id_str in ids:
-        try:
-            expense_id = int(id_str)
-        except ValueError:
-            continue
-
-        try:
-            delete_expense_record(expense_id)
-            deleted_count += 1
-        except Exception as e:
-            print(f"❌ שגיאה במחיקת הוצאה {expense_id}:", e)
-
-    if deleted_count > 0:
-        if deleted_count == 1:
-            flash("הוצאה אחת נמחקה בהצלחה", "success")
-        else:
-            flash(f"{deleted_count} הוצאות נמחקו בהצלחה", "success")
-    else:
-        flash("לא נמחקו הוצאות", "error")
+    completed = 0
+    try:
+        selected = []
+        for expense_id in dict.fromkeys(int(value) for value in ids):
+            exp = get_expense_by_id(expense_id)
+            if not exp:
+                raise RecurringEditError("אחת ההוצאות לא נמצאה; יש לרענן לפני ניסיון נוסף")
+            revision = request.form.get(f"recurring_revision_{expense_id}", request.form.get("recurring_revision"))
+            if is_recurring_expense(exp):
+                month = recurring_month(request.form.get("effective_month"))
+                if month < recurring_start_month(exp):
+                    raise RecurringEditError("חודש ההפסקה אינו יכול להיות לפני תחילת ההוצאה")
+                checked_recurring_revision(exp, revision)
+                checked_recurring_history(exp)
+            selected.append((exp, revision))
+        for exp, revision in selected:
+            if is_recurring_expense(exp):
+                save_recurring_change(exp, request.form.get("effective_month"), revision)
+            else:
+                delete_expense_record(exp["id"])
+            completed += 1
+        flash(f"טופלו {completed} הוצאות; קבועות הופסקו מהחודש שנבחר וההיסטוריה נשמרה", "success")
+    except Exception as ex:
+        print(f"❌ טיפול בהוצאות שנבחרו נעצר ({type(ex).__name__})")
+        message = str(ex) if isinstance(ex, RecurringEditError) else "הפעולה נעצרה; יש לרענן ולבדוק לפני ניסיון נוסף"
+        flash(f"{message}. טופלו {completed} הוצאות לפני העצירה", "error")
 
     return redirect(request.referrer or url_for("expenses"))
 
@@ -1442,6 +1614,10 @@ def reports():
     # ---------------------------------------------------------
     base_expenses = []
     for e in expenses_list:
+        if is_recurring_expense(e):
+            e = recurring_for_month(e, selected_month)
+            if e is None:
+                continue
         parsed_date = parse_any_date(e.get("raw_date") or e.get("date"))
         if not parsed_date:
             continue

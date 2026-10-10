@@ -141,6 +141,13 @@
         </div>
         <div class="card-body">
           <form method="post" action="{{ url_for('delete_selected') }}" id="delete-form">
+            {% if fixed_expenses %}
+            <div class="compact-field">
+              <label for="bulk-stop-month">להוצאות קבועות: להפסיק מחודש פיננסי</label>
+              <input type="month" class="compact-input" id="bulk-stop-month" name="effective_month" value="{{ selected_month }}" required>
+              <p>קבועות יופסקו מהחודש שנבחר והעבר יישמר. שינויים עתידיים יבוטלו. יתר ההוצאות שנבחרו יימחקו.</p>
+            </div>
+            {% endif %}
             <table class="expenses-table-only">
               <thead>
                 <tr>
@@ -167,7 +174,7 @@
                       </td>
                       <td>{{ "%.0f"|format(e.amount or 0) }} ₪</td>
                       <td class="actions-cell">
-                        <button type="button" class="table-action-btn" data-id="{{ e.id }}" data-date="{{ (e.display_date or e.date)|e }}" data-notes="{{ e.comment|default('', true)|e }}" data-category="{{ e.category|default('', true)|e }}" data-amount="{{ '%.0f'|format(e.amount or 0) }}" data-edit-url="{{ url_for('edit_expense', expense_id=e.id, return_to=request.full_path)|e }}">⋮</button>
+                        <button type="button" class="table-action-btn" data-id="{{ e.id }}" data-recurring="{{ 1 if e.is_fixed and e.expense_type != 'installments' else 0 }}" data-revision="{{ e.recurring_revision|default(0) }}" data-date="{{ (e.display_date or e.date)|e }}" data-notes="{{ e.comment|default('', true)|e }}" data-category="{{ e.category|default('', true)|e }}" data-amount="{{ '%.0f'|format(e.amount or 0) }}" data-edit-url="{{ url_for('edit_expense', expense_id=e.id, month=selected_month, return_to=request.full_path)|e }}">⋮</button>
                       </td>
                     </tr>
                   {% endfor %}
@@ -193,7 +200,7 @@
                       </td>
                       <td>{{ "%.0f"|format(e.amount or 0) }} ₪</td>
                       <td class="actions-cell">
-                        <button type="button" class="table-action-btn" data-id="{{ e.id }}" data-date="{{ (e.display_date or e.date)|e }}" data-notes="{{ e.comment|default('', true)|e }}" data-category="{{ e.category|default('', true)|e }}" data-amount="{{ '%.0f'|format(e.amount or 0) }}" data-edit-url="{{ url_for('edit_expense', expense_id=e.id, return_to=request.full_path)|e }}">⋮</button>
+                        <button type="button" class="table-action-btn" data-id="{{ e.id }}" data-recurring="{{ 1 if e.is_fixed and e.expense_type != 'installments' else 0 }}" data-revision="{{ e.recurring_revision|default(0) }}" data-date="{{ (e.display_date or e.date)|e }}" data-notes="{{ e.comment|default('', true)|e }}" data-category="{{ e.category|default('', true)|e }}" data-amount="{{ '%.0f'|format(e.amount or 0) }}" data-edit-url="{{ url_for('edit_expense', expense_id=e.id, month=selected_month, return_to=request.full_path)|e }}">⋮</button>
                       </td>
                     </tr>
                   {% endfor %}
@@ -207,7 +214,7 @@
                 {% if fixed_expenses %}
                   {% for e in fixed_expenses %}
                     <tr id="exp-{{ e.id }}" class="row-fixed">
-                      <td><input type="checkbox" name="selected_ids" value="{{ e.id }}" class="expense-checkbox"></td>
+                      <td><input type="checkbox" name="selected_ids" value="{{ e.id }}" class="expense-checkbox"><input type="hidden" name="recurring_revision_{{ e.id }}" value="{{ e.recurring_revision }}"></td>
                       <td>{{ e.display_date or e.date }}</td>
                       <td class="col-notes">
                         <strong>{{ e.comment or "ללא תיאור" }}</strong>
@@ -219,7 +226,7 @@
                       </td>
                       <td>{{ "%.0f"|format(e.amount or 0) }} ₪</td>
                       <td class="actions-cell">
-                        <button type="button" class="table-action-btn" data-id="{{ e.id }}" data-date="{{ (e.display_date or e.date)|e }}" data-notes="{{ e.comment|default('', true)|e }}" data-category="{{ e.category|default('', true)|e }}" data-amount="{{ '%.0f'|format(e.amount or 0) }}" data-edit-url="{{ url_for('edit_expense', expense_id=e.id, return_to=request.full_path)|e }}">⋮</button>
+                        <button type="button" class="table-action-btn" data-id="{{ e.id }}" data-recurring="{{ 1 if e.is_fixed and e.expense_type != 'installments' else 0 }}" data-revision="{{ e.recurring_revision|default(0) }}" data-date="{{ (e.display_date or e.date)|e }}" data-notes="{{ e.comment|default('', true)|e }}" data-category="{{ e.category|default('', true)|e }}" data-amount="{{ '%.0f'|format(e.amount or 0) }}" data-edit-url="{{ url_for('edit_expense', expense_id=e.id, month=selected_month, return_to=request.full_path)|e }}">⋮</button>
                       </td>
                     </tr>
                   {% endfor %}
@@ -245,7 +252,7 @@
               </tfoot>
             </table>
             <div style="margin-top: 12px;">
-              <button type="submit" onclick="return confirm('האם אתה בטוח שברצונך למחוק את כל ההוצאות שבחרת?') && confirm('בטוח בטוח? פעולה זו לא ניתנת לביטול!');" style="padding: 8px 16px; background: #dc2626; color: white; border: none; border-radius: 8px; cursor: pointer; font-family: 'Heebo', sans-serif; font-size: 14px;">מחק נבחרים</button>
+              <button type="submit" onclick="return confirm('רגילות יימחקו; קבועות יופסקו מהחודש שבחרת והעבר יישמר. להמשיך?');" style="padding: 8px 16px; background: #dc2626; color: white; border: none; border-radius: 8px; cursor: pointer; font-family: 'Heebo', sans-serif; font-size: 14px;">מחק רגילות / הפסק קבועות</button>
             </div>
           </form>
         </div>
@@ -430,17 +437,23 @@
         </div>
       </div>
 
+      <div id="recurring-stop-fields" class="compact-field" hidden>
+        <label for="modal-stop-month">להפסיק מחודש פיננסי</label>
+        <input type="month" class="compact-input" id="modal-stop-month" name="effective_month" value="{{ selected_month }}" form="expense-modal-delete-form">
+        <p>העבר יישמר; ההפסקה תבטל גם שינויים עתידיים שנקבעו.</p>
+      </div>
       <div class="expense-modal-actions">
         <a id="expense-modal-edit-link" href="#" class="modal-edit-btn">
           ✏️ עריכה
         </a>
-        <button type="button" class="modal-delete-btn" onclick="deleteExpenseFromModal()">
+        <button type="button" id="expense-modal-delete-button" class="modal-delete-btn" onclick="deleteExpenseFromModal()">
           🗑️ מחיקה
         </button>
       </div>
       
       <form id="expense-modal-delete-form" method="post" action="{{ url_for('delete_selected') }}" style="display: none;">
         <input type="hidden" name="selected_ids" id="expense-modal-delete-id">
+        <input type="hidden" name="recurring_revision" id="expense-modal-revision">
       </form>
     </div>
   </div>
@@ -592,6 +605,12 @@
 
       document.getElementById("expense-modal-edit-link").setAttribute("href", editUrl);
       document.getElementById("expense-modal-delete-id").value = id;
+      var recurring = btn.getAttribute('data-recurring') === '1';
+      document.getElementById('recurring-stop-fields').hidden = !recurring;
+      document.getElementById('modal-stop-month').disabled = !recurring;
+      document.getElementById('modal-stop-month').value = {{ selected_month|tojson }};
+      document.getElementById('expense-modal-revision').value = btn.getAttribute('data-revision') || '';
+      document.getElementById('expense-modal-delete-button').textContent = recurring ? '⏹ הפסק קבועה' : '🗑️ מחיקה';
 
       document.getElementById("expense-modal").classList.remove("hidden");
     }
@@ -601,7 +620,10 @@
     }
 
     function deleteExpenseFromModal() {
-      if (confirm('האם אתה בטוח שברצונך למחוק הוצאה זו?')) {
+      var recurring = !document.getElementById('recurring-stop-fields').hidden;
+      var month = document.getElementById('modal-stop-month').value;
+      if (recurring && !month) return;
+      if (confirm(recurring ? 'להפסיק מחודש ' + month + '? העבר יישמר ושינויים עתידיים יבוטלו.' : 'האם אתה בטוח שברצונך למחוק הוצאה זו?')) {
         document.getElementById('expense-modal-delete-form').submit();
       }
     }

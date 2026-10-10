@@ -14,9 +14,15 @@ if exist .venv\Scripts\activate.bat (
 
 REM הרצת סקריפט הגיבוי
 python backup_daily.py
+set "backup_exit_code=%errorlevel%"
 
 REM רישום לקובץ לוג
-echo Backup completed at %date% %time% >> backup_log.txt
+if "%backup_exit_code%"=="0" (
+    echo Backup completed at %date% %time% >> backup_log.txt
+) else (
+    echo Backup FAILED at %date% %time% ^(exit %backup_exit_code%^) >> backup_log.txt
+)
 
 REM סגירה
-deactivate
+call deactivate
+exit /b %backup_exit_code%

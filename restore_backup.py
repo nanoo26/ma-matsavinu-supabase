@@ -9,6 +9,8 @@ import requests
 from pathlib import Path
 from dotenv import load_dotenv
 
+TABLES = ("expenses", "budgets", "payment_plans")
+
 load_dotenv()
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "").rstrip("/")
@@ -52,61 +54,87 @@ def list_backups():
     return backups
 
 
-def restore_table(table_name, backup_folder, clear_existing=False):
-    """שחזור טבלה מגיבוי"""
+def load_backup_table(table_name, backup_folder):
+    """קריאת קובץ תקין; קובץ חסר אינו טבלה ריקה."""
+    if table_name not in TABLES:
+        raise ValueError("Unknown restore table")
     backup_file = backup_folder / f"{table_name}.json"
-    
-    if not backup_file.exists():
-        print(f"⚠️  לא נמצא גיבוי עבור {table_name}")
-        return 0
-    
     with open(backup_file, encoding="utf-8") as f:
         data = json.load(f)
-    
+    if not isinstance(data, list):
+        raise ValueError("Backup table must be a list")
+    ids = [row.get("id") if isinstance(row, dict) else None for row in data]
+    if any(type(row_id) is not int for row_id in ids) or len(set(ids)) != len(ids):
+        raise ValueError("Missing or duplicate backup ID")
+    return data
+
+
+def validate_backup(backup_folder, summary):
+    """בדיקת כל הקבצים והספירות לפני בקשת כתיבה ראשונה."""
+    if summary.get("status", "complete") != "complete":
+        raise ValueError("Backup is incomplete")
+    counts = summary["tables"]
+    for table in TABLES:
+        count = counts[table]
+        if type(count) is not int or count < 0 or len(load_backup_table(table, backup_folder)) != count:
+            raise ValueError("Backup count does not match")
+    total = summary["total_records"]
+    if type(total) is not int or total != sum(counts[table] for table in TABLES):
+        raise ValueError("Backup total does not match")
+
+
+def response_ids(resp):
+    """אימות תשובת return=representation בלי להציג את תוכנה."""
+    resp.raise_for_status()
+    if not 200 <= resp.status_code < 300:
+        raise ValueError("Unexpected restore HTTP status")
+    rows = resp.json()
+    if not isinstance(rows, list):
+        raise ValueError("Invalid restore response")
+    ids = [row.get("id") if isinstance(row, dict) else None for row in rows]
+    if any(type(row_id) is not int for row_id in ids) or len(set(ids)) != len(ids):
+        raise ValueError("Invalid response IDs")
+    return set(ids)
+
+
+def restore_table(table_name, backup_folder, clear_existing=False):
+    """שחזור טבלה; כשל מפסיק את התהליך במקום להחזיר אפס."""
+    data = load_backup_table(table_name, backup_folder)
     if not data:
-        print(f"⚠️  {table_name} ריק")
+        print(f"✅ {table_name}: טבלה ריקה, לא נדרשת הוספה")
         return 0
     
     url = f"{SUPABASE_URL}/rest/v1/{table_name}"
     
     # מחיקת נתונים קיימים (אם נדרש)
     if clear_existing:
-        confirm = input(f"⚠️  האם למחוק את כל הנתונים הקיימים ב-{table_name}? (yes/no): ")
-        if confirm.lower() == "yes":
-            try:
-                # מחיקה לפי ID (נניח שיש ID)
-                for record in data:
-                    if "id" in record:
-                        requests.delete(
-                            url,
-                            headers=supabase_headers(),
-                            params={"id": f"eq.{record['id']}"},
-                            timeout=10
-                        )
-                print(f"🗑️  נתונים קיימים נמחקו מ-{table_name}")
-            except Exception as e:
-                print(f"⚠️  שגיאה במחיקה: {e}")
-    
-    # הוספת הנתונים
-    try:
-        resp = requests.post(
-            url,
-            headers=supabase_headers(),
-            json=data,
-            timeout=30
-        )
-        
-        if resp.ok:
-            print(f"✅ {table_name}: {len(data)} רשומות שוחזרו")
-            return len(data)
-        else:
-            print(f"❌ שגיאה בשחזור {table_name}: {resp.status_code}")
-            print(f"   {resp.text}")
-            return 0
-            
-    except Exception as e:
-        print(f"❌ שגיאה בשחזור {table_name}: {e}")
-        return 0
+        confirm = input(f"⚠️  האם למחוק ב-{table_name} את הרשומות שמזהיהן בגיבוי? (yes/no): ")
+        if confirm.lower() != "yes":
+            raise RuntimeError("Restore cancelled before table deletion")
+        # אותה מחיקה ממוקדת לפי מזהי הגיבוי; אין הרחבה למחיקת כל הטבלה.
+        for record in data:
+            resp = requests.delete(
+                url,
+                headers=supabase_headers(),
+                params={"id": f"eq.{record['id']}"},
+                timeout=10,
+                allow_redirects=False
+            )
+            if not response_ids(resp).issubset({record["id"]}):
+                raise ValueError("Unexpected deleted IDs")
+        print(f"🗑️  הסתיימו בקשות המחיקה לפי מזהי הגיבוי ב-{table_name}")
+
+    resp = requests.post(
+        url,
+        headers=supabase_headers(),
+        json=data,
+        timeout=30,
+        allow_redirects=False
+    )
+    if response_ids(resp) != {row["id"] for row in data}:
+        raise ValueError("Inserted IDs do not match backup")
+    print(f"✅ {table_name}: {len(data)} רשומות שוחזרו")
+    return len(data)
 
 
 def main():
@@ -116,11 +144,19 @@ def main():
     print("="*50 + "\n")
     
     # הצגת גיבויים זמינים
-    backups = list_backups()
+    try:
+        backups = list_backups()
+        for backup in backups:
+            summary = backup["summary"]
+            if not isinstance(summary, dict) or not {"backup_date", "backup_time", "total_records", "tables"}.issubset(summary):
+                raise ValueError("Invalid backup summary")
+    except Exception as exc:
+        print(f"❌ לא ניתן לקרוא את רשימת הגיבויים ({type(exc).__name__}).")
+        return 1
     
     if not backups:
         print("❌ לא נמצאו גיבויים")
-        return
+        return 1
     
     print("גיבויים זמינים:\n")
     for i, backup in enumerate(backups, 1):
@@ -133,15 +169,18 @@ def main():
     # בחירת גיבוי
     try:
         choice = int(input("בחר מספר גיבוי לשחזור (0 לביטול): "))
-        if choice == 0 or choice > len(backups):
+        if choice == 0:
             print("בוטל.")
-            return
+            return 0
+        if choice < 1 or choice > len(backups):
+            print("❌ בחירה לא תקינה")
+            return 1
         
         selected_backup = backups[choice - 1]
         
     except ValueError:
         print("❌ בחירה לא תקינה")
-        return
+        return 1
     
     print(f"\n📂 נבחר: {selected_backup['name']}\n")
     
@@ -149,7 +188,7 @@ def main():
     confirm = input("⚠️  האם לשחזר את הגיבוי הזה? (yes/no): ")
     if confirm.lower() != "yes":
         print("בוטל.")
-        return
+        return 0
     
     clear = input("האם למחוק נתונים קיימים לפני השחזור? (yes/no): ")
     clear_existing = (clear.lower() == "yes")
@@ -157,18 +196,22 @@ def main():
     # שחזור
     print("\n🔄 מתחיל שחזור...\n")
     
-    tables = ["expenses", "budgets", "payment_plans"]
     stats = {}
-    
-    for table in tables:
-        count = restore_table(table, selected_backup["path"], clear_existing)
-        stats[table] = count
+    try:
+        validate_backup(selected_backup["path"], selected_backup["summary"])
+        for table in TABLES:
+            stats[table] = restore_table(table, selected_backup["path"], clear_existing)
+    except Exception as exc:
+        print(f"❌ השחזור נעצר ולא סומן כמושלם ({type(exc).__name__}).")
+        print("⚠️ אם נשלחו בקשות כתיבה, ייתכן שנותר שחזור חלקי; אין להריץ שוב אוטומטית.")
+        return 1
     
     print("\n" + "="*50)
     print("✅ שחזור הושלם!")
     print(f"📊 סה\"כ רשומות ששוחזרו: {sum(stats.values())}")
     print("="*50 + "\n")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
