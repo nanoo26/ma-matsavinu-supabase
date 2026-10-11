@@ -1,19 +1,19 @@
-<nav class="main-tabs">
+<nav class="main-tabs" aria-label="ניווט ראשי">
   <a href="{{ url_for('expenses', month=selected_month) if selected_month else url_for('expenses') }}"
      class="main-tab {% if active_tab == 'expenses' %}active{% endif %}">
-    <span class="tab-icon">💳</span>
+    <span class="tab-icon material-icons" aria-hidden="true">credit_card</span>
     <span class="tab-label">הוצאות</span>
   </a>
 
   <a href="{{ url_for('reports', month=selected_month) if selected_month else url_for('reports') }}"
      class="main-tab {% if active_tab == 'reports' %}active{% endif %}">
-    <span class="tab-icon">📈</span>
+    <span class="tab-icon material-icons" aria-hidden="true">bar_chart</span>
     <span class="tab-label">דוחות</span>
   </a>
 
   <a href="{{ url_for('budget', month=selected_month) if selected_month else url_for('budget') }}"
      class="main-tab {% if active_tab == 'budget' %}active{% endif %}">
-    <span class="tab-icon">💰</span>
+    <span class="tab-icon material-icons" aria-hidden="true">account_balance_wallet</span>
     <span class="tab-label">תקציב</span>
   </a>
 </nav>

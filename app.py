@@ -2,7 +2,7 @@ import os
 import re
 import math
 import requests
-from flask import Flask, render_template, request, redirect, url_for, flash, session
+from flask import Flask, render_template, request, redirect, url_for, flash, session, g, has_request_context
 from datetime import datetime, date
 from calendar import monthrange
 from dotenv import load_dotenv
@@ -64,6 +64,8 @@ INCOME_CATEGORIES = (
     "ביטוח לאומי",
     "קצבת ילדים",
 )
+
+SAVINGS_GOAL_CATEGORY = "יעד חיסכון"
 
 
 # =========================
@@ -260,6 +262,123 @@ def calc_total_income_from_budgets(budgets):
         if cat in INCOME_CATEGORIES:
             total += parse_amount(row.get("amount", 0))
     return total
+
+
+def mark_financial_read_failure(source):
+    """Keep existing fetch return contracts; never treat a failed read as zero spending."""
+    if has_request_context() and request.endpoint in ("expenses", "reports"):
+        g.financial_read_errors = getattr(g, "financial_read_errors", set()) | {source}
+
+
+def financial_amount(value):
+    try:
+        amount = float(str(value).replace(",", "").strip())
+        return amount if math.isfinite(amount) else None
+    except (TypeError, ValueError):
+        return None
+
+
+def savings_goal_from_budgets(budgets):
+    goals = [row for row in budgets if (row.get("category") or "").strip() == SAVINGS_GOAL_CATEGORY]
+    if not goals:
+        return 0.0
+    if len(goals) != 1:
+        return None
+    amount = financial_amount(goals[0].get("amount"))
+    return amount if amount is not None and amount >= 0 else None
+
+
+def monthly_expenses(rows, plans, month, report_dates=False):
+    """Resolve the same monthly charges for both screens, without guessing missing plans."""
+    start, end = financial_range_for_month(month)
+    year, month_number = map(int, month.split("-"))
+    resolved, unresolved = [], []
+    for original in rows:
+        row = original.copy()
+        try:
+            if is_recurring_expense(row):
+                row = recurring_for_month(row, month)
+                if row is None:
+                    continue
+                if row.get("amount") != original.get("amount"):
+                    row.pop("financial_amount_invalid", None)
+        except RecurringEditError:
+            unresolved.append(dict(original, financial_issue="היסטוריית הקבועה אינה תקינה"))
+            continue
+        parsed = parse_any_date(row.get("raw_date") or row.get("date"))
+        if not parsed:
+            unresolved.append(dict(row, financial_issue="חסר תאריך תקין לשיוך לחודש"))
+            continue
+        fy, fm = financial_label_for_date(parsed.date())
+        offset = month_diff(fy, fm, year, month_number)
+        kind = "standing" if is_recurring_expense(row) else normalize_expense_type_code(row.get("expense_type"))
+        row.update(expense_type=kind, is_fixed=kind != "single", _parsed_date=parsed)
+        row["display_date"] = display_date(row.get("raw_date") or row.get("date"))
+        if offset < 0 or (kind == "single" and not start <= parsed.date() <= end):
+            continue
+        if kind == "installments":
+            plan = plans.get(int(row["id"])) if row.get("id") else None
+            count_value = financial_amount((plan or {}).get("installments_count"))
+            count = int(count_value) if count_value is not None and count_value.is_integer() and count_value > 0 else 0
+            if count and offset >= count:
+                continue
+            payment = financial_amount((plan or {}).get("payment_amount"))
+            total = financial_amount((plan or {}).get("total_amount"))
+            if count and (payment is None or payment <= 0) and total is not None and total > 0:
+                payment = round(total / count, 2)
+            if not count or payment is None or payment <= 0:
+                unresolved.append(dict(row, financial_issue="חסרה תוכנית תשלומים תקינה: מספר תשלומים וחיוב חודשי"))
+                continue
+            row.update(amount=payment, current_installment=offset + 1, total_installments=count)
+        else:
+            amount = financial_amount(row.get("amount"))
+            if amount is None or row.get("financial_amount_invalid"):
+                unresolved.append(dict(row, financial_issue="חסר סכום תקין"))
+                continue
+            row["amount"] = amount
+        if report_dates and kind != "single":
+            row.update(_parsed_date=datetime.combine(end, datetime.min.time()),
+                       date=end.strftime("%d/%m/%Y"), display_date=end.strftime("%d/%m/%Y"))
+        resolved.append(row)
+    return sort_expenses_by_display_date_desc(resolved), unresolved
+
+
+def monthly_financial_summary(rows, budgets, month, unresolved):
+    """Reserve savings before single expenses; filters never apply."""
+    errors = getattr(g, "financial_read_errors", set()) if has_request_context() else set()
+    savings_goal = savings_goal_from_budgets(budgets) if "budgets" not in errors else None
+    if savings_goal is None:
+        errors = errors | {"savings_goal"}
+    complete = not unresolved and not errors
+    income = calc_total_income_from_budgets(budgets) if "budgets" not in errors else None
+    fixed = sum(e["amount"] for e in rows if e["expense_type"] == "standing")
+    installments = sum(e["amount"] for e in rows if e["expense_type"] == "installments")
+    singles = sum(e["amount"] for e in rows if e["expense_type"] == "single")
+    commitments = fixed + installments
+    available = income - commitments - savings_goal if complete else None
+    remaining = available - singles if complete else None
+    start, end = financial_range_for_month(month)
+    today = date.today()
+    current = start <= today <= end
+    days = (end - today).days + 1 if current else None
+    return {
+        "complete": complete, "read_errors": sorted(errors),
+        "total_income": income,
+        "savings_goal": savings_goal,
+        "fixed_expenses": fixed if complete else None,
+        "installments_this_month": installments if complete else None,
+        "total_commitments": commitments if complete else None,
+        "available_for_luxuries": available, "already_spent": singles if complete else None,
+        "known_single_spent": singles,
+        "can_still_spend": remaining, "days_remaining": days,
+        "daily_average": remaining / days if current and complete else None,
+        "daily_average_applicable": current and complete, "is_current_financial_month": current,
+        "usage_percent": singles / available * 100 if available is not None and available > 0 else None,
+        "total_spent": commitments + singles if complete else None,
+        "known_total_spent": commitments + singles,
+        "total_fixed": commitments if complete else None, "luxury_amount": available,
+        "total_diff": remaining,
+    }
 
 
 def apply_common_filters(expenses, category_filter, payment_filter, expense_type_filter):
@@ -506,11 +625,14 @@ def fetch_expenses():
             timeout=10,
         )
         resp.raise_for_status()
-    except requests.exceptions.RequestException as e:
-        print("❌ שגיאה בשליפת הוצאות מ-Supabase:", e)
+        data = resp.json()
+        if not isinstance(data, list) or any(not isinstance(row, dict) for row in data):
+            raise ValueError("Invalid expenses response")
+    except (requests.exceptions.RequestException, ValueError) as e:
+        mark_financial_read_failure("expenses")
+        print("Expenses read failed:", type(e).__name__)
         return []
 
-    data = resp.json()
     expenses = []
     for row in data:
         amount_val = parse_amount(row.get("amount", 0))
@@ -525,6 +647,7 @@ def fetch_expenses():
                 "display_date": display_date(raw_date),
                 "category": row.get("category") or "",
                 "amount": amount_val,
+                "financial_amount_invalid": financial_amount(row.get("amount")) is None,
                 "payment_method": row.get("payment_method") or "",
                 "comment": comment,
                 "is_fixed": bool(row.get("is_fixed")),
@@ -594,8 +717,11 @@ def fetch_payment_plans_map():
         )
         resp.raise_for_status()
         data = resp.json()
+        if not isinstance(data, list) or any(not isinstance(row, dict) for row in data):
+            raise ValueError("Invalid payment plans response")
     except Exception as e:
-        print("שגיאה בשליפת כל תכניות התשלומים:", e)
+        mark_financial_read_failure("plans")
+        print("Payment plans read failed:", type(e).__name__)
         return {}
 
     plans = {}
@@ -611,25 +737,28 @@ def fetch_payment_plans_map():
             or row.get("total_payments")
             or 0
         )
-        try:
-            installments = int(installments or 0)
-        except ValueError:
-            installments = 0
+        count_value = financial_amount(installments)
+        installments = int(count_value) if count_value is not None and count_value.is_integer() and count_value > 0 else 0
 
         # סכום חודשי
         payment_amount = row.get("payment_amount")
         try:
             payment_amount = float(payment_amount) if payment_amount is not None else 0.0
-        except ValueError:
+        except (TypeError, ValueError, OverflowError):
             payment_amount = 0.0
 
         total_amount = row.get("total_amount")
         try:
             total_amount = float(total_amount) if total_amount is not None else 0.0
-        except ValueError:
+        except (TypeError, ValueError, OverflowError):
             total_amount = 0.0
 
-        plans[int(exp_id)] = {
+        try:
+            exp_id = int(exp_id)
+        except (TypeError, ValueError, OverflowError):
+            mark_financial_read_failure("plans")
+            continue
+        plans[exp_id] = {
             "installments_count": installments,
             "payment_amount": payment_amount,
             "total_amount": total_amount,
@@ -706,16 +835,21 @@ def fetch_budgets_for_month(month):
         )
         resp.raise_for_status()
         data = resp.json()
+        if not isinstance(data, list) or any(not isinstance(row, dict) for row in data):
+            raise ValueError("Invalid budgets response")
+        if any(financial_amount(row.get("amount")) is None for row in data):
+            mark_financial_read_failure("budgets")
         return [
             {
                 "category": row.get("category", ""),
-                "amount": parse_amount(row.get("amount") or 0),
+                "amount": financial_amount(row.get("amount")) or 0,
                 "previous_amount": parse_amount(row.get("previous_amount") or 0),
             }
             for row in data
         ]
     except Exception as e:
-        print("שגיאה בשליפת תקציב:", e)
+        mark_financial_read_failure("budgets")
+        print("Budgets read failed:", type(e).__name__)
         return []
 
 
@@ -875,105 +1009,9 @@ def expenses():
     payment_filter = request.args.get("payment_filter", "")
     expense_type_filter = request.args.get("expense_type", "")
 
-    # כל ההוצאות גולמיות
-    expenses_raw = fetch_expenses()
-
-    # טווח תאריכים של החודש הפיננסי
-    try:
-        target_year, target_month = map(int, selected_month.split("-"))
-    except ValueError:
-        target_year, target_month = financial_label_for_date(date.today())
-
-    start_date, end_date = financial_range_for_month(selected_month)
-
-    # ניסיון לפרש תאריך לכל הוצאה
-    enriched = []
-    for e in expenses_raw:
-        if is_recurring_expense(e):
-            e = recurring_for_month(e, selected_month)
-            if e is None:
-                continue
-        parsed_date = parse_any_date(e.get("raw_date") or e.get("date"))
-        if parsed_date:
-            e["_parsed_date"] = parsed_date
-        enriched.append(e)
-
-    # כל תכניות התשלומים
-    plans_map = fetch_payment_plans_map()
-
-    adjusted_expenses = []
-    for e in enriched:
-        exp_id = e.get("id")
-        plan = plans_map.get(int(exp_id)) if exp_id and not is_recurring_expense(e) else None
-        dt = e.get("_parsed_date")
-
-        # אם אין תאריך מפוענח - לא מסננים לפי טווח (נכניס כמו שהוא)
-        if not dt:
-            adjusted_expenses.append(e)
-            continue
-
-        base_date = dt.date()
-        is_fixed = bool(e.get("is_fixed"))
-
-        # בלי תכנית תשלומים
-        if not plan:
-            if is_fixed:
-                # הוצאה קבועה - מופיעה בכל חודש פיננסי מאותו חודש והלאה
-                start_label_year, start_label_month = financial_label_for_date(base_date)
-                months_diff_val = month_diff(start_label_year, start_label_month, target_year, target_month)
-                if months_diff_val >= 0:
-                    adjusted_expenses.append(e)
-            else:
-                # הוצאה רגילה - רק אם נופלת בתוך החודש הפיננסי
-                if start_date <= base_date <= end_date:
-                    adjusted_expenses.append(e)
-            continue
-
-        # יש תכנית תשלומים
-        num_payments = plan.get("installments_count", 0)
-
-        # אם מוגדרת תכנית אבל רק תשלום אחד - מתנהג כמו רגילה/קבועה
-        if num_payments <= 1:
-            if is_fixed:
-                start_label_year, start_label_month = financial_label_for_date(base_date)
-                months_diff_val = month_diff(start_label_year, start_label_month, target_year, target_month)
-                if months_diff_val >= 0:
-                    adjusted_expenses.append(e)
-            else:
-                if start_date <= base_date <= end_date:
-                    adjusted_expenses.append(e)
-            continue
-
-        # כמה חודשים עברו מאז תחילת הפריסה (לפי חודש פיננסי)
-        start_label_year, start_label_month = financial_label_for_date(base_date)
-        months_diff_val = month_diff(start_label_year, start_label_month, target_year, target_month)
-
-        # לפני תחילת פריסה או אחרי סיום - לא נכנס לחודש הזה
-        if months_diff_val < 0 or months_diff_val >= num_payments:
-            continue
-
-        current_installment = months_diff_val + 1
-
-        # סכום חודשי
-        monthly_amount = plan.get("payment_amount") or 0
-        try:
-            monthly_amount = float(monthly_amount)
-        except ValueError:
-            monthly_amount = 0.0
-
-        if monthly_amount <= 0:
-            total_amount_plan = plan.get("total_amount") or 0
-            try:
-                total_amount_plan = float(total_amount_plan)
-            except ValueError:
-                total_amount_plan = 0.0
-            monthly_amount = round(total_amount_plan / num_payments, 2) if num_payments > 0 else 0.0
-
-        new_e = e.copy()
-        new_e["amount"] = monthly_amount
-        new_e["current_installment"] = current_installment
-        new_e["total_installments"] = num_payments
-        adjusted_expenses.append(new_e)
+    adjusted_expenses, unresolved_expenses = monthly_expenses(
+        fetch_expenses(), fetch_payment_plans_map(), selected_month
+    )
 
     # פילטרים (קטגוריה / קבועות / אמצעי תשלום / סוג הוצאה)
     filtered_expenses = apply_common_filters(
@@ -994,20 +1032,13 @@ def expenses():
     total_budget = sum(
         b["amount"]
         for b in budgets
-        if (b.get("category") or "").strip() not in INCOME_CATEGORIES
+        if (b.get("category") or "").strip() not in (*INCOME_CATEGORIES, SAVINGS_GOAL_CATEGORY)
     )
 
-    # הוצאות חד פעמיות בלבד (לסוללה) - כלומר לא is_fixed
-    spent_single = sum(
-        e.get("amount", 0)
-        for e in expenses_for_view
-        if not e.get("is_fixed")
-    )
-
-    # אחוז ניצול מתוך ההכנסות (לא מתוך התקציב)
-    battery_percent = 0
-    if total_income > 0:
-        battery_percent = min(100, round((spent_single / total_income) * 100, 1))
+    summary = monthly_financial_summary(adjusted_expenses, budgets, selected_month, unresolved_expenses)
+    spent_single = summary["already_spent"]
+    battery_percent = (spent_single / total_income * 100) if summary["complete"] and total_income > 0 else None
+    commitments_list = [e for e in adjusted_expenses if e["expense_type"] != "single"]
 
     # מיון לפי סוג: חד פעמי -> תשלומים -> קבועות
     def get_expense_type_priority(e):
@@ -1064,6 +1095,9 @@ def expenses():
         total_income=total_income,       # זה הנתון שמגיע לעמוד הוצאות
         spent_single=spent_single,
         battery_percent=battery_percent,
+        summary=summary,
+        unresolved_expenses=unresolved_expenses,
+        commitments_list=commitments_list,
         active_tab="expenses",
         selected_month=selected_month,
         category_filter=category_filter,
@@ -1328,9 +1362,17 @@ def budget():
         or session.get("selected_month")
         or current_month()
     )
+    if request.method == "POST" and request.form.get("save_savings_goal") == "1":
+        try:
+            recurring_month(month)
+            financial_range_for_month(month)
+        except (ValueError, RecurringEditError):
+            flash("יש לבחור חודש פיננסי תקין ליעד החיסכון", "error")
+            return redirect(url_for("budget", month=current_month()))
     session["selected_month"] = month
 
     # שליפת נתוני תקציב לחודש מה-DB
+    budget_read_ok = True
     try:
         resp = requests.get(
             SUPABASE_BUDGETS_URL,
@@ -1341,9 +1383,58 @@ def budget():
 
         resp.raise_for_status()
         budgets_data = resp.json()
+        if not isinstance(budgets_data, list) or any(not isinstance(row, dict) for row in budgets_data):
+            raise ValueError("Invalid budgets response")
     except Exception as e:
-        print("שגיאה בשליפת תקציב:", e)
+        print("Budgets read failed:", type(e).__name__)
         budgets_data = []
+        budget_read_ok = False
+
+    if request.method == "POST" and not budget_read_ok:
+        flash("התקציב לא נטען; לא בוצעה שמירה כדי לשמור על הנתונים הקיימים", "error")
+        target = url_for("budget", month=month)
+        return redirect(target + ("#savings-goal" if request.form.get("save_savings_goal") == "1" else ""))
+
+    savings_goal = savings_goal_from_budgets(budgets_data) if budget_read_ok else None
+    if request.method == "POST" and request.form.get("save_savings_goal") == "1":
+        amount = financial_amount(request.form.get("savings_goal"))
+        goal_rows = [row for row in budgets_data if row.get("category") == SAVINGS_GOAL_CATEGORY]
+        if amount is None or amount < 0:
+            flash("יעד החיסכון חייב להיות סכום תקין של 0 או יותר", "error")
+        elif not budget_read_ok or len(goal_rows) > 1:
+            flash("לא ניתן לשמור יעד חיסכון עד לטעינת תקציב תקין", "error")
+        else:
+            headers = supabase_headers().copy()
+            headers["Prefer"] = "return=representation"
+            try:
+                if goal_rows:
+                    response = requests.patch(
+                        SUPABASE_BUDGETS_URL, headers=headers,
+                        params={"month": f"eq.{month}", "category": f"eq.{SAVINGS_GOAL_CATEGORY}"},
+                        json={"amount": amount}, timeout=20, allow_redirects=False,
+                    )
+                elif amount == 0:
+                    # No target: no new record is needed.
+                    response = None
+                else:
+                    response = requests.post(
+                        SUPABASE_BUDGETS_URL, headers=headers,
+                        json=[{"month": month, "category": SAVINGS_GOAL_CATEGORY, "amount": amount}],
+                        timeout=20, allow_redirects=False,
+                    )
+                if response is not None:
+                    response.raise_for_status()
+                    saved = response.json()
+                    if (not isinstance(saved, list) or len(saved) != 1
+                            or saved[0].get("month") != month
+                            or saved[0].get("category") != SAVINGS_GOAL_CATEGORY
+                            or financial_amount(saved[0].get("amount")) != amount):
+                        raise ValueError("Savings goal save was not confirmed")
+                flash("יעד החיסכון נשמר" if amount > 0 else "לא הוגדר יעד חיסכון לחודש", "success")
+            except (requests.exceptions.RequestException, ValueError, TypeError, AttributeError) as error:
+                print("Savings goal save failed:", type(error).__name__)
+                flash("שמירת יעד החיסכון לא אושרה. יש לטעון מחדש ולבדוק את הסכום", "error")
+        return redirect(url_for("budget", month=month) + "#savings-goal")
 
     # קטגוריות תקציב (בלי הכנסות)
     categories = [
@@ -1384,7 +1475,7 @@ def budget():
             prev_month_budgets[cat] = amount
                 
     except Exception as e:
-        print(f"שגיאה בשליפת תקציב חודש קודם ({prev_month}):", e)
+        print("Previous budget read failed:", type(e).__name__)
 
     # בניית רשימת תקציבים מסודרת ל-template
     budgets = []
@@ -1431,7 +1522,7 @@ def budget():
     total_budget = sum(b["amount"] for b in budgets)
 
     # כמה נשאר אחרי התקציבים (הכנסה פחות מה שתיקצבתי)
-    net_after_budget = total_income - total_budget
+    net_after_budget = total_income - total_budget - savings_goal if savings_goal is not None else None
 
     # ============ POST - שמירת תקציב ============ #
     if request.method == "POST":
@@ -1498,14 +1589,17 @@ def budget():
 
         # 3. מחיקת התקציב הקודם לחודש
         try:
-            requests.delete(
+            delete_response = requests.delete(
                 SUPABASE_BUDGETS_URL,
                 headers=supabase_headers(),
-                params={"month": f"eq.{month}"},
+                params={"month": f"eq.{month}", "category": f"neq.{SAVINGS_GOAL_CATEGORY}"},
                 timeout=10,
             )
+            delete_response.raise_for_status()
         except Exception as e:
-            print("שגיאה במחיקת תקציב קודם:", e)
+            print("Budget replacement failed:", type(e).__name__)
+            flash("לא ניתן לשמור את התקציב כעת", "error")
+            return redirect(url_for("budget", month=month))
 
         # 4. הוספת התקציב החדש
         try:
@@ -1540,6 +1634,8 @@ def budget():
         total_income=total_income,
         total_budget=total_budget,
         net_after_budget=net_after_budget,
+        savings_goal=savings_goal,
+        budget_read_ok=budget_read_ok,
         active_tab="budget",
     )
 
@@ -1594,125 +1690,10 @@ def reports():
     budgets = fetch_budgets_for_month(selected_month)
     budgets_map = {row["category"]: parse_amount(row["amount"]) for row in budgets}
 
-    # חישוב הכנסות
-    total_income = calc_total_income_from_budgets(budgets)
-
-    # ---------------------------------------------------------
-    # שליפת הוצאות גולמיות (ללא עיבוד תשלומים)
-    # ---------------------------------------------------------
-    expenses_list = fetch_expenses()
-
-    # מיון ראשוני לפי created_at (ישן לחדש לצורך דוחות)
-    expenses_list = sorted(
-        expenses_list,
-        key=lambda e: e.get("created_at") or "",
-        reverse=False,
+    all_month_expenses, unresolved_expenses = monthly_expenses(
+        sorted(fetch_expenses(), key=lambda e: e.get("created_at") or ""),
+        fetch_payment_plans_map(), selected_month, report_dates=True
     )
-
-    # ---------------------------------------------------------
-    # פרסינג תאריכים וחישוב חודש פיננסי לכל הוצאה
-    # ---------------------------------------------------------
-    base_expenses = []
-    for e in expenses_list:
-        if is_recurring_expense(e):
-            e = recurring_for_month(e, selected_month)
-            if e is None:
-                continue
-        parsed_date = parse_any_date(e.get("raw_date") or e.get("date"))
-        if not parsed_date:
-            continue
-
-        fy, fm = financial_label_for_date(parsed_date.date())
-        e_copy = e.copy()
-        e_copy["_parsed_date"] = parsed_date
-        e_copy["_fin_year"] = fy
-        e_copy["_fin_month"] = fm
-        e_copy["expense_type"] = normalize_expense_type_code(e_copy.get("expense_type"))
-        e_copy["amount"] = parse_amount(e_copy.get("amount"))
-        e_copy["display_date"] = display_date(e_copy.get("raw_date") or e_copy.get("date"))
-        base_expenses.append(e_copy)
-
-    # ---------------------------------------------------------
-    # תשלומים – טבלת תוכניות תשלומים
-    # ---------------------------------------------------------
-    plans_map = fetch_payment_plans_map()
-
-    all_month_expenses = []
-    installments_current_month = 0.0
-    remaining_installments_total = 0.0
-    fixed_monthly = 0.0
-
-    for e in base_expenses:
-        etype = e.get("expense_type") or "single"
-        fy = e["_fin_year"]
-        fm = e["_fin_month"]
-
-        # חד פעמית
-        if etype == "single":
-            if fy == target_year and fm == target_month:
-                all_month_expenses.append(e)
-            continue
-
-        # הוראת קבע
-        if etype == "standing":
-            diff = month_diff(fy, fm, target_year, target_month)
-            if diff >= 0:
-                em = e.copy()
-                em["_parsed_date"] = datetime.combine(end_date, datetime.min.time())
-                em["date"] = end_date.strftime("%d/%m/%Y")
-                em["display_date"] = display_date(em["date"])
-                all_month_expenses.append(em)
-                fixed_monthly += em["amount"]
-            continue
-
-        # תשלומים
-        if etype == "installments":
-            exp_id = e.get("id")
-            plan = plans_map.get(int(exp_id)) if exp_id else None
-
-            if not plan:
-                if fy == target_year and fm == target_month:
-                    all_month_expenses.append(e)
-                continue
-
-            num_payments = plan.get("installments_count", 0) or 0
-            if num_payments <= 0:
-                continue
-
-            monthly_amount = plan.get("payment_amount") or 0
-            try:
-                monthly_amount = float(monthly_amount)
-            except Exception:
-                monthly_amount = 0.0
-
-            if monthly_amount <= 0:
-                total_amount = parse_amount(plan.get("total_amount") or 0)
-                monthly_amount = round(total_amount / num_payments, 2) if num_payments > 0 else 0
-
-            diff = month_diff(fy, fm, target_year, target_month)
-            if diff < 0 or diff >= num_payments:
-                continue
-
-            em = e.copy()
-            em["amount"] = monthly_amount
-            em["current_installment"] = diff + 1
-            em["total_installments"] = num_payments
-            em["_parsed_date"] = datetime.combine(end_date, datetime.min.time())
-            em["date"] = end_date.strftime("%d/%m/%Y")
-            em["display_date"] = display_date(em["date"])
-
-            all_month_expenses.append(em)
-            installments_current_month += monthly_amount
-
-            # תשלומים שנשארו לחודשים הבאים
-            remaining_after = num_payments - (diff + 1)
-            if remaining_after > 0:
-                remaining_installments_total += remaining_after * monthly_amount
-
-    # ---------------------------------------------------------
-    # מיון סופי לפי תאריך התצוגה בפועל, מהחדש לישן
-    # ---------------------------------------------------------
-    all_month_expenses = sort_expenses_by_display_date_desc(all_month_expenses)
 
     # ---------------------------------------------------------
     # פילטרים
@@ -1773,71 +1754,14 @@ def reports():
 
     payment_rows = build_payment_rows(expenses_for_display)
 
-    # ---------------------------------------------------------
-    # סיכומים חדשים - "מה נשאר לי?"
-    # ---------------------------------------------------------
-    
-    # 1. הכנסות
-    total_income = calc_total_income_from_budgets(budgets)
-    
-    # 2. התחייבויות קבועות
-    fixed_expenses_list = [e for e in all_month_expenses if e.get("expense_type") == "standing"]
-    installments_list = [e for e in all_month_expenses if e.get("expense_type") == "installments"]
-    fixed_expenses = sum(e["amount"] for e in fixed_expenses_list)
-    installments_this_month = installments_current_month
-    total_commitments = fixed_expenses + installments_this_month
-    commitments_list = fixed_expenses_list + installments_list
-    
-    # 3. נשאר למותרות
-    available_for_luxuries = total_income - total_commitments
-    
-    # 4. כבר הוצאת החודש (רק חד-פעמיות)
-    already_spent_list = [e for e in all_month_expenses if e.get("expense_type") == "single"]
-    already_spent = sum(e["amount"] for e in already_spent_list)
-    
-    # 5. עוד יכול להוציא
-    can_still_spend = available_for_luxuries - already_spent
-    
-    # 6. ימים נותרים + ממוצע יומי
-    is_current_financial_month = start_date <= today <= end_date
-    if is_current_financial_month:
-        days_remaining = max(1, (end_date - today).days)
-        daily_average = can_still_spend / days_remaining
-    else:
-        days_remaining = None
-        daily_average = None
-    
-    # אחוז ניצול
-    usage_percent = (already_spent / available_for_luxuries * 100) if available_for_luxuries > 0 else 0
-    
-    # סיכומים ישנים (לתאימות אחורה)
-    total_spent = sum(e["amount"] for e in all_month_expenses)
-    total_spent_filtered = sum(e["amount"] for e in expenses_for_display)
-    monthly_budget = sum(val for cat, val in budgets_map.items() if cat not in INCOME_CATEGORIES)
-
-    summary = {
-        # חדש
-        "total_income": total_income,
-        "fixed_expenses": fixed_expenses,
-        "installments_this_month": installments_this_month,
-        "total_commitments": total_commitments,
-        "available_for_luxuries": available_for_luxuries,
-        "already_spent": already_spent,
-        "can_still_spend": can_still_spend,
-        "days_remaining": days_remaining,
-        "daily_average": daily_average,
-        "daily_average_applicable": is_current_financial_month,
-        "is_current_financial_month": is_current_financial_month,
-        "usage_percent": usage_percent,
-        # ישן (לתאימות)
-        "total_spent": total_spent,
-        "total_spent_filtered": total_spent_filtered,
-        "total_fixed": total_commitments,
-        "monthly_budget": monthly_budget,
-        "luxury_amount": available_for_luxuries,
-        "total_budget": monthly_budget,
-        "total_diff": total_income - total_spent,
-    }
+    summary = monthly_financial_summary(all_month_expenses, budgets, selected_month, unresolved_expenses)
+    commitments_list = [e for e in all_month_expenses if e["expense_type"] != "single"]
+    already_spent_list = [e for e in all_month_expenses if e["expense_type"] == "single"]
+    monthly_budget = sum(val for cat, val in budgets_map.items() if cat not in (*INCOME_CATEGORIES, SAVINGS_GOAL_CATEGORY))
+    summary.update(
+        total_spent_filtered=sum(e["amount"] for e in expenses_for_display),
+        monthly_budget=monthly_budget, total_budget=monthly_budget,
+    )
 
     now_local = datetime.now()
 
@@ -1851,6 +1775,7 @@ def reports():
         categories=CATEGORIES,
         payment_methods=PAYMENT_METHODS,
         summary=summary,
+        unresolved_expenses=unresolved_expenses,
         category_rows=category_rows,
         expenses_by_category=expenses_by_category,
         expenses_by_payment=expenses_by_payment,
