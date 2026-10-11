@@ -3,14 +3,17 @@
 <head>
   <meta charset="utf-8">
   <title>מה מצבינו - הוספת הוצאה</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=clear3">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <script src="{{ url_for('static', filename='clear-navigation.js') }}?v=2" defer></script>
+  <script src="{{ url_for('static', filename='clear-controls.js') }}?v=1" defer></script>
 </head>
-<body class="add-expense-page">
+<body class="clear-ui add-expense-page">
   <div class="app-shell">
     <header class="app-header">
-      <h1 class="app-title">מה מצבינו</h1>
-      <p class="app-subtitle">הוספת הוצאה חדשה</p>
+      <a class="app-title" href="{{ url_for('expenses', month=selected_month) }}">מה מצבינו</a>
+      <h1 class="app-subtitle">הוספת הוצאה</h1>
       {% include "tabs.html" %}
     </header>
 
@@ -32,28 +35,29 @@
 
           <!-- מתי וכמה - התחלת הזנה מהירה -->
           <div class="field-row">
-            <div class="compact-field half-width">
-              <label>מתי?</label>
+            <div class="compact-field half-width clear-date-field">
+              <label for="date">תאריך</label>
               <input type="date" name="date" id="date" value="{{ today or '' }}" required>
               <div class="field-error" id="date-error" aria-live="polite"></div>
             </div>
 
-            <div class="compact-field half-width">
-              <label>כמה?</label>
-              <div class="selected-display" id="amount-display" onclick="openAmountModal()" tabindex="0" role="button" aria-label="הזנת סכום">
-                <span id="amount-text">0.00 ₪</span>
-                <span class="arrow">🔢</span>
+            <div class="compact-field half-width clear-amount-field">
+              <label for="amount" id="amount-label"><a class="drill-link" href="#amount" data-form-field="amount">סכום ההוצאה</a></label>
+              <div class="clear-amount-wrap">
+                <input type="text" name="amount" id="amount" required inputmode="decimal" autocomplete="off" dir="ltr" placeholder="0.00">
+                <span class="currency-label">₪</span>
+                <button type="button" id="amount-display" class="amount-keypad" onclick="openAmountModal()" aria-label="פתיחת מקלדת סכום"><span class="material-icons clear-icon" aria-hidden="true">dialpad</span></button>
+                <span id="amount-text" hidden></span>
               </div>
-              <input type="hidden" name="amount" id="amount" required>
               <div class="field-error" id="amount-error" aria-live="polite"></div>
             </div>
           </div>
 
           <!-- על מה ואיך -->
           <div class="field-row">
-            <div class="compact-field half-width">
-              <label>על מה?</label>
-              <div class="selected-display" id="category-display" onclick="openCategoryModal()">
+            <div class="compact-field half-width clear-category-field">
+              <label for="category-display"><a class="drill-link" href="#category-display" data-form-field="category-display">קטגוריה</a></label>
+              <div class="selected-display" id="category-display" tabindex="0" role="button" aria-label="בחירת קטגוריה" onclick="openCategoryModal()">
                 <span id="category-text">קטגוריה</span>
                 <span class="arrow">▼</span>
               </div>
@@ -61,20 +65,20 @@
               <div class="field-error" id="category-error" aria-live="polite"></div>
             </div>
 
-            <div class="compact-field half-width">
-              <label>איך?</label>
-              <div class="selected-display" id="payment-display" onclick="openPaymentModal()">
-                <span id="payment-text">תשלום</span>
+            <div class="compact-field half-width clear-payment-field">
+              <label for="payment-display"><a class="drill-link" href="#payment-display" data-form-field="payment-display">אמצעי תשלום</a></label>
+              <div class="selected-display" id="payment-display" tabindex="0" role="button" aria-label="בחירת אמצעי תשלום" onclick="openPaymentModal()">
+                <span id="payment-text">{{ "מקס שלום" if "מקס שלום" in payment_methods else "תשלום" }}</span>
                 <span class="arrow">▼</span>
               </div>
-              <input type="hidden" name="payment_method" id="payment_method" required>
+              <input type="hidden" name="payment_method" id="payment_method" value="{{ "מקס שלום" if "מקס שלום" in payment_methods else "" }}" required>
               <div class="field-error" id="payment-error" aria-live="polite"></div>
             </div>
           </div>
 
           <!-- פירוט קצר - נשאר חובה -->
           <div class="compact-field quick-note-field">
-            <label>פירוט קצר</label>
+            <label for="comment">פירוט</label>
             <textarea name="comment" id="comment" class="compact-textarea"
                       rows="1" placeholder="לדוגמה: סופר, דלק, מסעדה" required></textarea>
             <div class="field-error" id="comment-error" aria-live="polite"></div>
@@ -82,11 +86,11 @@
 
           <!-- סוג הוצאה - שליטה משנית קומפקטית -->
           <div class="compact-field expense-type-field">
-            <label>סוג</label>
+            <label>סוג הוצאה</label>
             <div class="type-buttons">
-              <button type="button" class="type-btn active" data-type="single">חד פעמית</button>
-              <button type="button" class="type-btn" data-type="standing">קבועה</button>
-              <button type="button" class="type-btn" data-type="installments">תשלומים</button>
+              <button type="button" class="type-btn active" data-type="single" aria-label="חד פעמית">חד פעמית</button>
+              <button type="button" class="type-btn" data-type="standing" aria-label="קבועה">קבועה</button>
+              <button type="button" class="type-btn" data-type="installments" aria-label="תשלומים">תשלומים</button>
               <label class="fixed-status-chip" id="fixed-status-chip" aria-live="polite">
                 <input type="checkbox" name="is_fixed" id="is_fixed" value="1" class="auto-fixed-input" disabled aria-hidden="true" tabindex="-1">
                 <span class="fixed-status-box" id="fixed-indicator">✓</span>
@@ -99,22 +103,18 @@
 
           <!-- מספר תשלומים - מוסתר בברירת מחדל -->
           <div class="compact-field" id="installments-field" style="display: none;">
-            <label>💳 מספר תשלומים</label>
-            <div class="selected-display" onclick="openInstallmentsModal()">
-              <span id="installments-text">בחר</span>
-              <span class="arrow">🔢</span>
-            </div>
-            <input type="hidden" name="installments_count" id="installments_count">
+            <label for="installments_count"><a class="drill-link" href="#installments_count" data-form-field="installments_count">מספר תשלומים</a></label>
+            <div class="clear-count-wrap"><input type="number" name="installments_count" id="installments_count" inputmode="numeric" min="2" max="36" step="1" aria-label="מספר תשלומים"><button type="button" class="amount-keypad" onclick="openInstallmentsModal()" aria-label="פתיחת מקלדת תשלומים"><span class="material-icons clear-icon" aria-hidden="true">dialpad</span></button><span id="installments-text" hidden></span></div><p id="installment-preview" class="field-hint" aria-live="polite"></p>
             <div class="field-error" id="installments-error" aria-live="polite"></div>
           </div>
 
           <!-- כפתורי פעולה -->
           <div class="form-actions">
             <button type="button" class="btn-cancel" onclick="window.location.href='{{ return_to or url_for('expenses') }}'">
-              ✕ ביטול
+              ביטול
             </button>
             <button type="submit" class="btn-primary btn-save">
-              💾 שמור
+              שמירת הוצאה
             </button>
           </div>
 
@@ -126,33 +126,19 @@
 
   <!-- מודל בחירת קטגוריה -->
   <div class="modal" id="category-modal">
-    <div class="modal-content">
+    <div class="modal-content" role="dialog" aria-modal="true" tabindex="-1" aria-label="בחירת קטגוריה">
       <div class="modal-header">
         <h3>בחר קטגוריה</h3>
-        <button type="button" class="modal-close" onclick="closeCategoryModal()">✕</button>
+        <button type="button" class="modal-close" aria-label="סגירת חלון הבחירה" onclick="closeCategoryModal()">✕</button>
       </div>
       <div class="modal-body">
         <div class="category-grid">
-          {% set category_icons = {
-            'מזון': '🍕',
-            'בריאות': '💊',
-            'חינוך': '📚',
-            'מתנות': '🎁',
-            'בילויים': '🎉',
-            'ביגוד': '👕',
-            'בית': '🏠',
-            'רכב': '🚙',
-            'ילדים': '👶',
-            'חוגים': '⚽',
-            'קניות': '🛒',
-            'טבק': '🚬',
-            'שונות': '📦'
-          } %}
+
+          {% set category_icons = {'מזון':'restaurant','בריאות':'medical_services','חינוך':'school','מתנות':'redeem','בילויים':'celebration','ביגוד':'checkroom','בית':'home','רכב':'directions_car','ילדים':'child_friendly','חוגים':'sports_soccer','קניות':'shopping_cart','טבק':'smoking_rooms',"צ'אבי":'pets','שונות':'more_horiz'} %}
           {% for c in categories %}
-            <div class="category-btn" onclick='selectCategory({{ c|tojson }})'>
-              <div class="category-icon">{{ category_icons[c] or '📌' }}</div>
-              <div class="category-name">{{ c }}</div>
-            </div>
+            <button type="button" class="category-btn" data-value="{{ c }}" aria-label="{{ c }}" onclick='selectCategory({{ c|tojson }})'>
+
+              <span class="material-icons clear-icon category-icon" aria-hidden="true">{{ category_icons[c] }}</span><div class="category-name">{{ c }}</div></button>
           {% endfor %}
         </div>
       </div>
@@ -161,18 +147,17 @@
 
   <!-- מודל בחירת אמצעי תשלום -->
   <div class="modal" id="payment-modal">
-    <div class="modal-content">
+    <div class="modal-content" role="dialog" aria-modal="true" tabindex="-1" aria-label="בחירת אמצעי תשלום">
       <div class="modal-header">
         <h3>בחר אמצעי תשלום</h3>
-        <button type="button" class="modal-close" onclick="closePaymentModal()">✕</button>
+        <button type="button" class="modal-close" aria-label="סגירת חלון הבחירה" onclick="closePaymentModal()">✕</button>
       </div>
       <div class="modal-body">
         <div class="payment-cards">
           {% for p in payment_methods %}
-            <div class="payment-card" onclick='selectPayment({{ p|tojson }})'>
-              <div class="payment-card-icon">💳</div>
-              <div class="payment-card-name">{{ p }}</div>
-            </div>
+            <button type="button" class="payment-card" data-value="{{ p }}" aria-label="{{ p }}" onclick='selectPayment({{ p|tojson }})'>
+              <span class="material-icons clear-icon" aria-hidden="true">credit_card</span>
+              <div class="payment-card-name">{{ p }}</div></button>
           {% endfor %}
         </div>
       </div>
@@ -181,10 +166,10 @@
 
   <!-- מודל מקלדת סכום -->
   <div class="modal" id="amount-modal">
-    <div class="modal-content">
+    <div class="modal-content" role="dialog" aria-modal="true" tabindex="-1" aria-label="הזנת סכום">
       <div class="modal-header">
         <h3>הזן סכום</h3>
-        <button type="button" class="modal-close" onclick="closeAmountModal()">✕</button>
+        <button type="button" class="modal-close" aria-label="סגירת חלון הבחירה" onclick="closeAmountModal()">✕</button>
       </div>
       <div class="modal-body">
         <div class="calculator-display" id="calc-display">0</div>
@@ -208,10 +193,10 @@
   </div>
 
   <script>
-    // Auto-hide flash messages
-    var flashMessages = document.querySelectorAll('.flash-message');
+    // Success feedback clears after reading; errors remain visible.
+    var flashMessages = document.querySelectorAll('.flash-success');
     flashMessages.forEach(function(msg) {
-      setTimeout(function() { msg.remove(); }, 1000);
+      setTimeout(function() { msg.remove(); }, 6000);
     });
 
     // Auto-fill today's date
@@ -221,17 +206,12 @@
       dateInput.value = today;
     }
 
-    const amountDisplay = document.getElementById('amount-display');
+    const amountDisplay = document.getElementById('amount');
     if (amountDisplay) {
       setTimeout(function() {
         amountDisplay.focus({ preventScroll: true });
       }, 80);
-      amountDisplay.addEventListener('keydown', function(event) {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault();
-          openAmountModal();
-        }
-      });
+
     }
 
     function setFieldError(fieldId, message) {
@@ -264,32 +244,32 @@
       let hasError = false;
 
       clearFieldErrors();
-      
+
       if (!category) {
         setFieldError('category', 'בחר קטגוריה להוצאה');
         hasError = true;
       }
-      
-      if (!amount || parseFloat(amount) <= 0) {
+
+      if (!/^(?:[0-9]+|[0-9]{1,3}(?:,[0-9]{3})+)(?:\.[0-9]*)?$/.test(amount.trim()) || !Number.isFinite(Number(amount.replace(/,/g, ''))) || Number(amount.replace(/,/g, '')) <= 0) {
         setFieldError('amount', 'הזן סכום גדול מ-0');
         hasError = true;
       }
-      
+
       if (!payment) {
         setFieldError('payment', 'בחר אמצעי תשלום');
         hasError = true;
       }
-      
+
       if (!date) {
         setFieldError('date', 'בחר תאריך');
         hasError = true;
       }
-      
+
       if (!comment) {
         setFieldError('comment', 'הוסף תיאור קצר להוצאה');
         hasError = true;
       }
-      
+
       if (expenseType === 'installments') {
         const installments = document.getElementById('installments_count').value;
         if (!installments || parseInt(installments) < 2) {
@@ -320,6 +300,8 @@
     const fixedStatusChip = document.getElementById('fixed-status-chip');
 
     function updateExpenseTypeUi(type) {
+      updateInstallmentPreview();
+      typeBtns.forEach(btn => btn.setAttribute('aria-pressed', String(btn.dataset.type === type)));
       fixedStatusChip.classList.toggle('is-active', type !== 'single');
       fixedStatusChip.setAttribute('aria-label', type === 'single' ? 'קבוע לא מסומן' : 'קבוע מסומן');
 
@@ -363,13 +345,28 @@
       });
     });
 
+    function updateInstallmentPreview() {
+      var type = document.getElementById('expense_type').value;
+      document.querySelector('#amount-label a').textContent = type === 'installments' ? 'סכום העסקה הכולל' : type === 'standing' ? 'סכום חודשי' : 'סכום ההוצאה';
+      var total = Number(document.getElementById('amount').value.replace(/,/g, ''));
+      var countInput = document.getElementById('installments_count');
+      var count = Number(countInput.value);
+      countInput.required = type === 'installments';
+      ['min','max'].forEach(attr => { if (type === 'installments') countInput.setAttribute(attr, attr === 'min' ? '2' : '36'); else countInput.removeAttribute(attr); });
+      document.getElementById('installment-preview').textContent = type === 'installments' && total > 0 && count >= 2 ? (total / count).toLocaleString('he-IL', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' ₪ לחודש · ' + count + ' תשלומים' : '';
+    }
+    ['amount', 'installments_count'].forEach(id => document.getElementById(id).addEventListener('input', updateInstallmentPreview));
+
     // Category Modal
     function openCategoryModal() {
+      document.querySelectorAll('#category-modal .category-btn').forEach(btn => { var selected = btn.dataset.value === document.getElementById('category').value; btn.classList.toggle('selected', selected); btn.setAttribute('aria-pressed', String(selected)); });
       document.getElementById('category-modal').classList.add('active');
+      document.body.style.overflow = 'hidden';
     }
 
     function closeCategoryModal() {
       document.getElementById('category-modal').classList.remove('active');
+      document.body.style.overflow = '';
     }
 
     function selectCategory(cat) {
@@ -381,11 +378,14 @@
 
     // Payment Modal
     function openPaymentModal() {
+      document.querySelectorAll('#payment-modal .payment-card').forEach(btn => { var selected = btn.dataset.value === document.getElementById('payment_method').value; btn.classList.toggle('selected', selected); btn.setAttribute('aria-pressed', String(selected)); });
       document.getElementById('payment-modal').classList.add('active');
+      document.body.style.overflow = 'hidden';
     }
 
     function closePaymentModal() {
       document.getElementById('payment-modal').classList.remove('active');
+      document.body.style.overflow = '';
     }
 
     function selectPayment(method) {
@@ -400,12 +400,14 @@
 
     function openAmountModal() {
       document.getElementById('amount-modal').classList.add('active');
-      calcValue = document.getElementById('amount').value || '';
+      document.body.style.overflow = 'hidden';
+      calcValue = document.getElementById('amount').value.replace(/,/g, '') || '';
       document.getElementById('calc-display').textContent = calcValue || '0';
     }
 
     function closeAmountModal() {
       document.getElementById('amount-modal').classList.remove('active');
+      document.body.style.overflow = '';
     }
 
     function calcInput(digit) {
@@ -429,6 +431,7 @@
       document.getElementById('amount').value = amount;
       document.getElementById('amount-text').textContent = amount.toFixed(2) + ' ₪';
       setFieldError('amount', amount > 0 ? '' : 'הזן סכום גדול מ-0');
+      updateInstallmentPreview();
       closeAmountModal();
     }
 
@@ -439,10 +442,12 @@
       installmentsCalcValue = '';
       updateInstallmentsDisplay();
       document.getElementById('installments-calc-modal').classList.add('active');
+      document.body.style.overflow = 'hidden';
     }
 
     function closeInstallmentsModal() {
       document.getElementById('installments-calc-modal').classList.remove('active');
+      document.body.style.overflow = '';
     }
 
     function installmentsCalcInput(num) {
@@ -475,6 +480,7 @@
       document.getElementById('installments_count').value = count;
       document.getElementById('installments-text').textContent = count + ' תשלומים';
       setFieldError('installments', '');
+      updateInstallmentPreview();
       closeInstallmentsModal();
     }
 
@@ -482,16 +488,17 @@
     window.addEventListener('click', function(e) {
       if (e.target.classList.contains('modal')) {
         e.target.classList.remove('active');
+        document.body.style.overflow = '';
       }
     });
   </script>
 
   <!-- מודל מחשבון תשלומים -->
   <div class="modal" id="installments-calc-modal">
-    <div class="modal-content">
+    <div class="modal-content" role="dialog" aria-modal="true" tabindex="-1" aria-label="מספר תשלומים">
       <div class="modal-header">
         <h3>מספר תשלומים</h3>
-        <button type="button" class="modal-close" onclick="closeInstallmentsModal()">✕</button>
+        <button type="button" class="modal-close" aria-label="סגירת חלון הבחירה" onclick="closeInstallmentsModal()">✕</button>
       </div>
       <div class="modal-body">
         <div class="calculator-display" id="installments-calc-display">0</div>
@@ -515,5 +522,76 @@
   </div>
 
   <script src="{{ url_for('static', filename='haptics.js') }}"></script>
+<script>
+    var clearForm = document.getElementById('expense-form');
+    var clearActions = clearForm.querySelector('.form-actions');
+    clearActions.appendChild(clearActions.querySelector('.btn-cancel'));
+    clearForm.querySelectorAll(':scope > .field-row').forEach(row => {
+      Array.from(row.children).forEach(field => clearForm.insertBefore(field, row));
+      row.remove();
+    });
+    Array.from(clearForm.children).sort((a,b) => Number(getComputedStyle(a).order) - Number(getComputedStyle(b).order)).forEach(field => clearForm.appendChild(field));
+    document.querySelectorAll('input[type="date"]').forEach(input => {
+      var wrap = document.createElement('div');
+      wrap.className = 'clear-date-display';
+      var label = document.createElement('span');
+      label.setAttribute('aria-hidden', 'true');
+      input.parentNode.insertBefore(wrap, input);
+      wrap.appendChild(label);
+      wrap.appendChild(input);
+      function updateDateLabel() {
+        var parts = input.value.split('-');
+        label.textContent = parts.length === 3 ? parts[2] + '/' + parts[1] + '/' + parts[0] : 'בחירת תאריך';
+      }
+      updateDateLabel();
+      input.addEventListener('input', updateDateLabel);
+      input.addEventListener('change', updateDateLabel);
+    });
+    document.querySelectorAll('[role="button"]').forEach(el => {
+      el.addEventListener('keydown', event => {
+        if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); el.click(); }
+      });
+    });
+    (() => {
+      var previousFocus = null;
+      var activeDialog = null;
+      function visibleDialog() {
+        return Array.from(document.querySelectorAll('[role="dialog"]')).find(el => el.getClientRects().length && !el.closest('.hidden, [aria-hidden="true"]') && el.getAttribute('aria-hidden') !== 'true');
+      }
+      new MutationObserver(() => {
+        var dialog = visibleDialog();
+        if (dialog && dialog !== activeDialog) {
+          previousFocus = document.activeElement;
+          activeDialog = dialog;
+          if (!dialog.contains(document.activeElement)) (dialog.querySelector('button, input, a[href]') || dialog).focus();
+        } else if (!dialog && activeDialog) {
+          activeDialog = null;
+          if (previousFocus && previousFocus.isConnected) previousFocus.focus();
+        }
+      }).observe(document.body, {subtree:true, attributes:true, attributeFilter:['class','style','aria-hidden']});
+      document.addEventListener('keydown', event => {
+        var dialog = visibleDialog();
+        if (!dialog) return;
+        if (event.key === 'Escape') {
+          var closer = dialog.querySelector('.modal-close, .expense-modal-close, .modal-close-btn, .quick-expense-close, .drawer-handle');
+          if (closer) closer.click();
+        }
+        if (event.key === 'Tab') {
+          var items = Array.from(dialog.querySelectorAll('button, a[href], input, select, textarea, [tabindex="0"]')).filter(el => !el.disabled && el.getClientRects().length && el.type !== 'hidden');
+          if (!items.length) return;
+          if (event.shiftKey && document.activeElement === items[0]) { event.preventDefault(); items[items.length - 1].focus(); }
+          else if (!event.shiftKey && document.activeElement === items[items.length - 1]) { event.preventDefault(); items[0].focus(); }
+        }
+      });
+    })();
+  </script>
+<script>
+    document.querySelectorAll('[data-form-field]').forEach(link => link.addEventListener('click', event => {
+      event.preventDefault();
+      const field = document.getElementById(link.dataset.formField);
+      field.focus();
+      if (field.getAttribute('role') === 'button') field.click();
+    }));
+  </script>
 </body>
 </html>

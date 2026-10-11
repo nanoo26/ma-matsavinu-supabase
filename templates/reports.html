@@ -3,26 +3,26 @@
 <head>
   <meta charset="utf-8">
   <title>מה מצבינו - דוחות</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=5">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=clear3">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <script src="{{ url_for('static', filename='clear-navigation.js') }}?v=2" defer></script>
+  <script src="{{ url_for('static', filename='clear-controls.js') }}?v=1" defer></script>
 </head>
-<body>
+<body class="clear-ui reports-page">
   <!-- כפתור חזרה -->
-  <a href="{{ url_for('index') }}" class="back-button" aria-label="חזרה לדף הבית">←</a>
+  <a href="{{ url_for('index') }}" class="back-button" aria-label="חזרה לדף הבית"><span class="material-icons clear-icon" aria-hidden="true">arrow_forward</span></a>
 
-  <!-- סרגל חודשים צף -->
-  <div class="floating-month-timeline" id="month-timeline">
-    <div class="month-timeline-scroller" id="timeline-scroller">
-    </div>
-  </div>
 
+
+{% macro money(value) -%}{% if value is not none %}{{ "{:,.0f}".format(value) }} ₪{% else %}—{% endif %}{%- endmacro %}
   <div class="app-shell">
 
     <!-- כותרת עליונה -->
     <header class="app-header">
-      <h1 class="app-title">מה מצבינו</h1>
-      <p class="app-subtitle">דוחות וסיכומים</p>
+      <a class="app-title" href="{{ url_for('expenses', month=selected_month) }}">מה מצבינו</a>
+      <h1 class="app-subtitle">דוחות</h1>
 
       {% include "tabs.html" %}
     </header>
@@ -43,28 +43,26 @@
       <!-- פילטרים עליונים -->
       <section class="reports-filters-section">
         <form method="get" class="reports-filters-form">
-          
+
           <!-- חודש עם חיצים -->
           <div class="reports-month-selector">
-            <button type="button" class="month-arrow-btn" id="reports-month-next" aria-label="חודש הבא">
-              →
+            <button type="button" class="month-arrow-btn" id="reports-month-prev" aria-label="חודש קודם"><span class="material-icons clear-icon" aria-hidden="true">chevron_right</span>
             </button>
-            <input
+            <div class="clear-month-display">{% set clear_month = (selected_month).split('-') %}{% set clear_months = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'] %}<span aria-hidden="true">{{ clear_months[clear_month[1]|int - 1] }} {{ clear_month[0] }}</span><input
               type="month"
               id="month"
               name="month"
               value="{{ selected_month }}"
-              class="modern-select month-select"
+              class="modern-select month-select" aria-label="חודש פיננסי"
               required
-            >
-            <button type="button" class="month-arrow-btn" id="reports-month-prev" aria-label="חודש קודם">
-              ←
+            ></div>
+            <button type="button" class="month-arrow-btn" id="reports-month-next" aria-label="חודש הבא"><span class="material-icons clear-icon" aria-hidden="true">chevron_left</span>
             </button>
           </div>
 
           <!-- פילטרים בשורה אחת -->
           <div class="reports-filters-single-row">
-            <select id="category_filter" name="category_filter" class="filter-select">
+            <select id="category_filter" name="category_filter" aria-label="קטגוריה" class="filter-select">
               <option value="">קטגוריה</option>
               <option value="fixed_and_installments" {% if category_filter == "fixed_and_installments" %}selected{% endif %}>קבועות ותשלומים</option>
               <option value="fixed_only" {% if category_filter == "fixed_only" %}selected{% endif %}>קבועות בלבד</option>
@@ -74,104 +72,112 @@
               {% endfor %}
             </select>
 
-            <select id="payment_filter" name="payment_filter" class="filter-select">
+            <select id="payment_filter" name="payment_filter" aria-label="אמצעי תשלום" class="filter-select">
               <option value="">אמצעי תשלום</option>
               {% for p in payment_methods %}
                 <option value="{{ p }}" {% if payment_filter == p %}selected{% endif %}>{{ p }}</option>
               {% endfor %}
             </select>
 
-            <select id="expense_type" name="expense_type" class="filter-select">
+            <select id="expense_type" name="expense_type" aria-label="סוג הוצאה" class="filter-select">
               <option value="">סוג הוצאה</option>
               <option value="single" {% if expense_type == "single" %}selected{% endif %}>חד פעמית</option>
               <option value="standing" {% if expense_type == "standing" %}selected{% endif %}>קבועה</option>
               <option value="installments" {% if expense_type == "installments" %}selected{% endif %}>תשלומים</option>
             </select>
 
-            <button type="submit" class="filter-btn-search">🔍</button>
+            <button type="submit" class="filter-btn-search" aria-label="החלת מסננים"><span class="material-icons clear-icon" aria-hidden="true">search</span></button>
           </div>
 
           <!-- תצוגת טווח תאריכים כטקסט -->
           <div class="date-range-text">
-            {{ display_range }}
+            <bdi dir="ltr">{{ display_range }}</bdi>
           </div>
 
         </form>
+  <!-- סרגל חודשים צף -->
+  <div class="floating-month-timeline" id="month-timeline">
+    <div class="month-timeline-scroller" id="timeline-scroller">
+    </div>
+  </div>
       </section>
 
       <!-- סיכום פיננסי -->
+      {% include "financial_notice.html" %}
+      <p class="financial-context">הסיכום לכל החודש. המסננים חלים על הטבלאות והגרפים בלבד.</p>
+      <p class="financial-context savings-goal-context"><a class="drill-link" href="{{ url_for('budget', month=selected_month) }}#savings-goal">{% if summary.savings_goal is not none and summary.savings_goal > 0 %}שומרים לחיסכון: {{ money(summary.savings_goal) }}{% elif summary.savings_goal is not none %}טרם הוגדר יעד חיסכון · הגדרה בתקציב{% else %}יעד החיסכון אינו זמין · פתיחה בתקציב{% endif %}</a></p>
       <div class="reports-summary-vertical">
         <!-- הכנסות -->
-        <div class="stat-card-vertical summary-income">
+        <a class="stat-card-vertical summary-income drill-card" href="{{ url_for('budget', month=selected_month) }}#income-section"><i class="material-icons drill-indicator" aria-hidden="true">chevron_left</i>
           <div class="stat-bar-wrapper">
             <div class="stat-bar" style="--progress: 100" data-percent="100%"></div>
           </div>
           <div class="stat-content">
             <div class="stat-label">הכנסות החודש</div>
-            <div class="stat-value">{{ "%.0f"|format(summary.total_income or 0) }} ₪</div>
+            <div class="stat-value">{{ money(summary.total_income) }}</div>
           </div>
-        </div>
+        </a>
 
         <!-- התחייבויות -->
-        <div class="stat-card-vertical summary-commitments clickable-stat" onclick="openCommitmentsModal()" style="cursor: pointer;">
+        <a class="stat-card-vertical summary-commitments drill-card" href="#detail-commitments"><i class="material-icons drill-indicator" aria-hidden="true">chevron_left</i>
           <div class="stat-bar-wrapper">
-            {% set commitments_percent = (summary.total_commitments / summary.total_income * 100) if summary.total_income > 0 else 0 %}
+            {% set commitments_percent = (summary.total_commitments / summary.total_income * 100) if summary.complete and (summary.total_income or 0) > 0 else 0 %}
             {% set commitments_capped = commitments_percent if commitments_percent <= 100 else 100 %}
             <div class="stat-bar" style="--progress: {{ commitments_capped }}" data-percent="{{ '%.0f'|format(commitments_percent) }}%"></div>
           </div>
           <div class="stat-content">
             <div class="stat-label">התחייבויות חודשיות</div>
-            <div class="stat-value">{{ "%.0f"|format(summary.total_commitments or 0) }} ₪</div>
+            <div class="stat-value">{{ money(summary.total_commitments) }}</div>
             <div class="stat-details">
-              <div>קבועות: {{ "%.0f"|format(summary.fixed_expenses or 0) }} ₪</div>
-              <div>תשלומים: {{ "%.0f"|format(summary.installments_this_month or 0) }} ₪</div>
+              <div>קבועות: {{ money(summary.fixed_expenses) }}</div>
+              <div>תשלומים: {{ money(summary.installments_this_month) }}</div>
             </div>
           </div>
-        </div>
+        </a>
 
-        <!-- תקציב למותרות -->
-        <div class="stat-card-vertical summary-luxury {% if (summary.available_for_luxuries or 0) < 0 %}negative{% endif %}">
+        <!-- תקציב לחד־פעמיות -->
+        <a class="stat-card-vertical summary-luxury {% if (summary.available_for_luxuries or 0) < 0 %}negative{% endif %} drill-card" href="#detail-luxury"><i class="material-icons drill-indicator" aria-hidden="true">chevron_left</i>
           <div class="stat-bar-wrapper">
-            {% set luxury_percent = (summary.available_for_luxuries / summary.total_income * 100) if summary.total_income > 0 else 0 %}
+            {% set luxury_percent = (summary.available_for_luxuries / summary.total_income * 100) if summary.complete and (summary.total_income or 0) > 0 else 0 %}
             {% set luxury_capped = luxury_percent if luxury_percent <= 100 else 100 %}
             <div class="stat-bar" style="--progress: {{ luxury_capped if luxury_capped > 0 else 0 }}" data-percent="{{ '%.0f'|format(luxury_percent if luxury_percent > 0 else 0) }}%"></div>
           </div>
           <div class="stat-content">
-            <div class="stat-label">תקציב למותרות</div>
-            <div class="stat-value big">{{ "%.0f"|format(summary.available_for_luxuries or 0) }} ₪</div>
+            <div class="stat-label">תקציב לחד־פעמיות</div>
+            <div class="stat-value big">{{ money(summary.available_for_luxuries) }}</div>
           </div>
-        </div>
+        </a>
 
         <!-- כבר הוצאת -->
-        <div class="stat-card-vertical summary-spent clickable-stat" onclick="openAlreadySpentModal()" style="cursor: pointer;">
+        <a class="stat-card-vertical summary-spent drill-card" href="#detail-spent"><i class="material-icons drill-indicator" aria-hidden="true">chevron_left</i>
           <div class="stat-bar-wrapper">
             {% set usage = summary.usage_percent or 0 %}
             {% set usage_capped = usage if usage <= 100 else 100 %}
             <div class="stat-bar" style="--progress: {{ usage_capped }}" data-percent="{{ '%.0f'|format(usage) }}%"></div>
           </div>
           <div class="stat-content">
-            <div class="stat-label">כבר הוצאת מהמותרות</div>
-            <div class="stat-value">{{ "%.0f"|format(summary.already_spent or 0) }} ₪</div>
-            <div class="stat-percent">({{ "%.0f"|format(summary.usage_percent or 0) }}%)</div>
+            <div class="stat-label">חד־פעמיות שכבר הוצאו</div>
+            <div class="stat-value">{{ money(summary.already_spent) }}</div>
+            <div class="stat-percent">({% if summary.usage_percent is not none %}{{ "{:,.0f}".format(summary.usage_percent) }}%{% else %}—{% endif %})</div>
           </div>
-        </div>
+        </a>
 
-        <!-- נשאר להוציא -->
-        <div class="stat-card-vertical summary-remaining {% if (summary.can_still_spend or 0) < 0 %}negative{% endif %}">
+        <!-- מרווח להוצאות -->
+        <a class="stat-card-vertical summary-remaining {% if (summary.can_still_spend or 0) < 0 %}negative{% endif %} drill-card" href="#detail-remaining"><i class="material-icons drill-indicator" aria-hidden="true">chevron_left</i>
           <div class="stat-bar-wrapper">
-            {% set remaining_percent = (summary.can_still_spend / summary.available_for_luxuries * 100) if summary.available_for_luxuries > 0 else 0 %}
+            {% set remaining_percent = (summary.can_still_spend / summary.available_for_luxuries * 100) if summary.complete and (summary.available_for_luxuries or 0) > 0 else 0 %}
             {% set remaining_progress = remaining_percent if remaining_percent > 0 else 0 %}
             {% set remaining_capped = remaining_progress if remaining_progress <= 100 else 100 %}
             <div class="stat-bar" style="--progress: {{ remaining_capped }}" data-percent="{{ '%.0f'|format(remaining_percent) }}%"></div>
           </div>
           <div class="stat-content">
-            <div class="stat-label">נשאר להוציא</div>
-            <div class="stat-value {% if (summary.can_still_spend or 0) >= 0 %}success{% endif %}">{{ "%.0f"|format(summary.can_still_spend or 0) }} ₪</div>
+            <div class="stat-label">מרווח להוצאות</div>
+            <div class="stat-value {% if (summary.can_still_spend or 0) >= 0 %}success{% endif %}">{{ money(summary.can_still_spend) }}</div>
           </div>
-        </div>
+        </a>
 
-        <!-- ממוצע יומי -->
-        <div class="stat-card-vertical summary-daily">
+        <!-- מרווח יומי -->
+        <a class="stat-card-vertical summary-daily drill-card" href="#detail-daily"><i class="material-icons drill-indicator" aria-hidden="true">chevron_left</i>
           <div class="stat-bar-wrapper">
             {% if summary.daily_average_applicable %}
             {% set days_percent = (summary.days_remaining / 30 * 100) %}
@@ -182,24 +188,25 @@
             {% endif %}
           </div>
           <div class="stat-content">
-            <div class="stat-label">ממוצע יומי</div>
+            <div class="stat-label">מרווח יומי</div>
             {% if summary.daily_average_applicable %}
-            <div class="stat-value">{{ "%.0f"|format(summary.daily_average or 0) }} ₪</div>
-            <div class="stat-details">נשארו {{ summary.days_remaining or 0 }} ימים</div>
+            <div class="stat-value">{{ money(summary.daily_average) }}</div>
+            <div class="stat-details">{{ summary.days_remaining }} ימים, כולל היום</div>
             {% else %}
             <div class="stat-value">—</div>
-            <div class="stat-details">רלוונטי רק לחודש הנוכחי</div>
+            <div class="stat-details">{{ "חסר מידע לחישוב" if summary.is_current_financial_month else "רלוונטי רק לחודש הנוכחי" }}</div>
             {% endif %}
           </div>
-        </div>
+        </a>
       </div>
 
       <!-- גרפים אינטראקטיביים -->
+
       <section class="charts-section">
         <div class="charts-grid">
           <!-- גרף עמודות - קטגוריות -->
           <div class="chart-card">
-            <h3 class="chart-title">📊 הוצאות לפי קטגוריה</h3>
+            <h3 class="chart-title"><a class="drill-link" href="#category-breakdown">בפועל מול תקציב</a></h3>
             <div class="chart-container">
               <canvas id="categoriesChart"></canvas>
             </div>
@@ -207,7 +214,7 @@
 
           <!-- גרף עוגה - אמצעי תשלום -->
           <div class="chart-card">
-            <h3 class="chart-title">💳 פילוח אמצעי תשלום</h3>
+            <h3 class="chart-title"><a class="drill-link" href="#payment-breakdown">פילוח אמצעי תשלום</a></h3>
             <div class="chart-container">
               <canvas id="paymentChart"></canvas>
             </div>
@@ -215,13 +222,14 @@
         </div>
       </section>
 
+      <nav class="report-jump-links" aria-label="פירוט דוחות"><a href="#payment-breakdown">פילוח אמצעי תשלום</a><a href="#category-breakdown">סיכום לפי קטגוריה</a><a href="#all-report-expenses">כל ההוצאות</a></nav>
       <!-- סיכום לפי קטגוריה -->
       <section class="card">
         <div class="card-header">
-          <h2 class="card-title">סיכום לפי קטגוריה</h2>
+          <h2 class="card-title" id="category-breakdown"><a class="drill-link" href="#category-table">סיכום לפי קטגוריה</a></h2>
         </div>
         <div class="card-body">
-          <table class="simple-table">
+          <table class="simple-table" id="category-table" tabindex="-1">
             <thead>
               <tr>
                 <th>קטגוריה</th>
@@ -232,12 +240,12 @@
             </thead>
             <tbody>
               {% for row in category_rows %}
-                <tr class="category-summary-row" data-category="{{ row.category }}" style="cursor: pointer;">
-                  <td>{{ row.category }}</td>
-                  <td>{{ "%.0f"|format(row.spent or 0) }} ₪</td>
-                  <td>{{ "%.0f"|format(row.budget or 0) }} ₪</td>
+                <tr class="category-summary-row" aria-label="פירוט קטגוריה {{ row.category }}" data-category="{{ row.category }}" style="cursor: pointer;">
+                  <td><a class="drill-link" data-category-detail="{{ row.category }}" href="#category={{ row.category|urlencode }}">{{ row.category }}</a></td>
+                  <td><a class="drill-link" data-category-detail="{{ row.category }}" href="#category={{ row.category|urlencode }}">{{ "{:,.0f}".format(row.spent or 0) }} ₪</a></td>
+                  <td><a class="drill-link" href="{{ url_for('budget', month=selected_month) }}#category={{ row.category|urlencode }}" onclick="event.stopPropagation()">{{ "{:,.0f}".format(row.budget or 0) }} ₪</a></td>
                   <td class="{% if row.diff < 0 %}neg{% elif row.diff > 0 %}pos{% endif %}">
-                    {{ "%.0f"|format(row.diff or 0) }} ₪
+                    <a class="drill-link" data-category-detail="{{ row.category }}" href="#category={{ row.category|urlencode }}">{{ "{:,.0f}".format(row.diff or 0) }} ₪</a>
                   </td>
                 </tr>
               {% endfor %}
@@ -252,10 +260,10 @@
             <tfoot>
               <tr class="table-total-row">
                 <th>סה"כ</th>
-                <th>{{ "%.0f"|format(category_rows|sum(attribute='spent') or 0) }} ₪</th>
-                <th>{{ "%.0f"|format(category_rows|sum(attribute='budget') or 0) }} ₪</th>
+                <th>{{ "{:,.0f}".format(category_rows|sum(attribute='spent') or 0) }} ₪</th>
+                <th>{{ "{:,.0f}".format(category_rows|sum(attribute='budget') or 0) }} ₪</th>
                 <th class="{% if (category_rows|sum(attribute='diff') or 0) < 0 %}neg{% elif (category_rows|sum(attribute='diff') or 0) > 0 %}pos{% endif %}">
-                  {{ "%.0f"|format(category_rows|sum(attribute='diff') or 0) }} ₪
+                  {{ "{:,.0f}".format(category_rows|sum(attribute='diff') or 0) }} ₪
                 </th>
               </tr>
             </tfoot>
@@ -266,10 +274,10 @@
       <!-- סיכום לפי אמצעי תשלום -->
       <section class="card">
         <div class="card-header">
-          <h2 class="card-title">סיכום לפי אמצעי תשלום</h2>
+          <h2 class="card-title" id="payment-breakdown"><a class="drill-link" href="#payment-table">סיכום לפי אמצעי תשלום</a></h2>
         </div>
         <div class="card-body">
-          <table class="simple-table">
+          <table class="simple-table" id="payment-table" tabindex="-1">
             <thead>
               <tr>
                 <th>אמצעי תשלום</th>
@@ -278,9 +286,9 @@
             </thead>
             <tbody>
               {% for row in payment_rows %}
-                <tr class="payment-summary-row" data-payment="{{ row.method }}" style="cursor: pointer;">
-                  <td>{{ row.method }}</td>
-                  <td>{{ "%.0f"|format(row.total or 0) }} ₪</td>
+                <tr class="payment-summary-row" aria-label="פירוט אמצעי תשלום {{ row.method }}" data-payment="{{ row.method }}" style="cursor: pointer;">
+                  <td><a class="drill-link" data-payment-detail="{{ row.method }}" href="#payment={{ row.method|urlencode }}">{{ row.method }}</a></td>
+                  <td><a class="drill-link" data-payment-detail="{{ row.method }}" href="#payment={{ row.method|urlencode }}">{{ "{:,.0f}".format(row.total or 0) }} ₪</a></td>
                 </tr>
               {% endfor %}
               {% if not payment_rows %}
@@ -294,7 +302,7 @@
             <tfoot>
               <tr class="table-total-row">
                 <th>סה"כ</th>
-                <th>{{ "%.0f"|format(payment_rows|sum(attribute='total') or 0) }} ₪</th>
+                <th>{{ "{:,.0f}".format(payment_rows|sum(attribute='total') or 0) }} ₪</th>
               </tr>
             </tfoot>
           </table>
@@ -305,7 +313,7 @@
       <section class="card">
         <div class="card-header">
           <h2 class="card-title">
-            כל ההוצאות בחודש {{ selected_month }}
+            <a class="drill-link" id="all-report-expenses" href="{{ url_for('expenses', month=selected_month, category_filter=category_filter, payment_filter=payment_filter, expense_type=expense_type) }}">כל ההוצאות בחודש {{ selected_month }}</a>
           </h2>
         </div>
         <div class="card-body">
@@ -321,75 +329,78 @@
             <tbody>
               <!-- הוצאות חד פעמיות -->
               {% if single_expenses %}
+                  <tr class="ledger-group" id="ledger-single"><th colspan="4"><a class="drill-link" href="{{ url_for('expenses', month=selected_month, category_filter=category_filter, payment_filter=payment_filter, expense_type='single') }}">חד־פעמיות <span>({{ single_expenses|length }})</span></a></th></tr>
                 {% for e in single_expenses %}
                   <tr id="exp-{{ e.id }}">
                     <td>{{ e.display_date or e.date }}</td>
                     <td class="col-notes">
                       <strong>{{ e.comment or "ללא תיאור" }}</strong>
                       <div class="expense-meta-row">
-                        <span class="expense-category">{{ e.category or "לא מסווג" }}</span>
-                        <span class="expense-payment">{{ e.payment_method or "-" }}</span>
+                        <a class="expense-category drill-link" href="{{ url_for('expenses', month=selected_month, category_filter=e.category or '', payment_filter=payment_filter, expense_type=expense_type) }}">{{ e.category or "לא מסווג" }}</a>
+                        <a class="expense-payment drill-link" href="{{ url_for('expenses', month=selected_month, category_filter=category_filter, payment_filter=e.payment_method or '', expense_type=expense_type) }}">{{ e.payment_method or "-" }}</a>
                       </div>
                     </td>
-                    <td>{{ "%.0f"|format(e.amount or 0) }} ₪</td>
+                    <td><button type="button" class="ledger-detail-trigger drill-link" aria-label="פרטי סכום ההוצאה: {{ e.comment or 'ללא תיאור' }}"><bdi class="ledger-amount">{{ "{:,.0f}".format(e.amount or 0) }} ₪</bdi></button><span class="ledger-date">{{ e.display_date or e.date }}</span></td>
                     <td class="actions-cell">
-                      <button type="button" class="table-action-btn" data-id="{{ e.id }}" data-recurring="{{ 1 if e.is_fixed and e.expense_type != 'installments' else 0 }}" data-revision="{{ e.recurring_revision|default(0) }}" data-date="{{ (e.display_date or e.date)|e }}" data-notes="{{ e.comment|default('', true)|e }}" data-category="{{ e.category|default('', true)|e }}" data-amount="{{ '%.0f'|format(e.amount or 0) }}" data-edit-url="{{ url_for('edit_expense', expense_id=e.id, month=selected_month, return_to=url_for('reports', month=selected_month, category_filter=category_filter, payment_filter=payment_filter, expense_type=expense_type))|e }}">⋮</button>
+                      <button type="button" class="table-action-btn" aria-label="פרטי הוצאה: {{ e.comment or 'ללא תיאור' }}" data-id="{{ e.id }}" data-recurring="{{ 1 if e.is_fixed and e.expense_type != 'installments' else 0 }}" data-revision="{{ e.recurring_revision|default(0) }}" data-date="{{ (e.display_date or e.date)|e }}" data-notes="{{ e.comment|default('', true)|e }}" data-payment="{{ e.payment_method|default('', true)|e }}" data-kind="{{ e.expense_type }}" data-category="{{ e.category|default('', true)|e }}" data-amount="{{ '%.0f'|format(e.amount or 0) }}" data-edit-url="{{ url_for('edit_expense', expense_id=e.id, month=selected_month, return_to=url_for('reports', month=selected_month, category_filter=category_filter, payment_filter=payment_filter, expense_type=expense_type))|e }}"><span class="material-icons clear-icon" aria-hidden="true">more_vert</span></button>
                     </td>
                   </tr>
                 {% endfor %}
                 <tr class="subtotal-row">
-                  <td colspan="2" style="text-align:right; font-weight:600; padding:10px; background:#f8fafc;">סיכום חד פעמיות</td>
-                  <td colspan="2" style="font-weight:700; padding:10px; background:#f8fafc;">{{ "%.0f"|format(single_total_reports) }} ₪</td>
+                  <td colspan="2" style="text-align:right; font-weight:600; padding:10px; background:#f8fafc;"><a class="drill-link" href="{{ url_for('expenses', month=selected_month, category_filter=category_filter, payment_filter=payment_filter, expense_type='single') }}">סיכום חד פעמיות</a></td>
+                  <td colspan="2" style="font-weight:700; padding:10px; background:#f8fafc;"><a class="drill-link" href="{{ url_for('expenses', month=selected_month, category_filter=category_filter, payment_filter=payment_filter, expense_type='single') }}">{{ "{:,.0f}".format(single_total_reports) }} ₪</a></td>
                 </tr>
               {% endif %}
 
               <!-- הוצאות בתשלומים -->
               {% if installment_expenses %}
+                  <tr class="ledger-group" id="ledger-installment"><th colspan="4"><a class="drill-link" href="{{ url_for('expenses', month=selected_month, category_filter=category_filter, payment_filter=payment_filter, expense_type='installments') }}">בתשלומים <span>({{ installment_expenses|length }})</span></a></th></tr>
                 {% for e in installment_expenses %}
                   <tr id="exp-{{ e.id }}" class="row-installments">
                     <td>{{ e.display_date or e.date }}</td>
                     <td class="col-notes">
                       <strong>{{ e.comment or "ללא תיאור" }}</strong>
                       <div class="expense-meta-row">
-                        <span class="expense-category">{{ e.category or "לא מסווג" }}</span>
-                        <span class="expense-payment">{{ e.payment_method or "-" }}</span>
-                        <span class="installment-badge">💳 {{ e.current_installment }}/{{ e.total_installments }}</span>
+                        <a class="expense-category drill-link" href="{{ url_for('expenses', month=selected_month, category_filter=e.category or '', payment_filter=payment_filter, expense_type=expense_type) }}">{{ e.category or "לא מסווג" }}</a>
+                        <a class="expense-payment drill-link" href="{{ url_for('expenses', month=selected_month, category_filter=category_filter, payment_filter=e.payment_method or '', expense_type=expense_type) }}">{{ e.payment_method or "-" }}</a>
+                        <span class="installment-badge">{{ e.current_installment }}/{{ e.total_installments }}</span>
                       </div>
                     </td>
-                    <td>{{ "%.0f"|format(e.amount or 0) }} ₪</td>
+                    <td><button type="button" class="ledger-detail-trigger drill-link" aria-label="פרטי סכום ההוצאה: {{ e.comment or 'ללא תיאור' }}"><bdi class="ledger-amount">{{ "{:,.0f}".format(e.amount or 0) }} ₪</bdi></button><span class="ledger-date">{{ e.display_date or e.date }}</span></td>
                     <td class="actions-cell">
-                      <button type="button" class="table-action-btn" data-id="{{ e.id }}" data-recurring="{{ 1 if e.is_fixed and e.expense_type != 'installments' else 0 }}" data-revision="{{ e.recurring_revision|default(0) }}" data-date="{{ (e.display_date or e.date)|e }}" data-notes="{{ e.comment|default('', true)|e }}" data-category="{{ e.category|default('', true)|e }}" data-amount="{{ '%.0f'|format(e.amount or 0) }}" data-edit-url="{{ url_for('edit_expense', expense_id=e.id, month=selected_month, return_to=url_for('reports', month=selected_month, category_filter=category_filter, payment_filter=payment_filter, expense_type=expense_type))|e }}">⋮</button>
+                      <button type="button" class="table-action-btn" aria-label="פרטי הוצאה: {{ e.comment or 'ללא תיאור' }}" data-id="{{ e.id }}" data-recurring="{{ 1 if e.is_fixed and e.expense_type != 'installments' else 0 }}" data-revision="{{ e.recurring_revision|default(0) }}" data-date="{{ (e.display_date or e.date)|e }}" data-notes="{{ e.comment|default('', true)|e }}" data-payment="{{ e.payment_method|default('', true)|e }}" data-kind="{{ e.expense_type }}" data-category="{{ e.category|default('', true)|e }}" data-amount="{{ '%.0f'|format(e.amount or 0) }}" data-edit-url="{{ url_for('edit_expense', expense_id=e.id, month=selected_month, return_to=url_for('reports', month=selected_month, category_filter=category_filter, payment_filter=payment_filter, expense_type=expense_type))|e }}"><span class="material-icons clear-icon" aria-hidden="true">more_vert</span></button>
                     </td>
                   </tr>
                 {% endfor %}
                 <tr class="subtotal-row">
-                  <td colspan="2" style="text-align:right; font-weight:600; padding:10px; background:rgba(239,68,68,0.08);">סיכום תשלומים</td>
-                  <td colspan="2" style="font-weight:700; padding:10px; background:rgba(239,68,68,0.08);">{{ "%.0f"|format(installment_total_reports) }} ₪</td>
+                  <td colspan="2" style="text-align:right; font-weight:600; padding:10px; background:rgba(239,68,68,0.08);"><a class="drill-link" href="{{ url_for('expenses', month=selected_month, category_filter=category_filter, payment_filter=payment_filter, expense_type='installments') }}">סיכום תשלומים</a></td>
+                  <td colspan="2" style="font-weight:700; padding:10px; background:rgba(239,68,68,0.08);"><a class="drill-link" href="{{ url_for('expenses', month=selected_month, category_filter=category_filter, payment_filter=payment_filter, expense_type='installments') }}">{{ "{:,.0f}".format(installment_total_reports) }} ₪</a></td>
                 </tr>
               {% endif %}
 
               <!-- הוצאות קבועות -->
               {% if fixed_expenses %}
+                  <tr class="ledger-group" id="ledger-fixed"><th colspan="4"><a class="drill-link" href="{{ url_for('expenses', month=selected_month, category_filter=category_filter, payment_filter=payment_filter, expense_type='standing') }}">קבועות <span>({{ fixed_expenses|length }})</span></a></th></tr>
                 {% for e in fixed_expenses %}
                   <tr id="exp-{{ e.id }}" class="row-fixed">
                     <td>{{ e.display_date or e.date }}</td>
                     <td class="col-notes">
                       <strong>{{ e.comment or "ללא תיאור" }}</strong>
                       <div class="expense-meta-row">
-                        <span class="expense-category">{{ e.category or "לא מסווג" }}</span>
-                        <span class="expense-payment">{{ e.payment_method or "-" }}</span>
-                        <span class="fixed-badge">📆 קבועה</span>
+                        <a class="expense-category drill-link" href="{{ url_for('expenses', month=selected_month, category_filter=e.category or '', payment_filter=payment_filter, expense_type=expense_type) }}">{{ e.category or "לא מסווג" }}</a>
+                        <a class="expense-payment drill-link" href="{{ url_for('expenses', month=selected_month, category_filter=category_filter, payment_filter=e.payment_method or '', expense_type=expense_type) }}">{{ e.payment_method or "-" }}</a>
+                        <span class="fixed-badge">קבועה</span>
                       </div>
                     </td>
-                    <td>{{ "%.0f"|format(e.amount or 0) }} ₪</td>
+                    <td><button type="button" class="ledger-detail-trigger drill-link" aria-label="פרטי סכום ההוצאה: {{ e.comment or 'ללא תיאור' }}"><bdi class="ledger-amount">{{ "{:,.0f}".format(e.amount or 0) }} ₪</bdi></button><span class="ledger-date">{{ e.display_date or e.date }}</span></td>
                     <td class="actions-cell">
-                      <button type="button" class="table-action-btn" data-id="{{ e.id }}" data-recurring="{{ 1 if e.is_fixed and e.expense_type != 'installments' else 0 }}" data-revision="{{ e.recurring_revision|default(0) }}" data-date="{{ (e.display_date or e.date)|e }}" data-notes="{{ e.comment|default('', true)|e }}" data-category="{{ e.category|default('', true)|e }}" data-amount="{{ '%.0f'|format(e.amount or 0) }}" data-edit-url="{{ url_for('edit_expense', expense_id=e.id, month=selected_month, return_to=url_for('reports', month=selected_month, category_filter=category_filter, payment_filter=payment_filter, expense_type=expense_type))|e }}">⋮</button>
+                      <button type="button" class="table-action-btn" aria-label="פרטי הוצאה: {{ e.comment or 'ללא תיאור' }}" data-id="{{ e.id }}" data-recurring="{{ 1 if e.is_fixed and e.expense_type != 'installments' else 0 }}" data-revision="{{ e.recurring_revision|default(0) }}" data-date="{{ (e.display_date or e.date)|e }}" data-notes="{{ e.comment|default('', true)|e }}" data-payment="{{ e.payment_method|default('', true)|e }}" data-kind="{{ e.expense_type }}" data-category="{{ e.category|default('', true)|e }}" data-amount="{{ '%.0f'|format(e.amount or 0) }}" data-edit-url="{{ url_for('edit_expense', expense_id=e.id, month=selected_month, return_to=url_for('reports', month=selected_month, category_filter=category_filter, payment_filter=payment_filter, expense_type=expense_type))|e }}"><span class="material-icons clear-icon" aria-hidden="true">more_vert</span></button>
                     </td>
                   </tr>
                 {% endfor %}
                 <tr class="subtotal-row">
-                  <td colspan="2" style="text-align:right; font-weight:600; padding:10px; background:rgba(16,185,129,0.12);">סיכום קבועות</td>
-                  <td colspan="2" style="font-weight:700; padding:10px; background:rgba(16,185,129,0.12);">{{ "%.0f"|format(fixed_total_reports) }} ₪</td>
+                  <td colspan="2" style="text-align:right; font-weight:600; padding:10px; background:rgba(16,185,129,0.12);"><a class="drill-link" href="{{ url_for('expenses', month=selected_month, category_filter=category_filter, payment_filter=payment_filter, expense_type='standing') }}">סיכום קבועות</a></td>
+                  <td colspan="2" style="font-weight:700; padding:10px; background:rgba(16,185,129,0.12);"><a class="drill-link" href="{{ url_for('expenses', month=selected_month, category_filter=category_filter, payment_filter=payment_filter, expense_type='standing') }}">{{ "{:,.0f}".format(fixed_total_reports) }} ₪</a></td>
                 </tr>
               {% endif %}
 
@@ -404,7 +415,7 @@
             <tfoot>
               <tr>
                 <th colspan="3">סה״כ</th>
-                <th>₪ {{ "%.0f"|format(summary.total_spent_filtered or 0) }}</th>
+                <th>₪ {{ "{:,.0f}".format(summary.total_spent_filtered or 0) }}</th>
               </tr>
             </tfoot>
           </table>
@@ -417,10 +428,10 @@
   <!-- מודל עריכה/מחיקה להוצאה בודדת -->
   <div id="expense-modal" class="expense-modal hidden">
     <div class="expense-modal-backdrop" onclick="closeExpenseModal()"></div>
-    <div class="expense-modal-content">
-      <button type="button" class="expense-modal-close" onclick="closeExpenseModal()">✕</button>
+    <div class="expense-modal-content" role="dialog" aria-modal="true" aria-labelledby="expense-detail-title" tabindex="-1">
+      <button type="button" class="expense-modal-close" aria-label="סגירת פרטי הוצאה" onclick="closeExpenseModal()">✕</button>
 
-      <h3 class="expense-modal-title">פרטי הוצאה</h3>
+      <h3 class="expense-modal-title" id="expense-detail-title">פרטי הוצאה</h3>
 
       <div class="expense-modal-body">
         <div class="expense-detail-item">
@@ -429,11 +440,13 @@
         </div>
         <div class="expense-detail-item">
           <span class="detail-label">קטגוריה:</span>
-          <span class="detail-value" id="modal-expense-category"></span>
+          <a class="detail-value drill-link" id="modal-expense-category"></a>
         </div>
+        <div class="expense-detail-item"><span class="detail-label">אמצעי תשלום:</span><a class="detail-value drill-link" id="modal-expense-payment"></a></div>
+        <div class="expense-detail-item"><span class="detail-label">סוג הוצאה:</span><span class="detail-value" id="modal-expense-kind"></span></div>
         <div class="expense-detail-item">
           <span class="detail-label">סכום:</span>
-          <span class="detail-value detail-amount" id="modal-expense-amount"></span>
+          <a class="detail-value detail-amount drill-link" id="modal-expense-amount" aria-label="עריכת סכום ההוצאה"></a>
         </div>
         <div class="expense-detail-item">
           <span class="detail-label">תיאור:</span>
@@ -442,19 +455,19 @@
       </div>
 
       <div id="recurring-stop-fields" class="compact-field" hidden>
-        <label for="modal-stop-month">להפסיק מחודש פיננסי</label>
-        <input type="month" class="compact-input" id="modal-stop-month" name="effective_month" value="{{ selected_month }}" form="expense-modal-delete-form">
+        <label for="modal-stop-month">השינוי יחול מחודש פיננסי</label>
+        <input type="month" class="compact-input" id="modal-stop-month" name="effective_month" required value="{{ selected_month }}" form="expense-modal-delete-form">
         <p>העבר יישמר; ההפסקה תבטל גם שינויים עתידיים שנקבעו.</p>
       </div>
       <div class="expense-modal-actions">
         <a id="expense-modal-edit-link" href="#" class="modal-edit-btn">
-          ✏️ עריכה
+          <span class="material-icons clear-icon" aria-hidden="true">edit</span> עריכה
         </a>
         <button type="button" id="expense-modal-delete-button" class="modal-delete-btn" onclick="deleteExpenseFromModal()">
-          🗑️ מחיקה
+          <span class="material-icons clear-icon" aria-hidden="true">delete_outline</span> מחיקה
         </button>
       </div>
-      
+
       <form id="expense-modal-delete-form" method="post" action="{{ url_for('delete_selected') }}" style="display: none;">
         <input type="hidden" name="selected_ids" id="expense-modal-delete-id">
         <input type="hidden" name="recurring_revision" id="expense-modal-revision">
@@ -723,8 +736,7 @@
   <script>
     function openExpenseModal(btn) {
       // שמירת מיקום גלילה לפני מעבר לעריכה
-      sessionStorage.setItem('scrollPosition', window.pageYOffset);
-      
+
       var id = btn.getAttribute("data-id");
       var date = btn.getAttribute("data-date") || "";
       var notes = btn.getAttribute("data-notes") || "";
@@ -734,30 +746,57 @@
 
       document.getElementById("modal-expense-date").textContent = date;
       document.getElementById("modal-expense-category").textContent = category;
-      document.getElementById("modal-expense-amount").textContent = amount + " ₪";
+      document.getElementById("modal-expense-payment").textContent = btn.dataset.payment || "";
+      document.getElementById("modal-expense-kind").textContent = ({single:"חד־פעמית", standing:"קבועה", installments:"תשלומים"})[btn.dataset.kind] || "חד־פעמית";
+      document.getElementById("modal-expense-amount").textContent = Number(amount).toLocaleString('en-US') + " ₪";
       document.getElementById("modal-expense-notes").textContent = notes;
 
       document.getElementById("expense-modal-edit-link").setAttribute("href", editUrl);
+      document.getElementById("modal-expense-amount").href = editUrl;
+      var categoryTarget = new URL({{ url_for('expenses', month=selected_month, category_filter=category_filter, payment_filter=payment_filter, expense_type=expense_type)|tojson }}, location.href);
+      categoryTarget.searchParams.set('category_filter', category);
+      document.getElementById("modal-expense-category").href = categoryTarget.href;
+      var paymentTarget = new URL({{ url_for('expenses', month=selected_month, category_filter=category_filter, payment_filter=payment_filter, expense_type=expense_type)|tojson }}, location.href);
+      paymentTarget.searchParams.set('payment_filter', btn.dataset.payment || '');
+      document.getElementById("modal-expense-payment").href = paymentTarget.href;
       document.getElementById("expense-modal-delete-id").value = id;
       var recurring = btn.getAttribute('data-recurring') === '1';
       document.getElementById('recurring-stop-fields').hidden = !recurring;
       document.getElementById('modal-stop-month').disabled = !recurring;
       document.getElementById('modal-stop-month').value = {{ selected_month|tojson }};
+      document.getElementById('modal-stop-month').dispatchEvent(new Event('input', {bubbles:true}));
       document.getElementById('expense-modal-revision').value = btn.getAttribute('data-revision') || '';
-      document.getElementById('expense-modal-delete-button').textContent = recurring ? '⏹ הפסק קבועה' : '🗑️ מחיקה';
+      document.getElementById('expense-modal-delete-button').innerHTML = recurring ? '<span class="material-icons clear-icon" aria-hidden="true">edit</span> עדכון או הפסקה' : '<span class="material-icons clear-icon" aria-hidden="true">delete_outline</span> מחיקה';
 
       document.getElementById("expense-modal").classList.remove("hidden");
+      document.body.style.overflow = "hidden";
     }
 
     function closeExpenseModal() {
       document.getElementById("expense-modal").classList.add("hidden");
+      document.body.style.overflow = "";
     }
 
     function deleteExpenseFromModal() {
       var recurring = !document.getElementById('recurring-stop-fields').hidden;
       var month = document.getElementById('modal-stop-month').value;
-      if (recurring && !month) return;
-      if (confirm(recurring ? 'להפסיק מחודש ' + month + '? העבר יישמר ושינויים עתידיים יבוטלו.' : 'האם אתה בטוח שברצונך למחוק הוצאה זו?')) {
+      if (recurring) {
+        const monthField = document.getElementById('modal-stop-month');
+        if (!monthField.reportValidity()) return;
+        window.ClearRecurringActions.choose({
+          month: month,
+          update: () => {
+            const link = document.getElementById('expense-modal-edit-link');
+            const target = new URL(link.href, location.href);
+            target.searchParams.set('month', month);
+            link.href = target.href;
+            link.click();
+          },
+          stop: () => document.getElementById('expense-modal-delete-form').submit()
+        });
+        return;
+      }
+      if (confirm('האם אתה בטוח שברצונך למחוק הוצאה זו?')) {
         document.getElementById('expense-modal-delete-form').submit();
       }
     }
@@ -787,7 +826,7 @@
         currentDate.setMonth(currentDate.getMonth() - 1);
         var newMonth = currentDate.getFullYear() + '-' + String(currentDate.getMonth() + 1).padStart(2, '0');
         monthSelect.value = newMonth;
-        monthSelect.form.submit();
+        window.ClearNavigation.submitFilters(monthSelect.form);
       });
     }
 
@@ -797,20 +836,20 @@
         currentDate.setMonth(currentDate.getMonth() + 1);
         var newMonth = currentDate.getFullYear() + '-' + String(currentDate.getMonth() + 1).padStart(2, '0');
         monthSelect.value = newMonth;
-        monthSelect.form.submit();
+        window.ClearNavigation.submitFilters(monthSelect.form);
       });
     }
 
-    // Auto-hide flash messages after 1 second
-    var flashMessages = document.querySelectorAll('.flash-message');
+    // Success feedback clears after reading; errors remain visible.
+    var flashMessages = document.querySelectorAll('.flash-success');
     flashMessages.forEach(function(msg) {
       setTimeout(function() {
         msg.remove();
-      }, 1000);
+      }, 6000);
     });
 
     // ======= גרפים Chart.js =======
-    
+
     // נתונים מהשרת
     const categoryData = {{ category_rows | tojson | safe }};
 
@@ -826,22 +865,30 @@
           datasets: [{
             label: 'הוצאה בפועל',
             data: categoryData.map(d => d.spent),
-            backgroundColor: 'rgba(168, 85, 247, 0.7)',
-            borderColor: 'rgba(168, 85, 247, 1)',
+            backgroundColor: '#60a5fa',
+            borderColor: '#60a5fa',
             borderWidth: 2,
-            borderRadius: 8,
+            borderRadius: 3,
           }, {
             label: 'תקציב',
             data: categoryData.map(d => d.budget),
-            backgroundColor: 'rgba(14, 165, 233, 0.5)',
-            borderColor: 'rgba(14, 165, 233, 1)',
+            backgroundColor: '#2563eb',
+            borderColor: '#2563eb',
             borderWidth: 2,
-            borderRadius: 8,
+            borderRadius: 3,
           }]
         },
         options: {
           responsive: true,
-          maintainAspectRatio: true,
+          maintainAspectRatio: false,
+          onClick: function(event, elements) {
+            if (!elements.length) return;
+            const hit = elements[0];
+            const category = categoryData[hit.index].category;
+            if (hit.datasetIndex === 1) location.href = {{ url_for('budget', month=selected_month)|tojson }} + '#category=' + encodeURIComponent(category);
+            else openCategoryModal(category);
+          },
+          onHover: function(event, elements) { event.native.target.style.cursor = elements.length ? 'pointer' : 'default'; },
           plugins: {
             legend: {
               display: true,
@@ -882,8 +929,8 @@
             x: {
               ticks: {
                 font: { size: 12, family: 'Heebo' },
-                maxRotation: 45,
-                minRotation: 30
+                maxRotation: 0,
+                minRotation: 0
               },
               grid: {
                 display: false
@@ -898,13 +945,13 @@
     if (document.getElementById('paymentChart')) {
       const ctx2 = document.getElementById('paymentChart').getContext('2d');
       const colors = [
-        'rgba(168, 85, 247, 0.8)',
-        'rgba(14, 165, 233, 0.8)',
-        'rgba(16, 185, 129, 0.8)',
-        'rgba(251, 146, 60, 0.8)',
-        'rgba(236, 72, 153, 0.8)',
+        '#2563eb',
+        '#60a5fa',
+        '#0f766e',
+        '#94a3b8',
+        '#1e40af',
       ];
-      
+
       new Chart(ctx2, {
         type: 'doughnut',
         data: {
@@ -920,7 +967,9 @@
         },
         options: {
           responsive: true,
-          maintainAspectRatio: true,
+          onClick: function(event, elements) { if (elements.length) openPaymentModal(paymentData[elements[0].index].method); },
+          onHover: function(event, elements) { event.native.target.style.cursor = elements.length ? 'pointer' : 'default'; },
+          maintainAspectRatio: false,
           plugins: {
             legend: {
               display: true,
@@ -957,140 +1006,21 @@
       });
     }
 
-    // Month timeline generation
-    (function() {
-      const scroller = document.getElementById('timeline-scroller');
-      if (!scroller) return;
-
-      const today = new Date();
-      const months = [];
-      
-      for (let i = -12; i <= 11; i++) {
-        const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
-        const yearMonth = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
-        const hebrewMonth = getHebrewMonth(d.getMonth());
-        const year = d.getFullYear();
-        
-        months.push({ value: yearMonth, label: hebrewMonth + ' ' + year });
-      }
-
-      const urlParams = new URLSearchParams(window.location.search);
-      const currentMonth = urlParams.get('month') || (today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0'));
-      
-      months.forEach(m => {
-        const btn = document.createElement('button');
-        btn.className = 'timeline-month-btn';
-        btn.textContent = m.label;
-        btn.dataset.month = m.value;
-        if (m.value === currentMonth) {
-          btn.classList.add('active');
-          setTimeout(() => btn.scrollIntoView({ behavior: 'smooth', inline: 'center' }), 100);
-        }
-        btn.onclick = function() {
-          sessionStorage.setItem('scrollPosition', window.pageYOffset);
-          window.location.href = '{{ url_for("reports") }}?month=' + m.value;
-        };
-        scroller.appendChild(btn);
-      });
-
-      // Drag and swipe functionality with RTL support
-      let isDown = false, startX, scrollLeft, isDragging = false;
-      let swipeStartX = 0, swipeStartTime = 0;
-
-      scroller.addEventListener('mousedown', (e) => {
-        isDown = true;
-        isDragging = false;
-        startX = e.pageX - scroller.offsetLeft;
-        scrollLeft = scroller.scrollLeft;
-        scroller.style.cursor = 'grabbing';
-      });
-
-      scroller.addEventListener('mouseleave', () => {
-        isDown = false;
-        scroller.style.cursor = 'grab';
-      });
-
-      scroller.addEventListener('mouseup', () => {
-        isDown = false;
-        scroller.style.cursor = 'grab';
-      });
-
-      scroller.addEventListener('mousemove', (e) => {
-        if (!isDown) return;
-        isDragging = true;
-        e.preventDefault();
-        const x = e.pageX - scroller.offsetLeft;
-        const walk = (x - startX) * 2;
-        scroller.scrollLeft = scrollLeft - walk;
-      });
-
-      // Touch events with swipe detection (RTL-correct)
-      scroller.addEventListener('touchstart', (e) => {
-        swipeStartX = e.touches[0].pageX;
-        swipeStartTime = Date.now();
-        startX = e.touches[0].pageX - scroller.offsetLeft;
-        scrollLeft = scroller.scrollLeft;
-        isDragging = false;
-      });
-
-      scroller.addEventListener('touchmove', (e) => {
-        isDragging = true;
-        const x = e.touches[0].pageX - scroller.offsetLeft;
-        const walk = (x - startX) * 1.5;
-        scroller.scrollLeft = scrollLeft - walk;
-      });
-
-      scroller.addEventListener('touchend', (e) => {
-        const swipeEndX = e.changedTouches[0].pageX;
-        const swipeEndTime = Date.now();
-        const swipeDistance = swipeEndX - swipeStartX;
-        const swipeTime = swipeEndTime - swipeStartTime;
-        const swipeVelocity = Math.abs(swipeDistance) / swipeTime;
-
-        // Quick swipe detection (RTL: right = next month, left = previous)
-        if (!isDragging && swipeTime < 300 && Math.abs(swipeDistance) > 50 && swipeVelocity > 0.3) {
-          const currentActiveBtn = scroller.querySelector('.timeline-month-btn.active');
-          let targetBtn = null;
-
-          if (swipeDistance > 0) {
-            // Swipe right (RTL) = next month
-            targetBtn = currentActiveBtn ? currentActiveBtn.nextElementSibling : null;
-          } else {
-            // Swipe left (RTL) = previous month
-            targetBtn = currentActiveBtn ? currentActiveBtn.previousElementSibling : null;
-          }
-
-          if (targetBtn && targetBtn.classList.contains('timeline-month-btn')) {
-            targetBtn.click();
-          }
-        }
-      });
-
-      function getHebrewMonth(m) {
-        return ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני',
-                'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'][m];
-      }
-
-      // Restore scroll position after page load
-      const savedScrollPos = sessionStorage.getItem('scrollPosition');
-      if (savedScrollPos) {
-        setTimeout(() => {
-          window.scrollTo(0, parseInt(savedScrollPos));
-          sessionStorage.removeItem('scrollPosition');
-        }, 100);
-      }
-    })();
+    // Shared month wheel and view restoration: clear-navigation.js
   </script>
 
   <!-- Category Details Modal -->
   <div id="categoryModal" class="category-modal-overlay" style="display: none;">
-    <div class="category-modal-box">
+    <div class="category-modal-box" role="dialog" aria-modal="true" aria-labelledby="modalCategoryTitle" tabindex="-1">
       <div class="category-modal-header">
-        <h3 id="modalCategoryTitle"></h3>
-        <button class="modal-close-btn" onclick="closeCategoryModal()">✕</button>
+        <h3><a class="drill-link" id="modalCategoryTitle"></a></h3>
+        <button type="button" class="modal-close-btn" aria-label="סגירת פירוט הדוח" onclick="closeCategoryModal()">✕</button>
       </div>
       <div class="category-modal-content">
+        <div class="report-detail-context">{{ clear_months[clear_month[1]|int - 1] }} {{ clear_month[0] }} · <bdi dir="ltr">{{ display_range }}</bdi></div>
+        <div class="report-detail-total"><a class="drill-link" href="#all-report-expenses">סה״כ בפירוט</a><a class="drill-link" id="report-detail-total" href="#all-report-expenses"></a></div>
         <div id="modalExpensesList"></div>
+        <button type="button" class="report-detail-close" onclick="closeCategoryModal()">סגירה</button>
       </div>
     </div>
   </div>
@@ -1101,41 +1031,91 @@
 
     // Add click handlers to category rows
     document.querySelectorAll('.category-summary-row').forEach(row => {
-      row.addEventListener('click', function() {
+      row.addEventListener('click', function(event) {
+        if (event.target.closest('a')) return;
         const category = this.getAttribute('data-category');
         openCategoryModal(category);
       });
     });
 
+
+    function wireReportItems(items, targetUrl) {
+      document.getElementById('modalCategoryTitle').href = targetUrl;
+      document.getElementById('report-detail-total').href = targetUrl;
+      document.querySelector('.report-detail-total > a').href = targetUrl;
+      document.querySelector('.report-detail-total > a').textContent = {{ ('סה״כ בפירוט' if summary.complete else 'סה״כ חיובים ידועים בפירוט')|tojson }};
+      document.querySelectorAll('#modalExpensesList .modal-expense-item').forEach((row, index) => {
+        const item = items[index];
+        if (!item) return;
+        const amount = row.querySelector('.modal-expense-amount');
+        const amountLink = document.createElement('a');
+        amountLink.className = 'modal-expense-amount drill-link';
+        const edit = new URL({{ url_for('edit_expense', expense_id=0)|tojson }}.replace('/0', '/' + item.id), location.href);
+        edit.searchParams.set('month', {{ selected_month|tojson }});
+        edit.searchParams.set('return_to', {{ request.full_path|tojson }});
+        amountLink.href = edit.href;
+        amountLink.textContent = amount.textContent;
+        amountLink.setAttribute('aria-label', 'עריכת ההוצאה: ' + (item.comment || 'ללא תיאור'));
+        amount.replaceWith(amountLink);
+        const meta = row.querySelector('.modal-expense-meta');
+        const oldPayment = meta.querySelector('.modal-expense-payment');
+        if (oldPayment) oldPayment.remove();
+        ['category', 'payment_method'].forEach(field => {
+          const value = item[field];
+          if (!value) return;
+          const link = document.createElement('a');
+          link.className = 'drill-link';
+          const target = new URL({{ url_for('expenses', month=selected_month, category_filter=category_filter, payment_filter=payment_filter, expense_type=expense_type)|tojson }}, location.href);
+          target.searchParams.set(field === 'category' ? 'category_filter' : 'payment_filter', value);
+          link.href = target.href;
+          link.textContent = value;
+          meta.append(' · ', link);
+        });
+      });
+    }
+    function expenseDetailTarget(field, value, globalSummary) {
+      const target = new URL({{ url_for('expenses', month=selected_month, category_filter=category_filter, payment_filter=payment_filter, expense_type=expense_type)|tojson }}, location.href);
+      if (globalSummary) ['category_filter', 'payment_filter', 'expense_type'].forEach(key => target.searchParams.delete(key));
+      target.searchParams.set(field, value);
+      return target.href;
+    }
+
+    function updateReportDetailTotal(items) {
+      var total = items.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+      document.getElementById('report-detail-total').textContent = Number(total.toFixed(0)).toLocaleString('en-US') + ' ₪';
+    }
+
     function openCategoryModal(category) {
       const modal = document.getElementById('categoryModal');
+      if (modal.style.display === 'flex') modal.querySelector('.modal-close-btn').focus();
       const title = document.getElementById('modalCategoryTitle');
       const listContainer = document.getElementById('modalExpensesList');
 
       title.textContent = category;
 
       const expenses = expensesByCategory[category] || [];
-      
+      updateReportDetailTotal(expenses);
+
       if (expenses.length === 0) {
         listContainer.innerHTML = '<p style="text-align: center; color: #94a3b8; padding: 20px;">אין הוצאות להצגה</p>';
       } else {
         let html = '<div class="modal-expenses-list">';
         expenses.forEach(exp => {
-          const amount = (exp.amount || 0).toFixed(0);
+          const amount = Number((exp.amount || 0).toFixed(0)).toLocaleString('en-US');
           const date = exp.display_date || exp.date || '';
           const comment = exp.comment || exp.description || '';
           const payment = exp.payment_method || '';
           const expenseId = exp.id || '';
-          const editUrl = `/edit/${expenseId}?return_to={{ request.full_path | urlencode }}`;
-          
+          const editUrl = `/edit/${expenseId}?month={{ selected_month }}&return_to={{ request.full_path | urlencode }}`;
+
           let bgClass = '';
           let badges = '';
-          if (exp.is_fixed || exp.expense_type === 'standing') {
-            badges += '<span class="expense-badge badge-fixed">📆 קבוע</span>';
+          if (exp.expense_type !== 'installments' && (exp.is_fixed || exp.expense_type === 'standing')) {
+            badges += '<span class="expense-badge badge-fixed">קבוע</span>';
             bgClass = 'modal-item-fixed';
           }
           if (exp.expense_type === 'installments' && exp.current_installment && exp.total_installments) {
-            badges += `<span class="expense-badge badge-installments">💳 תשלום ${exp.current_installment}/${exp.total_installments}</span>`;
+            badges += `<span class="expense-badge badge-installments">תשלום ${exp.current_installment}/${exp.total_installments}</span>`;
             bgClass = 'modal-item-installments';
           }
 
@@ -1150,7 +1130,7 @@
                 <span class="modal-expense-category">${badges}</span>
                 <span class="modal-expense-payment">${payment}</span>
               </div>
-              <button class="modal-edit-btn" onclick="window.location.href='${editUrl}'">✏️ ערוך</button>
+              <button class="modal-edit-btn" onclick="window.location.href='${editUrl}'"><span class="material-icons clear-icon" aria-hidden="true">edit</span> ערוך</button>
             </div>
           `;
         });
@@ -1158,6 +1138,7 @@
         listContainer.innerHTML = html;
       }
 
+      wireReportItems(expenses, expenseDetailTarget('category_filter', category, false));
       modal.style.display = 'flex';
       document.body.style.overflow = 'hidden';
     }
@@ -1181,7 +1162,8 @@
     const expensesByPayment = {{ expenses_by_payment | tojson | safe }};
 
     document.querySelectorAll('.payment-summary-row').forEach(row => {
-      row.addEventListener('click', function() {
+      row.addEventListener('click', function(event) {
+        if (event.target.closest('a')) return;
         const payment = this.getAttribute('data-payment');
         openPaymentModal(payment);
       });
@@ -1189,25 +1171,27 @@
 
     function openPaymentModal(payment) {
       const modal = document.getElementById('categoryModal');
+      if (modal.style.display === 'flex') modal.querySelector('.modal-close-btn').focus();
       const title = document.getElementById('modalCategoryTitle');
       const listContainer = document.getElementById('modalExpensesList');
 
       title.textContent = 'אמצעי תשלום: ' + payment;
 
       const expenses = expensesByPayment[payment] || [];
-      
+      updateReportDetailTotal(expenses);
+
       if (expenses.length === 0) {
         listContainer.innerHTML = '<p style="text-align: center; color: #94a3b8; padding: 20px;">אין הוצאות להצגה</p>';
       } else {
         let html = '<div class="modal-expenses-list">';
         expenses.forEach(exp => {
-          const amount = (exp.amount || 0).toFixed(0);
+          const amount = Number((exp.amount || 0).toFixed(0)).toLocaleString('en-US');
           const date = exp.display_date || exp.date || '';
           const comment = exp.comment || exp.description || '';
           const category = exp.category || '';
-          
+
           let badges = '';
-          if (exp.is_fixed) {
+          if (exp.is_fixed && exp.expense_type !== 'installments') {
             badges += '<span class="expense-badge badge-fixed">קבוע</span>';
           }
           if (exp.expense_type === 'installments' && exp.current_installment && exp.total_installments) {
@@ -1232,6 +1216,7 @@
         listContainer.innerHTML = html;
       }
 
+      wireReportItems(expenses, expenseDetailTarget('payment_filter', payment, false));
       modal.style.display = 'flex';
       document.body.style.overflow = 'hidden';
     }
@@ -1243,32 +1228,34 @@
 
     function openCommitmentsModal() {
       const modal = document.getElementById('categoryModal');
+      if (modal.style.display === 'flex') modal.querySelector('.modal-close-btn').focus();
       const title = document.getElementById('modalCategoryTitle');
       const listContainer = document.getElementById('modalExpensesList');
 
-      title.textContent = 'התחייבויות קבועות';
+      title.textContent = 'התחייבויות חודשיות';
+      updateReportDetailTotal(commitmentsList);
 
       if (commitmentsList.length === 0) {
         listContainer.innerHTML = '<p style="text-align: center; color: #94a3b8; padding: 20px;">אין התחייבויות להצגה</p>';
       } else {
         let html = '<div class="modal-expenses-list">';
         commitmentsList.forEach(exp => {
-          const amount = (exp.amount || 0).toFixed(0);
+          const amount = Number((exp.amount || 0).toFixed(0)).toLocaleString('en-US');
           const date = exp.display_date || exp.date || '';
           const comment = exp.comment || exp.description || '';
           const payment = exp.payment_method || '';
           const category = exp.category || '';
           const expenseId = exp.id || '';
-          const editUrl = `/edit/${expenseId}?return_to={{ request.full_path | urlencode }}`;
-          
+          const editUrl = `/edit/${expenseId}?month={{ selected_month }}&return_to={{ request.full_path | urlencode }}`;
+
           let bgClass = '';
           let badges = '';
           if (exp.expense_type === 'standing') {
-            badges += '<span class="expense-badge badge-fixed">📆 קבוע</span>';
+            badges += '<span class="expense-badge badge-fixed">קבוע</span>';
             bgClass = 'modal-item-fixed';
           }
           if (exp.expense_type === 'installments' && exp.current_installment && exp.total_installments) {
-            badges += `<span class="expense-badge badge-installments">💳 תשלום ${exp.current_installment}/${exp.total_installments}</span>`;
+            badges += `<span class="expense-badge badge-installments">תשלום ${exp.current_installment}/${exp.total_installments}</span>`;
             bgClass = 'modal-item-installments';
           }
 
@@ -1283,7 +1270,7 @@
                 <span class="modal-expense-category">${badges}</span>
                 <span class="modal-expense-payment">${category} • ${payment}</span>
               </div>
-              <button class="modal-edit-btn" onclick="window.location.href='${editUrl}'">✏️ ערוך</button>
+              <button class="modal-edit-btn" onclick="window.location.href='${editUrl}'"><span class="material-icons clear-icon" aria-hidden="true">edit</span> ערוך</button>
             </div>
           `;
         });
@@ -1291,6 +1278,7 @@
         listContainer.innerHTML = html;
       }
 
+      wireReportItems(commitmentsList, expenseDetailTarget('category_filter', 'fixed_and_installments', true));
       modal.style.display = 'flex';
       document.body.style.overflow = 'hidden';
     }
@@ -1302,23 +1290,25 @@
 
     function openAlreadySpentModal() {
       const modal = document.getElementById('categoryModal');
+      if (modal.style.display === 'flex') modal.querySelector('.modal-close-btn').focus();
       const title = document.getElementById('modalCategoryTitle');
       const listContainer = document.getElementById('modalExpensesList');
 
-      title.textContent = 'כבר הוצאת החודש (חד-פעמיות)';
+      title.textContent = 'הוצאות חד־פעמיות';
+      updateReportDetailTotal(alreadySpentList);
 
       if (alreadySpentList.length === 0) {
         listContainer.innerHTML = '<p style="text-align: center; color: #94a3b8; padding: 20px;">אין הוצאות להצגה</p>';
       } else {
         let html = '<div class="modal-expenses-list">';
         alreadySpentList.forEach(exp => {
-          const amount = (exp.amount || 0).toFixed(0);
+          const amount = Number((exp.amount || 0).toFixed(0)).toLocaleString('en-US');
           const date = exp.display_date || exp.date || '';
           const comment = exp.comment || exp.description || '';
           const payment = exp.payment_method || '';
           const category = exp.category || '';
           const expenseId = exp.id || '';
-          const editUrl = `/edit/${expenseId}?return_to={{ request.full_path | urlencode }}`;
+          const editUrl = `/edit/${expenseId}?month={{ selected_month }}&return_to={{ request.full_path | urlencode }}`;
 
           html += `
             <div class="modal-expense-item">
@@ -1330,7 +1320,7 @@
               <div class="modal-expense-meta">
                 <span class="modal-expense-payment">${category} • ${payment}</span>
               </div>
-              <button class="modal-edit-btn" onclick="window.location.href='${editUrl}'">✏️ ערוך</button>
+              <button class="modal-edit-btn" onclick="window.location.href='${editUrl}'"><span class="material-icons clear-icon" aria-hidden="true">edit</span> ערוך</button>
             </div>
           `;
         });
@@ -1338,10 +1328,138 @@
         listContainer.innerHTML = html;
       }
 
+      wireReportItems(alreadySpentList, expenseDetailTarget('expense_type', 'single', true));
       modal.style.display = 'flex';
       document.body.style.overflow = 'hidden';
     }
   </script>
   <script src="{{ url_for('static', filename='haptics.js') }}"></script>
+<script>
+    document.querySelectorAll('input[type="month"]:not(.month-select)').forEach(input => {
+      var wrap = document.createElement('div');
+      wrap.className = 'clear-month-display month-editor';
+      var label = document.createElement('span');
+      label.setAttribute('aria-hidden', 'true');
+      input.parentNode.insertBefore(wrap, input);
+      wrap.appendChild(label);
+      wrap.appendChild(input);
+      function updateMonthLabel() {
+        var parts = input.value.split('-');
+        label.textContent = parts.length === 2 ? new Date(Number(parts[0]), Number(parts[1]) - 1, 10).toLocaleDateString('he-IL', {month:'long',year:'numeric'}) : 'בחירת חודש';
+      }
+      updateMonthLabel();
+      input.addEventListener('input', updateMonthLabel);
+    });
+    document.querySelectorAll('[role="button"]').forEach(el => {
+      el.addEventListener('keydown', event => {
+        if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); el.click(); }
+      });
+    });
+    (() => {
+      var previousFocus = null;
+      var activeDialog = null;
+      function visibleDialog() {
+        return Array.from(document.querySelectorAll('[role="dialog"]')).find(el => el.getClientRects().length && !el.closest('.hidden, [aria-hidden="true"]') && el.getAttribute('aria-hidden') !== 'true');
+      }
+      new MutationObserver(() => {
+        var dialog = visibleDialog();
+        if (dialog && dialog !== activeDialog) {
+          previousFocus = document.activeElement;
+          activeDialog = dialog;
+          if (!dialog.contains(document.activeElement)) (dialog.querySelector('button, input, a[href]') || dialog).focus();
+        } else if (!dialog && activeDialog) {
+          activeDialog = null;
+          if (previousFocus && previousFocus.isConnected) previousFocus.focus();
+        }
+      }).observe(document.body, {subtree:true, attributes:true, attributeFilter:['class','style','aria-hidden']});
+      document.addEventListener('keydown', event => {
+        var dialog = visibleDialog();
+        if (!dialog) return;
+        if (event.key === 'Escape') {
+          var closer = dialog.querySelector('.modal-close, .expense-modal-close, .modal-close-btn, .quick-expense-close, .drawer-handle');
+          if (closer) closer.click();
+        }
+        if (event.key === 'Tab') {
+          var items = Array.from(dialog.querySelectorAll('button, a[href], input, select, textarea, [tabindex="0"]')).filter(el => !el.disabled && el.getClientRects().length && el.type !== 'hidden');
+          if (!items.length) return;
+          if (event.shiftKey && document.activeElement === items[0]) { event.preventDefault(); items[items.length - 1].focus(); }
+          else if (!event.shiftKey && document.activeElement === items[items.length - 1]) { event.preventDefault(); items[0].focus(); }
+        }
+      });
+    })();
+  </script>
+<script>
+    document.querySelectorAll('.ledger-detail-trigger').forEach(button => {
+      button.addEventListener('click', () => button.closest('tr').querySelector('.table-action-btn').click());
+    });
+  </script>
+<script>
+    function openCalculationModal(kind) {
+      const values = {{ summary|tojson }};
+      const budgetIncome = {{ url_for('budget', month=selected_month)|tojson }} + '#income-section';
+      const definitions = {
+        luxury: { title:'תקציב לחד־פעמיות', result:values.available_for_luxuries, explanation:'הכנסות פחות קבועות, תשלומי החודש ויעד החיסכון, לפני הוצאות חד־פעמיות.', rows:[['הכנסות החודש', values.total_income, budgetIncome], ['התחייבויות חודשיות', values.total_commitments, '#detail-commitments'], ['יעד חיסכון', values.savings_goal, {{ url_for('budget', month=selected_month)|tojson }} + '#savings-goal']] },
+        remaining: { title:'מרווח להוצאות', result:values.can_still_spend, explanation:'המרווח אחרי קבועות, תשלומי החודש, יעד החיסכון וחד־פעמיות שכבר נרשמו. הוצאות שטרם נרשמו אינן מופחתות כאן. כשאין יעד חיסכון, מופחת 0.', rows:[['תקציב לחד־פעמיות', values.available_for_luxuries, '#detail-luxury'], ['חד־פעמיות שכבר הוצאו', values.already_spent, '#detail-spent']] },
+        daily: { title:'מרווח יומי', result:values.daily_average, explanation:values.daily_average_applicable ? 'מרווח להוצאות חלקי מספר הימים שנותרו כולל היום הנוכחי ועד היום ה־9 בחודש הבא. זהו מרווח, ולא יעד להוצאה יומית.' : 'הממוצע היומי מחושב רק לחודש הפיננסי הנוכחי.', rows:[['מרווח להוצאות', values.can_still_spend, '#detail-remaining'], ['ימים שנותרו', values.days_remaining, null]] }
+      };
+      const definition = definitions[kind];
+      const modal = document.getElementById('categoryModal');
+      if (modal.style.display === 'flex') modal.querySelector('.modal-close-btn').focus();
+      document.getElementById('modalCategoryTitle').textContent = definition.title;
+      document.getElementById('modalCategoryTitle').href = '#detail-' + kind;
+      document.querySelector('.report-detail-total > a').textContent = 'תוצאת החישוב';
+      document.getElementById('report-detail-total').textContent = definition.result == null ? '—' : Number(definition.result.toFixed(0)).toLocaleString('he-IL') + ' ₪';
+      const list = document.getElementById('modalExpensesList');
+      list.replaceChildren();
+      const explanation = document.createElement('p');
+      explanation.className = 'calculation-explanation';
+      explanation.textContent = definition.explanation + (values.complete ? '' : ' חסר מידע לחישוב מלא; ניתן לפתוח את ההוצאות המסומנות בראש העמוד.');
+      list.appendChild(explanation);
+      definition.rows.forEach(([label, amount, href]) => {
+        const row = document.createElement(href ? 'a' : 'div');
+        row.className = 'drawer-item drill-link';
+        if (href) row.href = href;
+        const caption = document.createElement('span');
+        caption.textContent = label;
+        const value = document.createElement('bdi');
+        value.textContent = amount == null ? '—' : Number(amount.toFixed(0)).toLocaleString('he-IL') + (href ? ' ₪' : '');
+        row.append(caption, value);
+        list.appendChild(row);
+      });
+      document.getElementById('report-detail-total').href = '#detail-' + kind;
+      document.querySelector('.report-detail-total > a').href = '#detail-' + kind;
+      modal.dataset.detailKind = kind;
+      modal.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    }
+    function openReportTarget(hash) {
+      if (hash === '#detail-commitments') openCommitmentsModal();
+      else if (hash === '#detail-spent') openAlreadySpentModal();
+      else if (hash.startsWith('#detail-')) openCalculationModal(hash.slice(8));
+      else if (hash.startsWith('#category=')) openCategoryModal(decodeURIComponent(hash.slice(10)));
+      else if (hash.startsWith('#payment=')) openPaymentModal(decodeURIComponent(hash.slice(9)));
+      else return false;
+      return true;
+    }
+    document.addEventListener('click', event => {
+      const link = event.target.closest('a[href]');
+      if (!link || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+      const href = link.getAttribute('href');
+      if (href.startsWith('#') && /^(#detail-(commitments|spent|luxury|remaining|daily)|#category=|#payment=)/.test(href)) {
+        event.preventDefault();
+        event.stopPropagation();
+        openReportTarget(href);
+      }
+    }, true);
+    if (/^(#detail-(commitments|spent|luxury|remaining|daily)|#category=|#payment=)/.test(location.hash)) openReportTarget(location.hash);
+    // Totals link to the corresponding existing detail or budget section.
+    document.querySelectorAll('.simple-table tfoot th, .reports-table-only tfoot th').forEach(cell => {
+      const link = document.createElement('a');
+      link.className = 'drill-link';
+      link.href = cell.closest('#category-table') && cell.cellIndex === 2 ? {{ url_for('budget', month=selected_month)|tojson }} + '#budget-section' : {{ url_for('expenses', month=selected_month, category_filter=category_filter, payment_filter=payment_filter, expense_type=expense_type)|tojson }};
+      link.append(...cell.childNodes);
+      cell.appendChild(link);
+    });
+  </script>
 </body>
 </html>

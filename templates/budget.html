@@ -3,23 +3,22 @@
 <head>
   <meta charset="utf-8">
   <title>מה מצבינו - תקציב חודשי</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=clear3">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <script src="{{ url_for('static', filename='clear-navigation.js') }}?v=2" defer></script>
+  <script src="{{ url_for('static', filename='clear-controls.js') }}?v=1" defer></script>
 </head>
-<body>
+<body class="clear-ui budget-page">
   <!-- כפתור חזרה -->
-  <a href="{{ url_for('index') }}" class="back-button" aria-label="חזרה לדף הבית">←</a>
+  <a href="{{ url_for('index') }}" class="back-button" aria-label="חזרה לדף הבית"><span class="material-icons clear-icon" aria-hidden="true">arrow_forward</span></a>
 
-  <!-- סרגל חודשים צף -->
-  <div class="floating-month-timeline" id="month-timeline">
-    <div class="month-timeline-scroller" id="timeline-scroller">
-    </div>
-  </div>
+
 
   <div class="app-shell">
     <header class="app-header">
-      <h1 class="app-title">מה מצבינו</h1>
-      <p class="app-subtitle">ניהול תקציב חודשי</p>
+      <a class="app-title" href="{{ url_for('expenses', month=selected_month) }}">מה מצבינו</a>
+      <h1 class="app-subtitle">תקציב</h1>
       {% include "tabs.html" %}
     </header>
 
@@ -39,28 +38,27 @@
       <!-- בחירת חודש -->
       <section class="reports-filters-section">
         <form method="get" action="{{ url_for('budget') }}" class="reports-filters-form">
-          
+
           <!-- חודש עם חיצים -->
           <div class="reports-month-selector">
-            <button type="button" class="month-arrow-btn" id="budget-month-next" aria-label="חודש הבא">
-              →
+            <button type="button" class="month-arrow-btn" id="budget-month-prev" aria-label="חודש קודם"><span class="material-icons clear-icon" aria-hidden="true">chevron_right</span>
             </button>
-            <input
+            <div class="clear-month-display">{% set clear_month = (month).split('-') %}{% set clear_months = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'] %}<span aria-hidden="true">{{ clear_months[clear_month[1]|int - 1] }} {{ clear_month[0] }}</span><input
               type="month"
               id="global-month-select"
               name="month"
               value="{{ month }}"
-              class="modern-select month-select"
+              class="modern-select month-select" aria-label="חודש פיננסי"
               required
-            >
-            <button type="button" class="month-arrow-btn" id="budget-month-prev" aria-label="חודש קודם">
-              ←
+            ></div>
+            <button type="button" class="month-arrow-btn" id="budget-month-next" aria-label="חודש הבא"><span class="material-icons clear-icon" aria-hidden="true">chevron_left</span>
             </button>
           </div>
 
           <!-- תצוגת טווח תאריכים כטקסט -->
           <div class="date-range-text">
-            טווח חודש פיננסי נבחר: 
+            חודש פיננסי:
+            <bdi dir="ltr">
             {% set year, month_num = month.split('-') %}
             {% set year = year|int %}
             {% set month_num = month_num|int %}
@@ -69,37 +67,38 @@
             {% else %}
               10/{{ "%02d"|format(month_num) }}/{{ year }} - 09/{{ "%02d"|format(month_num + 1) }}/{{ year }}
             {% endif %}
+            </bdi>
           </div>
 
         </form>
+  <!-- סרגל חודשים צף -->
+  <div class="floating-month-timeline" id="month-timeline">
+    <div class="month-timeline-scroller" id="timeline-scroller">
+    </div>
+  </div>
       </section>
 
-      <!-- סיכום כללי -->
-      <section class="card">
-        <div class="card-header">
-          <div>
-            <div class="card-title">חודש תקציב</div>
-            <div class="card-subtitle">{{ month }}</div>
-          </div>
-          <div class="card-value-main">
-            {{ "%.0f"|format(total_budget or 0) }} ₪
-          </div>
-        </div>
+      <section class="card clear-summary-strip" aria-label="סיכום התקציב">
+        <a class="summary-tile drill-card" href="#income-section"><i class="material-icons drill-indicator" aria-hidden="true">chevron_left</i><span>סה״כ הכנסות</span><bdi>{{ "{:,.0f}".format(total_income or 0) }} ₪</bdi></a>
+        <a class="summary-tile drill-card" href="#budget-section"><i class="material-icons drill-indicator" aria-hidden="true">chevron_left</i><span>סה״כ תקציב</span><bdi>{{ "{:,.0f}".format(total_budget or 0) }} ₪</bdi></a>
+        <a class="summary-tile drill-card" href="#budget-balance"><i class="material-icons drill-indicator" aria-hidden="true">chevron_left</i><span>יתרה לפי התכנון</span><bdi class="{% if (net_after_budget or 0) < 0 %}negative-value{% endif %}">{% if net_after_budget is not none %}{{ "{:,.0f}".format(net_after_budget) }} ₪{% else %}—{% endif %}</bdi></a>
+      </section>
+      <p class="flash-message" id="budget-navigation-message" role="status" hidden></p>
+
+      <section class="card savings-goal-card" id="savings-goal" tabindex="-1">
+        <div class="card-header"><h2 class="card-title"><a class="drill-link" href="#savings-goal-amount" data-focus-field="savings-goal-amount">יעד חיסכון חודשי</a></h2></div>
         <div class="card-body">
-          <div class="stats-row">
-            <div class="stat-item">
-              <div class="stat-label">סה"כ הכנסות</div>
-              <div class="stat-value">
-                {{ "%.0f"|format(total_income or 0) }} ₪
-              </div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-label">יתרה אחרי תקציב</div>
-              <div class="stat-value">
-                {{ "%.0f"|format(net_after_budget or 0) }} ₪
-              </div>
-            </div>
-          </div>
+          <p id="savings-goal-help">אופציונלי, לחודש הנבחר בלבד. 0 פירושו ללא יעד. הסכום נשמר בצד לפני חישוב המרווח לחד־פעמיות; זו אינה הוצאה או העברה בנקאית.</p>
+          {% if not budget_read_ok or savings_goal is none %}<p class="flash-message flash-error">יעד החיסכון לא נטען באופן תקין. <a class="drill-link" href="{{ url_for('budget', month=month) }}#savings-goal">טעינה מחדש</a></p>{% endif %}
+          <form method="post" action="{{ url_for('budget') }}" id="savings-goal-form">
+            <input type="hidden" name="month" value="{{ month }}">
+            <input type="hidden" name="save_savings_goal" value="1">
+            <label class="savings-goal-field" for="savings-goal-amount"><span>סכום לחיסכון <span aria-hidden="true">₪</span></span>
+              <input type="number" name="savings_goal" id="savings-goal-amount" value="{{ savings_goal if savings_goal is not none else '' }}" min="0" step="0.01" inputmode="decimal" class="budget-input" aria-describedby="savings-goal-help" required {% if not budget_read_ok or savings_goal is none %}disabled{% endif %}>
+            </label>
+            <button type="submit" class="btn btn-primary" {% if not budget_read_ok or savings_goal is none %}disabled{% endif %}>שמירת יעד החיסכון</button>
+          </form>
+          <p><a class="drill-link" href="{{ url_for('reports', month=month) }}#detail-remaining">למרווח אחרי שמירת הסכום לחיסכון</a></p>
         </div>
       </section>
 
@@ -107,20 +106,13 @@
       <form method="post" action="{{ url_for('budget') }}" id="budget-form">
         <input type="hidden" name="month" value="{{ month }}">
 
-        
-        <!-- כפתור שמירה -->
-        <section class="card">
-          <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; font-size: 16px; padding: 14px;">
-            💾 שמור שינויים
-          </button>
-        </section>
 
         <!-- תקציב והכנסות במקביל -->
         <div class="budget-grid">
           <!-- תקציב לפי קטגוריות -->
           <section class="card">
             <div class="card-header">
-              <h2 class="card-title">📊 תקציב לפי קטגוריות</h2>
+              <h2 class="card-title" id="budget-section" tabindex="-1"><a class="drill-link" href="#budget-1" data-focus-field="budget-1">תקציב לפי קטגוריות</a></h2>
             </div>
             <div class="card-body">
               <div class="budget-edit-table">
@@ -130,17 +122,18 @@
                   <div class="budget-cell budget-current">תקציב נוכחי</div>
                 </div>
 
+                {% set populated_budgets = budgets|selectattr('amount')|list %}
                 {% for row in budgets %}
-                <div class="budget-row">
-                  <div class="budget-cell budget-category">{{ row.category }}</div>
+                <div class="budget-row {% if (populated_budgets and not row.amount and not row.previous_amount) or (not populated_budgets and loop.index > 3) %}budget-extra-row{% endif %}" {% if (populated_budgets and not row.amount and not row.previous_amount) or (not populated_budgets and loop.index > 3) %}hidden{% endif %}>
+                  <div class="budget-cell budget-category"><a class="drill-link" href="{{ url_for('expenses', month=month, category_filter=row.category) }}">{{ row.category }}</a></div>
                   <div class="budget-cell budget-prev">
-                    <span class="prev-amount">{{ "%.0f"|format(row.previous_amount or 0) }}</span>
+                    <span class="prev-amount">{{ "{:,.0f}".format(row.previous_amount or 0) }}</span>
                   </div>
                   <div class="budget-cell budget-current">
-                    <input 
-                      type="number" 
-                      name="budget_{{ row.category }}" 
-                      value="{{ row.amount or 0 }}" 
+                    <input
+                      type="number" data-budget-category="{{ row.category }}"
+                      name="budget_{{ row.category }}" id="budget-{{ loop.index }}" aria-label="תקציב {{ row.category }}" inputmode="decimal"
+                      value="{{ row.amount or 0 }}"
                       class="budget-input"
                       step="0.01"
                       placeholder="0"
@@ -148,14 +141,15 @@
                   </div>
                 </div>
                 {% endfor %}
+                <button type="button" class="text-link" id="show-more-budget" aria-expanded="false">הצגת כל הקטגוריות</button>
 
                 <div class="budget-row budget-row-total">
-                  <div class="budget-cell budget-category">סה״כ תקציב</div>
+                  <div class="budget-cell budget-category"><a class="drill-link" href="#budget-section">סה״כ תקציב</a></div>
                   <div class="budget-cell budget-prev">
                     <span class="prev-amount">-</span>
                   </div>
                   <div class="budget-cell budget-current">
-                    <span class="total-value">{{ "%.0f"|format(total_budget or 0) }} ₪</span>
+                    <a class="total-value drill-link" href="#budget-section">{{ "{:,.0f}".format(total_budget or 0) }} ₪</a>
                   </div>
                 </div>
               </div>
@@ -165,7 +159,7 @@
           <!-- הכנסות -->
           <section class="card">
             <div class="card-header">
-              <h2 class="card-title">💰 הכנסות חודשיות</h2>
+              <h2 class="card-title" id="income-section" tabindex="-1"><a class="drill-link" href="#income-shalom" data-focus-field="income-shalom">הכנסות חודשיות</a></h2>
             </div>
             <div class="card-body">
             <div class="budget-edit-table">
@@ -177,10 +171,10 @@
               <div class="budget-row">
                 <div class="budget-cell budget-source">שכר שלום</div>
                 <div class="budget-cell budget-amount">
-                  <input 
-                    type="number" 
-                    name="income_shalom" 
-                    value="{{ income_shalom or 0 }}" 
+                  <input
+                    type="number"
+                    name="income_shalom" id="income-shalom" aria-label="שכר שלום" inputmode="decimal"
+                    value="{{ income_shalom or 0 }}"
                     class="budget-input"
                     step="0.01"
                     placeholder="0"
@@ -191,10 +185,10 @@
               <div class="budget-row">
                 <div class="budget-cell budget-source">שכר חגית</div>
                 <div class="budget-cell budget-amount">
-                  <input 
-                    type="number" 
-                    name="income_hagit" 
-                    value="{{ income_hagit or 0 }}" 
+                  <input
+                    type="number"
+                    name="income_hagit" id="income-hagit" aria-label="שכר חגית" inputmode="decimal"
+                    value="{{ income_hagit or 0 }}"
                     class="budget-input"
                     step="0.01"
                     placeholder="0"
@@ -205,10 +199,10 @@
               <div class="budget-row">
                 <div class="budget-cell budget-source">ביטוח לאומי</div>
                 <div class="budget-cell budget-amount">
-                  <input 
-                    type="number" 
-                    name="income_bitua" 
-                    value="{{ income_bitua or 0 }}" 
+                  <input
+                    type="number"
+                    name="income_bitua" id="income-bitua" aria-label="ביטוח לאומי" inputmode="decimal"
+                    value="{{ income_bitua or 0 }}"
                     class="budget-input"
                     step="0.01"
                     placeholder="0"
@@ -219,10 +213,10 @@
               <div class="budget-row">
                 <div class="budget-cell budget-source">קצבת ילדים</div>
                 <div class="budget-cell budget-amount">
-                  <input 
-                    type="number" 
-                    name="income_kids" 
-                    value="{{ income_kids or 0 }}" 
+                  <input
+                    type="number"
+                    name="income_kids" id="income-kids" aria-label="קצבת ילדים" inputmode="decimal"
+                    value="{{ income_kids or 0 }}"
                     class="budget-input"
                     step="0.01"
                     placeholder="0"
@@ -231,9 +225,9 @@
               </div>
 
               <div class="budget-row budget-row-total">
-                <div class="budget-cell budget-source">סה״כ הכנסות</div>
+                <div class="budget-cell budget-source"><a class="drill-link" href="#income-section">סה״כ הכנסות</a></div>
                 <div class="budget-cell budget-amount">
-                  <span class="total-value">{{ "%.0f"|format(total_income or 0) }} ₪</span>
+                  <a class="total-value drill-link" href="#income-section">{{ "{:,.0f}".format(total_income or 0) }} ₪</a>
                 </div>
               </div>
             </div>
@@ -244,23 +238,43 @@
         <!-- כפתור שמירה -->
         <section class="card">
           <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; font-size: 16px; padding: 14px;">
-            💾 שמור שינויים
+            <span class="material-icons clear-icon" aria-hidden="true">save</span> שמירת התקציב
           </button>
         </section>
 
       </form>
 
+      <section class="card calculation-breakdown" id="budget-balance" tabindex="-1">
+        <h2 class="card-title"><a class="drill-link" href="#budget-balance-operands">יתרה לפי התכנון</a></h2>
+        <p>הכנסות פחות התקציב לקטגוריות ופחות יעד החיסכון. זהו תכנון; הוצאות בפועל אינן מופחתות כאן.</p>
+        <div id="budget-balance-operands">
+          <a class="drawer-item drill-link" href="#income-section"><span>סה״כ הכנסות</span><bdi>{{ "{:,.0f}".format(total_income or 0) }} ₪</bdi></a>
+          <a class="drawer-item drill-link" href="#budget-section"><span>סה״כ תקציב</span><bdi>{{ "{:,.0f}".format(total_budget or 0) }} ₪</bdi></a>
+          <a class="drawer-item drill-link" href="#savings-goal"><span>יעד חיסכון</span><bdi>{% if savings_goal is not none %}{{ "{:,.0f}".format(savings_goal) }} ₪{% else %}—{% endif %}</bdi></a>
+          <a class="drawer-item drill-link" href="#budget-balance-operands"><span>יתרה לפי התכנון</span><bdi>{% if net_after_budget is not none %}{{ "{:,.0f}".format(net_after_budget) }} ₪{% else %}—{% endif %}</bdi></a>
+        </div>
+        <p><a class="drill-link" href="{{ url_for('reports', month=month) }}#detail-remaining">למרווח להוצאות אחרי יעד החיסכון</a></p>
+      </section>
     </main>
   </div>
 
   <script>
+    var moreBudget = document.getElementById('show-more-budget');
+    var extraBudgets = document.querySelectorAll('.budget-extra-row');
+    moreBudget.hidden = extraBudgets.length === 0;
+    moreBudget.addEventListener('click', () => {
+      var expanded = moreBudget.getAttribute('aria-expanded') !== 'true';
+      extraBudgets.forEach(row => row.hidden = !expanded);
+      moreBudget.setAttribute('aria-expanded', String(expanded));
+      moreBudget.textContent = expanded ? 'צמצום הקטגוריות' : 'הצגת כל הקטגוריות';
+    });
     var monthInput = document.getElementById('global-month-select');
     var prevBtn = document.getElementById('budget-month-prev');
     var nextBtn = document.getElementById('budget-month-next');
 
     // Auto-submit on month change
     monthInput.addEventListener('change', function() {
-      this.form.submit();
+      window.ClearNavigation.submitFilters(this.form);
     });
 
     // Month navigation
@@ -282,7 +296,7 @@
       }
       var mm = (m < 10) ? '0' + m : '' + m;
       monthInput.value = y + '-' + mm;
-      monthInput.form.submit();
+      window.ClearNavigation.submitFilters(monthInput.form);
     }
 
     if (prevBtn) {
@@ -292,138 +306,87 @@
       nextBtn.addEventListener('click', function() { changeMonth(+1); });
     }
 
-    // Auto-hide flash messages after 1 second
-    var flashMessages = document.querySelectorAll('.flash-message');
+    // Success feedback clears after reading; errors remain visible.
+    var flashMessages = document.querySelectorAll('.flash-success');
     flashMessages.forEach(function(msg) {
       setTimeout(function() {
         msg.remove();
-      }, 1000);
+      }, 6000);
     });
 
-    // Month timeline generation
-    (function() {
-      const scroller = document.getElementById('timeline-scroller');
-      if (!scroller) return;
-
-      const today = new Date();
-      const months = [];
-      
-      for (let i = -12; i <= 11; i++) {
-        const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
-        const yearMonth = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
-        const hebrewMonth = getHebrewMonth(d.getMonth());
-        const year = d.getFullYear();
-        
-        months.push({ value: yearMonth, label: hebrewMonth + ' ' + year });
-      }
-
-      const urlParams = new URLSearchParams(window.location.search);
-      const currentMonth = urlParams.get('month') || (today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0'));
-      
-      months.forEach(m => {
-        const btn = document.createElement('button');
-        btn.className = 'timeline-month-btn';
-        btn.textContent = m.label;
-        btn.dataset.month = m.value;
-        if (m.value === currentMonth) {
-          btn.classList.add('active');
-          setTimeout(() => btn.scrollIntoView({ behavior: 'smooth', inline: 'center' }), 100);
-        }
-        btn.onclick = function() {
-          sessionStorage.setItem('scrollPosition', window.pageYOffset);
-          window.location.href = '{{ url_for("budget") }}?month=' + m.value;
-        };
-        scroller.appendChild(btn);
-      });
-
-      // Drag and swipe functionality with RTL support
-      let isDown = false, startX, scrollLeft, isDragging = false;
-      let swipeStartX = 0, swipeStartTime = 0;
-
-      scroller.addEventListener('mousedown', (e) => {
-        isDown = true;
-        isDragging = false;
-        startX = e.pageX - scroller.offsetLeft;
-        scrollLeft = scroller.scrollLeft;
-        scroller.style.cursor = 'grabbing';
-      });
-
-      scroller.addEventListener('mouseleave', () => {
-        isDown = false;
-        scroller.style.cursor = 'grab';
-      });
-
-      scroller.addEventListener('mouseup', () => {
-        isDown = false;
-        scroller.style.cursor = 'grab';
-      });
-
-      scroller.addEventListener('mousemove', (e) => {
-        if (!isDown) return;
-        isDragging = true;
-        e.preventDefault();
-        const x = e.pageX - scroller.offsetLeft;
-        const walk = (x - startX) * 2;
-        scroller.scrollLeft = scrollLeft - walk;
-      });
-
-      // Touch events with swipe detection (RTL-correct)
-      scroller.addEventListener('touchstart', (e) => {
-        swipeStartX = e.touches[0].pageX;
-        swipeStartTime = Date.now();
-        startX = e.touches[0].pageX - scroller.offsetLeft;
-        scrollLeft = scroller.scrollLeft;
-        isDragging = false;
-      });
-
-      scroller.addEventListener('touchmove', (e) => {
-        isDragging = true;
-        const x = e.touches[0].pageX - scroller.offsetLeft;
-        const walk = (x - startX) * 1.5;
-        scroller.scrollLeft = scrollLeft - walk;
-      });
-
-      scroller.addEventListener('touchend', (e) => {
-        const swipeEndX = e.changedTouches[0].pageX;
-        const swipeEndTime = Date.now();
-        const swipeDistance = swipeEndX - swipeStartX;
-        const swipeTime = swipeEndTime - swipeStartTime;
-        const swipeVelocity = Math.abs(swipeDistance) / swipeTime;
-
-        // Quick swipe detection (RTL: right = next month, left = previous)
-        if (!isDragging && swipeTime < 300 && Math.abs(swipeDistance) > 50 && swipeVelocity > 0.3) {
-          const currentActiveBtn = scroller.querySelector('.timeline-month-btn.active');
-          let targetBtn = null;
-
-          if (swipeDistance > 0) {
-            // Swipe right (RTL) = next month
-            targetBtn = currentActiveBtn ? currentActiveBtn.nextElementSibling : null;
-          } else {
-            // Swipe left (RTL) = previous month
-            targetBtn = currentActiveBtn ? currentActiveBtn.previousElementSibling : null;
-          }
-
-          if (targetBtn && targetBtn.classList.contains('timeline-month-btn')) {
-            targetBtn.click();
-          }
-        }
-      });
-
-      function getHebrewMonth(m) {
-        return ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני',
-                'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'][m];
-      }
-
-      // Restore scroll position after page load
-      const savedScrollPos = sessionStorage.getItem('scrollPosition');
-      if (savedScrollPos) {
-        setTimeout(() => {
-          window.scrollTo(0, parseInt(savedScrollPos));
-          sessionStorage.removeItem('scrollPosition');
-        }, 100);
-      }
-    })();
+    // Shared month wheel and view restoration: clear-navigation.js
   </script>
   <script src="{{ url_for('static', filename='haptics.js') }}"></script>
+<script>
+    document.querySelectorAll('[role="button"]').forEach(el => {
+      el.addEventListener('keydown', event => {
+        if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); el.click(); }
+      });
+    });
+    (() => {
+      var previousFocus = null;
+      var activeDialog = null;
+      function visibleDialog() {
+        return Array.from(document.querySelectorAll('[role="dialog"]')).find(el => el.getClientRects().length && !el.closest('.hidden, [aria-hidden="true"]') && el.getAttribute('aria-hidden') !== 'true');
+      }
+      new MutationObserver(() => {
+        var dialog = visibleDialog();
+        if (dialog && dialog !== activeDialog) {
+          previousFocus = document.activeElement;
+          activeDialog = dialog;
+          if (!dialog.contains(document.activeElement)) (dialog.querySelector('button, input, a[href]') || dialog).focus();
+        } else if (!dialog && activeDialog) {
+          activeDialog = null;
+          if (previousFocus && previousFocus.isConnected) previousFocus.focus();
+        }
+      }).observe(document.body, {subtree:true, attributes:true, attributeFilter:['class','style','aria-hidden']});
+      document.addEventListener('keydown', event => {
+        var dialog = visibleDialog();
+        if (!dialog) return;
+        if (event.key === 'Escape') {
+          var closer = dialog.querySelector('.modal-close, .expense-modal-close, .modal-close-btn, .quick-expense-close, .drawer-handle');
+          if (closer) closer.click();
+        }
+        if (event.key === 'Tab') {
+          var items = Array.from(dialog.querySelectorAll('button, a[href], input, select, textarea, [tabindex="0"]')).filter(el => !el.disabled && el.getClientRects().length && el.type !== 'hidden');
+          if (!items.length) return;
+          if (event.shiftKey && document.activeElement === items[0]) { event.preventDefault(); items[items.length - 1].focus(); }
+          else if (!event.shiftKey && document.activeElement === items[items.length - 1]) { event.preventDefault(); items[0].focus(); }
+        }
+      });
+    })();
+  </script>
+<script>
+    function focusBudgetHash() {
+      if (location.hash.startsWith('#category=')) {
+        const category = decodeURIComponent(location.hash.slice(10));
+        const field = Array.from(document.querySelectorAll('[data-budget-category]')).find(input => input.dataset.budgetCategory === category);
+        if (field) {
+          const row = field.closest('.budget-row');
+          if (row.hidden) {
+            extraBudgets.forEach(extra => extra.hidden = false);
+            moreBudget.setAttribute('aria-expanded', 'true');
+            moreBudget.textContent = 'צמצום הקטגוריות';
+          }
+          field.focus();
+          field.scrollIntoView({block:'center'});
+        } else {
+          const message = document.getElementById('budget-navigation-message');
+          message.textContent = 'לקטגוריה ' + category + ' אין שדה תקציב ברשימת הקטגוריות הקיימת.';
+          message.hidden = false;
+          document.getElementById('budget-section').focus();
+        }
+      } else if (['#income-section', '#budget-section', '#budget-balance', '#savings-goal'].includes(location.hash)) {
+        const target = document.querySelector(location.hash);
+        target.focus();
+      }
+    }
+    document.querySelectorAll('[data-focus-field]').forEach(link => link.addEventListener('click', event => {
+      event.preventDefault();
+      document.getElementById(link.dataset.focusField).focus();
+    }));
+    window.addEventListener('hashchange', focusBudgetHash);
+    focusBudgetHash();
+  </script>
 </body>
 </html>

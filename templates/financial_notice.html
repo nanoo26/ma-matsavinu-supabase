@@ -1,0 +1,16 @@
+{% if not summary.complete %}
+<section class="card financial-notice" role="status" aria-labelledby="financial-notice-title">
+  <h2 class="card-title" id="financial-notice-title">חסר מידע לחישוב המרווח</h2>
+  <p>המרווח אינו מחושב עד להשלמת המידע. הרשימות וסכומי הביניים כוללים רק חיובים חודשיים שניתן לחשב.</p>
+  {% if 'savings_goal' in summary.read_errors %}<p>יעד החיסכון אינו זמין או אינו תקין. <a class="drill-link" href="{{ url_for('budget', month=selected_month) }}#savings-goal">פתיחה בתקציב</a></p>{% endif %}
+  {% if summary.read_errors|reject('equalto', 'savings_goal')|list %}
+  <p>חלק מהנתונים לא נטענו. <a class="drill-link" href="{{ request.full_path }}">טעינה מחדש</a></p>
+  {% endif %}
+  {% for e in unresolved_expenses %}
+  <a class="financial-issue drill-link" href="{{ url_for('edit_expense', expense_id=e.id, month=selected_month, return_to=request.full_path) }}">
+    <strong>{{ e.comment or e.category or 'הוצאה ללא תיאור' }}</strong>
+    <span>{{ e.financial_issue }} · פתיחת ההוצאה</span>
+  </a>
+  {% endfor %}
+</section>
+{% endif %}

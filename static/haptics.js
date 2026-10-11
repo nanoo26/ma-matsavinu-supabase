@@ -20,7 +20,7 @@
     if (!shouldVibrateNow()) {
       return;
     }
-    navigator.vibrate(durationMs || 18);
+    try { navigator.vibrate(durationMs || 18); } catch (_) { /* Unsupported or restricted device. */ }
   }
 
   function matchesInteractiveTarget(target) {
@@ -30,6 +30,10 @@
 
     var clickableSelector = [
       'button',
+      'a[href]',
+      'select',
+      'input[type="checkbox"]',
+      'input[type="radio"]',
       'input[type="button"]',
       'input[type="submit"]',
       'input[type="reset"]',
@@ -65,7 +69,15 @@
     return true;
   }
 
+  var pointerStart = null;
+  document.addEventListener('pointerdown', function (event) {
+    pointerStart = { x: event.clientX, y: event.clientY };
+  }, true);
+  document.addEventListener('pointercancel', function () { pointerStart = null; }, true);
   document.addEventListener('pointerup', function (event) {
+    var start = pointerStart;
+    pointerStart = null;
+    if (!start || Math.hypot(event.clientX - start.x, event.clientY - start.y) > 8) return;
     if (!matchesInteractiveTarget(event.target)) {
       return;
     }
