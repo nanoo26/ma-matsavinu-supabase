@@ -1697,7 +1697,7 @@ def reports():
     )
 
     category_comparison = None
-    if category_filter or payment_filter:
+    if category_filter or payment_filter or expense_type_filter:
         labels = ("ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני", "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר")
         comparison_name = {
             "fixed_and_installments": "קבועות ותשלומים", "fixed": "קבועות ותשלומים",
@@ -1705,6 +1705,10 @@ def reports():
         }.get(category_filter, category_filter) or payment_filter
         if category_filter and payment_filter:
             comparison_name += f" · {payment_filter}"
+        if expense_type_filter:
+            type_name = {"single": "חד־פעמיות", "standing": "קבועות", "installments": "תשלומים"}.get(
+                normalize_expense_type_code(expense_type_filter), "הוצאות מסוננות")
+            comparison_name = f"{comparison_name} · {type_name}" if comparison_name else type_name
         points = []
         read_failed = bool(getattr(g, "financial_read_errors", set()) & {"expenses", "plans"})
         for offset in (0, -1, -2):

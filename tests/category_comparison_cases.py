@@ -114,6 +114,25 @@ class CategoryComparisonCases(OfflineCase):
         self.assertEqual([p['amount'] for p in empty['points']], [0, 0, 0])
         self.assertEqual([p['bar_percent'] for p in empty['points']], [0, 0, 0])
 
+    def test_type_only_comparison_includes_all_categories_for_each_month(self):
+        rows = [expense(1, '2026-10-10', 20),
+                dict(expense(2, '2026-10-11', 10), category='בית'),
+                expense(3, '2026-09-10', 40), expense(4, '2026-08-10', 50),
+                dict(expense(5, '2026-08-10', 70, 'standing'), category='רכב'),
+                dict(expense(6, '2026-08-10', 300, 'installments'), category='בית')]
+        plans = {6: {'installments_count': 3, 'payment_amount': 100, 'total_amount': 300}}
+        for kind, label, totals in (('single', 'חד־פעמיות', [30, 40, 50]),
+                                    ('standing', 'קבועות', [70, 70, 70]),
+                                    ('installments', 'תשלומים', [100, 100, 100])):
+            with self.subTest(kind=kind):
+                comparison = self.report(rows, plans=plans, filters={
+                    'category_filter': '', 'expense_type': kind})['category_comparison']
+                self.assertEqual(comparison['label'], label)
+                self.assertEqual([p['amount'] for p in comparison['points']], totals)
+        combined = self.report(rows, plans=plans, filters={'expense_type': 'single'})['category_comparison']
+        self.assertEqual(combined['label'], 'מזון · חד־פעמיות')
+        self.assertEqual([p['amount'] for p in combined['points']], [20, 40, 50])
+
     def test_unfiltered_report_keeps_existing_summary_without_comparison(self):
         context = self.report([expense(1, '2026-10-10', 50)], filters={'category_filter': ''})
         self.assertIsNone(context['category_comparison'])
