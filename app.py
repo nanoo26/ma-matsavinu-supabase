@@ -1690,10 +1690,42 @@ def reports():
     budgets = fetch_budgets_for_month(selected_month)
     budgets_map = {row["category"]: parse_amount(row["amount"]) for row in budgets}
 
+    report_source = sorted(fetch_expenses(), key=lambda e: e.get("created_at") or "")
+    report_plans = fetch_payment_plans_map()
     all_month_expenses, unresolved_expenses = monthly_expenses(
-        sorted(fetch_expenses(), key=lambda e: e.get("created_at") or ""),
-        fetch_payment_plans_map(), selected_month, report_dates=True
+        report_source, report_plans, selected_month, report_dates=True
     )
+
+    category_comparison = None
+    if category_filter or payment_filter:
+        labels = ("ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני", "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר")
+        comparison_name = {
+            "fixed_and_installments": "קבועות ותשלומים", "fixed": "קבועות ותשלומים",
+            "fixed_only": "קבועות בלבד", "installments_only": "תשלומים בלבד",
+        }.get(category_filter, category_filter) or payment_filter
+        if category_filter and payment_filter:
+            comparison_name += f" · {payment_filter}"
+        points = []
+        read_failed = bool(getattr(g, "financial_read_errors", set()) & {"expenses", "plans"})
+        for offset in (0, -1, -2):
+            year, month_index = divmod(target_year * 12 + target_month - 1 + offset, 12)
+            month = f"{year}-{month_index + 1:02d}"
+            rows, unresolved = (all_month_expenses, unresolved_expenses) if offset == 0 else monthly_expenses(report_source, report_plans, month)
+            filtered = apply_common_filters(rows, category_filter, payment_filter, expense_type_filter)
+            missing = apply_common_filters(unresolved, category_filter, payment_filter, expense_type_filter)
+            amount = None if read_failed or missing else sum(row["amount"] for row in filtered)
+            start, end = financial_range_for_month(month)
+            points.append({
+                "month": month, "label": labels[month_index], "year": year, "amount": amount,
+                "selected": offset == 0, "open_month": start <= today <= end,
+                "range": f"{start:%d/%m/%Y} – {end:%d/%m/%Y}",
+            })
+        largest = max((point["amount"] or 0 for point in points), default=0)
+        for point in points:
+            point["bar_percent"] = round(max(0, point["amount"] or 0) / largest * 100, 2) if largest > 0 else 0
+        current, previous = points[0]["amount"], points[1]["amount"]
+        change = current - previous if current is not None and previous is not None else None
+        category_comparison = {"label": comparison_name, "points": points, "change": change}
 
     # ---------------------------------------------------------
     # פילטרים
@@ -1776,6 +1808,7 @@ def reports():
         payment_methods=PAYMENT_METHODS,
         summary=summary,
         unresolved_expenses=unresolved_expenses,
+        category_comparison=category_comparison,
         category_rows=category_rows,
         expenses_by_category=expenses_by_category,
         expenses_by_payment=expenses_by_payment,

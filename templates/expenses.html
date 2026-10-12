@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <title>מה מצבינו - הוצאות</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=clear3">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=clear4">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <script src="{{ url_for('static', filename='clear-navigation.js') }}?v=2" defer></script>
   <script src="{{ url_for('static', filename='clear-controls.js') }}?v=1" defer></script>
@@ -121,10 +121,13 @@
       <section class="card">
         <div class="card-header">
           <h2 class="card-title">
-            <a class="drill-link" href="#expense-ledger">הוצאות החודש</a>
+            <a class="drill-link" href="#expense-ledger">{% if category_filter or payment_filter or expense_type %}הוצאות מסוננות{% else %}כל הוצאות החודש{% endif %}</a>
           </h2>
         </div>
         <div class="card-body">
+          {% if category_filter or payment_filter or expense_type %}
+          <p class="expenses-filter-notice">מוצגות {{ expenses|length }} הוצאות בהתאם למסננים. <a class="drill-link" id="show-all-month-expenses" href="{{ url_for('expenses', month=selected_month) }}">כל הוצאות החודש</a></p>
+          {% endif %}
           <form method="post" action="{{ url_for('delete_selected') }}" id="delete-form">
 
             <div class="selection-toolbar"><label for="select-all"><input type="checkbox" id="select-all" aria-label="בחירת כל ההוצאות"> בחירה מרובה</label><output id="selection-summary" aria-live="polite">לא נבחרו הוצאות</output></div>

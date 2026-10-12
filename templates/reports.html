@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <title>מה מצבינו - דוחות</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=clear3">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=clear4">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <script src="{{ url_for('static', filename='clear-navigation.js') }}?v=2" defer></script>
@@ -106,6 +106,38 @@
       {% include "financial_notice.html" %}
       <p class="financial-context">הסיכום לכל החודש. המסננים חלים על הטבלאות והגרפים בלבד.</p>
       <p class="financial-context savings-goal-context"><a class="drill-link" href="{{ url_for('budget', month=selected_month) }}#savings-goal">{% if summary.savings_goal is not none and summary.savings_goal > 0 %}שומרים לחיסכון: {{ money(summary.savings_goal) }}{% elif summary.savings_goal is not none %}טרם הוגדר יעד חיסכון · הגדרה בתקציב{% else %}יעד החיסכון אינו זמין · פתיחה בתקציב{% endif %}</a></p>
+      {% if category_comparison %}
+      <section class="card category-trend" id="category-comparison" aria-labelledby="category-trend-title">
+        <div class="category-trend-heading">
+          <div><p class="category-trend-eyebrow">שלושה חודשים במבט אחד</p>
+            <h2 id="category-trend-title"><a class="drill-link" href="{{ url_for('expenses', month=selected_month, category_filter=category_filter, payment_filter=payment_filter, expense_type=expense_type) }}">{{ category_comparison.label }}</a></h2>
+          </div>
+          {% set change = category_comparison.change %}
+          {% if change is not none %}
+          <span class="category-trend-change {% if change < 0 %}decrease{% elif change > 0 %}increase{% endif %}">
+            {% if change < 0 %}↓{% elif change > 0 %}↑{% else %}={% endif %}
+            <bdi>{{ money(change|abs) }}</bdi><small>לעומת החודש הקודם</small>
+          </span>
+          {% endif %}
+        </div>
+        <p class="category-trend-context">לפי חודש פיננסי, מה־10 עד ה־9. המסננים שבחרת חלים על כל שלושת החודשים.</p>
+        <div class="category-trend-plot" role="group" aria-label="הוצאות {{ category_comparison.label }} בשלושה חודשים">
+          {% for point in category_comparison.points %}
+          <a class="category-trend-column {% if point.selected %}selected{% endif %} {% if point.amount is none %}incomplete{% endif %}"
+             href="{{ url_for('expenses', month=point.month, category_filter=category_filter, payment_filter=payment_filter, expense_type=expense_type) }}"
+             aria-label="{{ point.label }} {{ point.year }}: {% if point.amount is none %}חסר מידע{% else %}{{ money(point.amount) }}{% endif %}, פתיחת הוצאות">
+            <bdi class="category-trend-amount">{% if point.amount is none %}חסר מידע{% else %}{{ money(point.amount) }}{% endif %}</bdi>
+            <span class="category-trend-track" aria-hidden="true"><span class="category-trend-bar" style="--bar-height:{{ point.bar_percent }}%"></span></span>
+            <span class="category-trend-month">{{ point.label }}<small>{{ point.year }}</small></span>
+            <span class="category-trend-tag">{% if point.open_month %}החודש עדיין פתוח{% elif point.selected %}החודש הנבחר{% else %}&nbsp;{% endif %}</span>
+            <span class="category-trend-tooltip">{{ point.range }}</span>
+          </a>
+          {% endfor %}
+        </div>
+        <p class="category-trend-footnote">לחיצה על עמודה פותחת את ההוצאות באותו חודש. בתשלומים מוצג החיוב החודשי, ובקבועות הסכום שהיה בתוקף בחודש זה.</p>
+      </section>
+      {% endif %}
+
       <div class="reports-summary-vertical">
         <!-- הכנסות -->
         <a class="stat-card-vertical summary-income drill-card" href="{{ url_for('budget', month=selected_month) }}#income-section"><i class="material-icons drill-indicator" aria-hidden="true">chevron_left</i>
@@ -865,17 +897,21 @@
           datasets: [{
             label: 'הוצאה בפועל',
             data: categoryData.map(d => d.spent),
-            backgroundColor: '#60a5fa',
-            borderColor: '#60a5fa',
-            borderWidth: 2,
-            borderRadius: 3,
+            backgroundColor: '#5b8def',
+            borderWidth: 0,
+            borderRadius: 4,
+            maxBarThickness: 20,
+            categoryPercentage: 0.65,
+            barPercentage: 0.75,
           }, {
             label: 'תקציב',
             data: categoryData.map(d => d.budget),
-            backgroundColor: '#2563eb',
-            borderColor: '#2563eb',
-            borderWidth: 2,
-            borderRadius: 3,
+            backgroundColor: '#cbd5e1',
+            borderWidth: 0,
+            borderRadius: 4,
+            maxBarThickness: 20,
+            categoryPercentage: 0.65,
+            barPercentage: 0.75,
           }]
         },
         options: {
@@ -895,9 +931,13 @@
               position: 'top',
               rtl: true,
               labels: {
-                font: { size: 13, family: 'Heebo' },
+                color: '#64748b',
+                font: { size: 12, family: 'Heebo' },
                 padding: 12,
-                usePointStyle: true
+                usePointStyle: true,
+                pointStyleWidth: 6,
+                boxWidth: 6,
+                boxHeight: 6
               }
             },
             tooltip: {
@@ -917,24 +957,30 @@
             y: {
               beginAtZero: true,
               ticks: {
+                color: '#64748b',
+                maxTicksLimit: 5,
                 font: { size: 12, family: 'Heebo' },
                 callback: function(value) {
                   return value.toLocaleString('he-IL') + ' ₪';
                 }
               },
               grid: {
-                color: 'rgba(148, 163, 184, 0.1)'
-              }
+                color: '#f1f5f9',
+                drawTicks: false
+              },
+              border: { display: false }
             },
             x: {
               ticks: {
+                color: '#64748b',
                 font: { size: 12, family: 'Heebo' },
                 maxRotation: 0,
                 minRotation: 0
               },
               grid: {
                 display: false
-              }
+              },
+              border: { display: false }
             }
           }
         }
@@ -945,11 +991,11 @@
     if (document.getElementById('paymentChart')) {
       const ctx2 = document.getElementById('paymentChart').getContext('2d');
       const colors = [
-        '#2563eb',
-        '#60a5fa',
-        '#0f766e',
-        '#94a3b8',
-        '#1e40af',
+        '#5b8def',
+        '#9ab8ed',
+        '#6caaa4',
+        '#cbd5e1',
+        '#8d9bc5',
       ];
 
       new Chart(ctx2, {
@@ -959,10 +1005,10 @@
           datasets: [{
             data: paymentData.map(d => d.total),
             backgroundColor: colors,
-            borderWidth: 3,
+            borderWidth: 2,
             borderColor: '#ffffff',
-            hoverBorderWidth: 4,
-            hoverOffset: 8
+            hoverBorderWidth: 2,
+            hoverOffset: 3
           }]
         },
         options: {
@@ -976,10 +1022,14 @@
               position: 'bottom',
               rtl: true,
               labels: {
-                font: { size: 13, family: 'Heebo' },
+                color: '#64748b',
+                font: { size: 12, family: 'Heebo' },
                 padding: 12,
                 usePointStyle: true,
-                pointStyle: 'circle'
+                pointStyle: 'circle',
+                pointStyleWidth: 6,
+                boxWidth: 6,
+                boxHeight: 6
               }
             },
             tooltip: {
@@ -997,7 +1047,8 @@
               }
             }
           },
-          cutout: '60%',
+          cutout: '78%',
+          radius: '88%',
           animation: {
             animateScale: true,
             animateRotate: true

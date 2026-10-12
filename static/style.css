@@ -5078,3 +5078,41 @@ body.clear-ui { animation: none; transform: none; }
 .clear-control-option.danger { background: #fff1f2; color: #b91c1c; }
 .clear-control-cancel { margin-top: 16px; text-align: center; background: white; }
 .clear-control-panel button:focus-visible { outline: 3px solid #93c5fd; outline-offset: 2px; }
+
+/* Monthly category comparison: native links keep the graph usable without JS. */
+.clear-ui .category-trend { padding: 18px; animation: none; background: white; }
+.category-trend-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.category-trend-heading > div { min-width: 0; }
+.category-trend-eyebrow { margin: 0 0 4px; color: #64748b; font-size: 13px; }
+.category-trend-heading h2 { margin: 0; font-size: 20px; font-weight: 600; }
+.category-trend-change { border-radius: 8px; background: #f8fafc; color: #475569; padding: 6px 8px; white-space: nowrap; text-align: center; font-size: 14px; font-weight: 600; }
+.category-trend-change small { display: block; font-size: 11px; font-weight: 400; margin-top: 3px; }
+.category-trend-change.decrease { background: #f0fdf9; color: #047857; }
+.category-trend-change.increase { background: #fffaf5; color: #b45309; }
+.category-trend-context, .category-trend-footnote { color: #64748b; font-size: 13px; line-height: 1.6; margin: 12px 0 0; }
+.category-trend-plot { direction: ltr; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 18px 0 4px; }
+.category-trend-column { direction: rtl; position: relative; display: flex; flex-direction: column; align-items: center; color: #475569; text-decoration: none; border-radius: 12px; padding: 8px 0; transition: background .15s; min-width: 0; }
+.category-trend-column:hover { background: #f8fafc; }
+.category-trend-column:focus-visible { background: #f8fafc; outline: 2px solid #93c5fd; outline-offset: 2px; }
+.category-trend-amount { font-size: 14px; font-weight: 600; margin-bottom: 10px; max-width: 100%; overflow-wrap: anywhere; }
+.category-trend-track { display: flex; align-items: flex-end; justify-content: center; width: 100%; height: 112px; border-bottom: 1px solid #e2e8f0; background: repeating-linear-gradient(to top, transparent 0 36px, #f1f5f9 36px 37px); }
+.category-trend-bar { display: block; width: min(36%, 32px); height: var(--bar-height); background: #b5ccef; border-radius: 5px 5px 0 0; transform-origin: bottom; animation: category-bar-rise .3s ease-out; }
+.category-trend-column.selected .category-trend-bar { background: #5b8def; }
+.category-trend-column.selected .category-trend-amount { color: #1d4ed8; }
+.category-trend-month { margin-top: 9px; text-align: center; font-size: 14px; font-weight: 500; }
+.category-trend-month small { display: block; color: #64748b; font-size: 12px; font-weight: 400; margin-top: 2px; }
+.category-trend-tag { font-size: 11px; color: #2563eb; min-height: 18px; margin-top: 7px; text-align: center; }
+.category-trend-tooltip { position: absolute; inset-block-end: 80px; left: 50%; transform: translateX(-50%); width: max-content; padding: 8px; border: 1px solid #dbe4ee; border-radius: 10px; background: white; color: #475569; box-shadow: 0 4px 14px #0f172a18; font-size: 12px; opacity: 0; pointer-events: none; z-index: 1; }
+.category-trend-column:first-child .category-trend-tooltip { left: 0; transform: none; }
+.category-trend-column:last-child .category-trend-tooltip { left: auto; right: 0; transform: none; }
+.category-trend-column:hover .category-trend-tooltip, .category-trend-column:focus-visible .category-trend-tooltip { opacity: 1; }
+.category-trend-column.incomplete .category-trend-bar { height: 45%; background: repeating-linear-gradient(135deg, #e2e8f0 0 6px, #f8fafc 6px 12px); box-shadow: none; }
+.category-trend-column.incomplete .category-trend-amount { color: #64748b; font-size: 14px; }
+.expenses-filter-notice { font-size: 14px; color: #64748b; margin: 0 0 16px; line-height: 1.7; }
+.clear-ui .chart-title { font-size: 15px; font-weight: 600; margin-bottom: 12px; }
+.clear-ui .charts-grid { grid-template-columns: minmax(0, 1fr); }
+.clear-ui .chart-card { min-width: 0; }
+.clear-ui .chart-container { height: 180px; }
+@keyframes category-bar-rise { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@media (prefers-reduced-motion: reduce) { .category-trend-bar { animation: none; } }
+@media (max-width: 480px) { .clear-ui .category-trend { padding: 16px; } .category-trend-plot { gap: 8px; } .category-trend-amount { font-size: 14px; } }
