@@ -5116,3 +5116,6 @@ body.clear-ui { animation: none; transform: none; }
 @keyframes category-bar-rise { from { transform: scaleY(0); } to { transform: scaleY(1); } }
 @media (prefers-reduced-motion: reduce) { .category-trend-bar { animation: none; } }
 @media (max-width: 480px) { .clear-ui .category-trend { padding: 16px; } .category-trend-plot { gap: 8px; } .category-trend-amount { font-size: 14px; } }
+
+/* Keep every category label readable below the vertical bars. */
+.clear-ui .category-chart-container { height: 240px; }

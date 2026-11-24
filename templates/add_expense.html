@@ -134,7 +134,7 @@
       <div class="modal-body">
         <div class="category-grid">
 
-          {% set category_icons = {'מזון':'restaurant','בריאות':'medical_services','חינוך':'school','מתנות':'redeem','בילויים':'celebration','ביגוד':'checkroom','בית':'home','רכב':'directions_car','ילדים':'child_friendly','חוגים':'sports_soccer','קניות':'shopping_cart','טבק':'smoking_rooms',"צ'אבי":'pets','שונות':'more_horiz'} %}
+          {% set category_icons = {'מזון':'restaurant','בריאות':'medical_services','טיפוח':'spa','חינוך':'school','מתנות':'redeem','בילויים':'celebration','ביגוד':'checkroom','בית':'home','רכב':'directions_car','ילדים':'child_friendly','חוגים':'sports_soccer','קניות':'shopping_cart','טבק':'smoking_rooms',"צ'אבי":'pets','שונות':'more_horiz'} %}
           {% for c in categories %}
             <button type="button" class="category-btn" data-value="{{ c }}" aria-label="{{ c }}" onclick='selectCategory({{ c|tojson }})'>
 
