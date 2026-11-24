@@ -239,7 +239,7 @@
           <!-- גרף עמודות - קטגוריות -->
           <div class="chart-card">
             <h3 class="chart-title"><a class="drill-link" href="#category-breakdown">בפועל מול תקציב</a></h3>
-            <div class="chart-container">
+            <div class="chart-container category-chart-container">
               <canvas id="categoriesChart"></canvas>
             </div>
           </div>
@@ -974,8 +974,9 @@
               ticks: {
                 color: '#64748b',
                 font: { size: 12, family: 'Heebo' },
-                maxRotation: 0,
-                minRotation: 0
+                autoSkip: false,
+                maxRotation: 90,
+                minRotation: 90
               },
               grid: {
                 display: false

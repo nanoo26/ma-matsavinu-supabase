@@ -77,6 +77,33 @@ class SavingsGoalCases(OfflineCase):
             self.save("0")
         self.assertEqual(self.writes, [])
 
+    def test_tipuach_budget_save_preserves_other_budgets_income_goal_and_month(self):
+        self.rows.extend([
+            {'id': 4, 'month': '2026-10', 'category': 'ביגוד', 'amount': 80},
+            {'id': 5, 'month': '2026-10', 'category': 'יעד חיסכון', 'amount': 100},
+        ])
+        original = deepcopy(self.rows)
+        renderer = Mock(return_value='offline')
+        with self.mocked_rest(), patch.object(self.module, 'render_template', renderer):
+            result = self.module.app.test_client().get('/budget?month=2026-10')
+            self.assertEqual(result.status_code, 200)
+            context = renderer.call_args.kwargs
+            self.assertEqual(next(row['amount'] for row in context['budgets'] if row['category'] == 'טיפוח'), 0)
+            self.assertEqual(self.writes, [])
+            form = {f"budget_{row['category']}": str(row['amount']) for row in context['budgets']}
+            form.update(month='2026-10', income_shalom='1000', income_hagit='0', income_bitua='0', income_kids='0')
+            form['budget_טיפוח'] = '150'
+            result = self.module.app.test_client().post('/budget', data=form)
+            self.assertEqual(result.status_code, 302)
+            for row in original:
+                saved = next(r for r in self.rows if (r['category'], r['month']) == (row['category'], row['month']))
+                self.assertEqual(saved['amount'], row['amount'])
+            self.assertEqual(next(r['amount'] for r in self.rows if r['category'] == 'טיפוח'), 150)
+            self.module.app.test_client().get('/budget?month=2026-10')
+            after = renderer.call_args.kwargs
+            self.assertEqual(after['total_budget'], context['total_budget'] + 150)
+            self.assertEqual(after['net_after_budget'], context['net_after_budget'] - 150)
+
     def test_create_update_and_disable_preserve_other_financial_rows(self):
         original = deepcopy(self.rows)
         with self.mocked_rest():

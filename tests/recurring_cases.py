@@ -92,6 +92,17 @@ class RecurringCases(OfflineCase):
         self.assertEqual([entry['from_month'] for entry in self.row['recurring_history']], ['2026-01', '2026-03'])
         self.assert_months({'2025-12': 100, '2026-01': 125, '2026-02': 125, '2026-03': 150})
 
+    def test_tipuach_category_change_preserves_past_months(self):
+        result = self.edit('2026-02', 100, category='טיפוח')
+        self.assertEqual(result.status_code, 302)
+        for route in ('/expenses', '/reports'):
+            before = self.context(route, '2026-01')['expenses']
+            after = self.context(route, '2026-02')['expenses']
+            self.assertEqual(before[0]['category'], 'מזון')
+            self.assertEqual(after[0]['category'], 'טיפוח')
+            self.assertEqual(before[0]['amount'], after[0]['amount'])
+        self.assertEqual(self.row['category'], self.original['category'])
+
     def test_profile_changes_do_not_change_prior_category_payment_or_description(self):
         self.edit('2026-01', 120, category='בית', payment_method='שופרסל', comment='פרט מדומה חדש')
         for route in ('/expenses', '/reports'):
